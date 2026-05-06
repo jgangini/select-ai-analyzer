@@ -1,0 +1,155 @@
+# Sentrux architecture rules for the Select AI workspace.
+#
+# The gates below are intentionally close to the current baseline so they are
+# useful on day one. The engineering limits are stricter and should point at
+# concrete cleanup targets instead of silently accepting large concentrators.
+
+[constraints]
+min_quality = 0.56
+min_modularity = 0.63
+min_acyclicity = 0.50
+min_depth = 0.53
+min_equality = 0.50
+min_redundancy = 0.67
+
+max_cycles = 0
+max_cc = 25
+max_fn_lines = 120
+max_file_lines = 1000
+max_upward_violations = 0
+no_god_files = true
+
+[language.python.constraints]
+max_cc = 18
+max_fn_lines = 100
+max_file_lines = 900
+
+[language.typescript.constraints]
+max_cc = 20
+max_fn_lines = 120
+max_file_lines = 900
+
+[[layers]]
+name = "backend_core"
+paths = [
+  "apps/backend/app/core/*",
+  "apps/backend/app/repositories/*",
+  "apps/backend/app/storage/*",
+  "apps/backend/app/integrations/*",
+]
+order = 4
+
+[[layers]]
+name = "backend_application_services"
+paths = [
+  "apps/backend/app/services/*",
+]
+order = 3
+
+[[layers]]
+name = "backend_select_ai"
+paths = [
+  "apps/backend/app/select_ai/*",
+]
+order = 2
+
+[[layers]]
+name = "backend_api"
+paths = [
+  "apps/backend/app/api/*",
+  "apps/backend/app/api/routes/*",
+]
+order = 1
+
+[[layers]]
+name = "backend_entrypoints"
+paths = [
+  "apps/backend/app/main.py",
+  "apps/backend/app/dev/*",
+]
+order = 0
+
+[[layers]]
+name = "frontend_foundation"
+paths = [
+  "apps/frontend/src/assets/*",
+  "apps/frontend/src/config/*",
+  "apps/frontend/src/styles/*",
+  "apps/frontend/src/types/*",
+]
+order = 4
+
+[[layers]]
+name = "frontend_data"
+paths = [
+  "apps/frontend/src/lib/*",
+  "apps/frontend/src/services/*",
+]
+order = 3
+
+[[layers]]
+name = "frontend_state"
+paths = [
+  "apps/frontend/src/context/*",
+  "apps/frontend/src/hooks/*",
+]
+order = 2
+
+[[layers]]
+name = "frontend_ui"
+paths = [
+  "apps/frontend/src/components/*",
+  "apps/frontend/src/components/auth/*",
+  "apps/frontend/src/components/common/*",
+  "apps/frontend/src/components/pages/*",
+  "apps/frontend/src/components/wizard/*",
+]
+order = 1
+
+[[layers]]
+name = "frontend_entrypoints"
+paths = [
+  "apps/frontend/src/App.tsx",
+  "apps/frontend/src/main.tsx",
+]
+order = 0
+
+[[boundaries]]
+from = "apps/backend/app/core/*"
+to = "apps/backend/app/services/*"
+reason = "Core configuration and infrastructure should not reach upward into application services."
+
+[[boundaries]]
+from = "apps/backend/app/core/*"
+to = "apps/backend/app/select_ai/*"
+reason = "Core must stay reusable and independent from Select AI domain/application code."
+
+[[boundaries]]
+from = "apps/backend/app/services/*"
+to = "apps/backend/app/api/*"
+reason = "Services must not depend on FastAPI route modules."
+
+[[boundaries]]
+from = "apps/backend/app/select_ai/*"
+to = "apps/backend/app/api/*"
+reason = "Select AI services should expose behavior to API routes, not import them."
+
+[[boundaries]]
+from = "apps/backend/app/api/*"
+to = "apps/frontend/src/*"
+reason = "Backend API modules must not depend on frontend implementation."
+
+[[boundaries]]
+from = "apps/frontend/src/context/*"
+to = "apps/frontend/src/components/*"
+reason = "State providers should not import UI components; render UI at the application boundary."
+
+[[boundaries]]
+from = "apps/frontend/src/services/*"
+to = "apps/frontend/src/components/*"
+reason = "API clients should remain framework-agnostic and not depend on UI."
+
+[[boundaries]]
+from = "apps/frontend/src/components/*"
+to = "apps/backend/*"
+reason = "Frontend components must communicate through the typed API client, not backend internals."
