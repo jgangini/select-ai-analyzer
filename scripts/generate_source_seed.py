@@ -8,14 +8,16 @@ ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT))
 
 from apps.backend.app.select_ai.source_parser import build_create_table_sql, parse_source_tables
-from apps.backend.app.select_ai.synthetic_data import write_seed_csvs
+from apps.backend.app.select_ai.synthetic_data import YEAR_DAYS, write_seed_files
 
 
 def main() -> int:
-    parser = argparse.ArgumentParser(description="Generate APP_AGENT_DATA DDL and synthetic CSVs from .source structures.")
+    parser = argparse.ArgumentParser(
+        description="Generate APP_AGENT_DATA DDL plus CSV/JSON sidecars from .source structures."
+    )
     parser.add_argument("--source", type=Path, default=ROOT / ".source" / "decoupling_tables_structures.sql")
-    parser.add_argument("--out", type=Path, default=ROOT / "apps" / "backend" / "data" / "source_seed")
-    parser.add_argument("--default-rows", type=int, default=100)
+    parser.add_argument("--out", type=Path, default=ROOT / ".data")
+    parser.add_argument("--default-rows", type=int, default=YEAR_DAYS)
     parser.add_argument("--fact-rows", type=int, default=2000)
     args = parser.parse_args()
 
@@ -34,15 +36,18 @@ def main() -> int:
         "\n--\n".join(build_create_table_sql(table) for table in tables) + "\n",
         encoding="utf-8",
     )
-    csv_paths = write_seed_csvs(
+    seed_paths = write_seed_files(
         args.source,
         csv_dir,
         default_rows=args.default_rows,
         fact_rows=args.fact_rows,
     )
+    csv_paths = [path for path in seed_paths if path.suffix.lower() == ".csv"]
+    json_paths = [path for path in seed_paths if path.suffix.lower() == ".json"]
     print(f"tables={len(tables)}")
     print(f"ddl={ddl_path}")
     print(f"csv_files={len(csv_paths)}")
+    print(f"json_files={len(json_paths)}")
     print(f"csv_dir={csv_dir}")
     return 0
 

@@ -26,6 +26,7 @@ export const queryKeys = {
   },
   dashboards: {
     list: ['dashboards', 'list'] as const,
+    ownerList: ['dashboards', 'list', 'owner'] as const,
     detail: (dashboardId: string | null) => ['dashboards', 'detail', dashboardId] as const,
   },
   agentBuilder: { flow: ['agent-builder', 'flow'] as const },

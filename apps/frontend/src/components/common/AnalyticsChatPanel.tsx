@@ -14,6 +14,7 @@ import {
   type AnalyticsAskResponse,
   type ChartSpec,
   type DashboardVisualizationPayload,
+  type DashboardVisibility,
   type DataSourceSummary,
 } from '../../services/api';
 import { useToast } from '../../context/ToastContext';
@@ -30,6 +31,79 @@ const CHART_COLORS = ['#c74634', '#234967', '#2f7d7e', '#d48a2c', '#7a5a86', '#2
 const PAGE_SIZE = 10;
 
 type ChartSortMode = 'original' | 'value-desc' | 'value-asc' | 'label-asc' | 'label-desc';
+type TableSortMode = 'original' | 'column-asc' | 'column-desc';
+type DashboardTargetMode = 'new' | 'existing';
+type AddDashboardStep = 'target' | 'details';
+
+function TrashIcon({ className = 'h-4 w-4' }: { className?: string }) {
+  return (
+    <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+    </svg>
+  );
+}
+
+function VisibilityIcon({
+  visibility,
+  className = 'h-4 w-4',
+}: {
+  visibility: DashboardVisibility;
+  className?: string;
+}) {
+  if (visibility === 'shared') {
+    return (
+      <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a4 4 0 00-3-3.87M9 20H2v-2a4 4 0 013-3.87m9-6.13a4 4 0 11-8 0 4 4 0 018 0zm7 0a3 3 0 11-6 0 3 3 0 016 0z" />
+      </svg>
+    );
+  }
+  return (
+    <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15.25a1.25 1.25 0 100-2.5 1.25 1.25 0 000 2.5zM6.75 10.5V8a5.25 5.25 0 0110.5 0v2.5m-11.5 0h12.5a1 1 0 011 1v8a1 1 0 01-1 1H5.75a1 1 0 01-1-1v-8a1 1 0 011-1z" />
+    </svg>
+  );
+}
+
+function DashboardVisibilityControl({
+  value,
+  onChange,
+}: {
+  value: DashboardVisibility;
+  onChange: (visibility: DashboardVisibility) => void;
+}) {
+  const options: Array<{ value: DashboardVisibility; label: string; description: string }> = [
+    { value: 'private', label: 'Private', description: 'Only you can manage it.' },
+    { value: 'shared', label: 'Shared', description: 'Visible to all users.' },
+  ];
+
+  return (
+    <div className="grid grid-cols-2 gap-2" role="radiogroup" aria-label="Dashboard visibility">
+      {options.map((option) => {
+        const isSelected = value === option.value;
+        return (
+          <button
+            key={option.value}
+            type="button"
+            role="radio"
+            aria-checked={isSelected}
+            className={`rounded-lg border px-3 py-2 text-left transition-colors ${
+              isSelected
+                ? 'border-oracle-red bg-red-50 text-oracle-red'
+                : 'border-gray-200 bg-white text-oracle-dark-gray hover:bg-gray-50'
+            }`}
+            onClick={() => onChange(option.value)}
+          >
+            <span className="flex items-center gap-2 text-sm font-semibold">
+              <VisibilityIcon visibility={option.value} />
+              {option.label}
+            </span>
+            <span className="mt-1 block text-xs text-oracle-medium-gray">{option.description}</span>
+          </button>
+        );
+      })}
+    </div>
+  );
+}
 
 type ChartPoint = {
   label: string;
@@ -87,6 +161,10 @@ const GRAPH_NODE_WIDTH_MIN = 150;
 const GRAPH_NODE_WIDTH_MAX = 220;
 const GRAPH_CHAR_WIDTH = 7;
 const MIN_CHART_SCROLL_THUMB_PX = 48;
+const BAR_CHART_HEIGHT_PX = 268;
+const BAR_CHART_TOP_PADDING_PX = 34;
+const BAR_CHART_BOTTOM_PADDING_PX = 38;
+const BAR_CHART_MAX_BAR_HEIGHT_PX = 176;
 
 function getInitials(name: string): string {
   return String(name || 'User')
@@ -335,6 +413,70 @@ function normalizeChartSearch(value: string): string {
     .toLocaleLowerCase();
 }
 
+function formatAxisValue(value: number): string {
+  const absolute = Math.abs(value);
+  if (absolute >= 1_000_000) {
+    return new Intl.NumberFormat('en-US', { notation: 'compact', maximumFractionDigits: 1 }).format(value);
+  }
+  if (absolute >= 10_000) {
+    return new Intl.NumberFormat('en-US', { maximumFractionDigits: 0 }).format(value);
+  }
+  return new Intl.NumberFormat('en-US', { maximumFractionDigits: 1 }).format(value);
+}
+
+function buildYAxisTicks(maxValue: number): number[] {
+  const safeMax = Math.max(1, maxValue);
+  return [safeMax, safeMax * 0.75, safeMax * 0.5, safeMax * 0.25, 0];
+}
+
+function compareTableCellValues(leftValue: unknown, rightValue: unknown): number {
+  const leftNumber = valueAsNumber(leftValue);
+  const rightNumber = valueAsNumber(rightValue);
+  if (leftNumber !== null && rightNumber !== null) {
+    return leftNumber - rightNumber;
+  }
+  return formatCellValue(leftValue).localeCompare(formatCellValue(rightValue), undefined, {
+    numeric: true,
+    sensitivity: 'base',
+  });
+}
+
+function AddVisualizationButton({
+  visibleCount,
+  totalCount,
+  isVisualizationAdded,
+  onAddVisualization,
+}: {
+  visibleCount: number;
+  totalCount: number;
+  isVisualizationAdded?: boolean;
+  onAddVisualization: () => void;
+}) {
+  return (
+    <button
+      type="button"
+      className={`inline-flex h-9 w-9 flex-shrink-0 items-center justify-center rounded border text-lg font-semibold transition-colors ${
+        isVisualizationAdded
+          ? 'border-gray-300 bg-gray-50 text-oracle-medium-gray'
+          : 'border-gray-300 bg-white text-oracle-medium-gray hover:border-gray-400 hover:bg-gray-50 hover:text-oracle-dark-gray'
+      }`}
+      onClick={onAddVisualization}
+      disabled={isVisualizationAdded}
+      title={isVisualizationAdded ? 'Visualization already added' : `${visibleCount} of ${totalCount} values. Add visualization`}
+      aria-label={isVisualizationAdded ? 'Visualization already added' : 'Add visualization'}
+      data-testid="add-visualization-button"
+    >
+      {isVisualizationAdded ? (
+        <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+        </svg>
+      ) : (
+        <span aria-hidden="true">+</span>
+      )}
+    </button>
+  );
+}
+
 function ChartControls({
   search,
   sortMode,
@@ -387,27 +529,12 @@ function ChartControls({
         <div className="sm:col-span-2" />
       )}
       {onAddVisualization ? (
-        <button
-          type="button"
-          className={`inline-flex h-9 w-9 flex-shrink-0 items-center justify-center rounded border text-lg font-semibold transition-colors ${
-            isVisualizationAdded
-              ? 'border-gray-300 bg-gray-50 text-oracle-medium-gray'
-              : 'border-gray-300 bg-white text-oracle-medium-gray hover:border-gray-400 hover:bg-gray-50 hover:text-oracle-dark-gray'
-          }`}
-          onClick={onAddVisualization}
-          disabled={isVisualizationAdded}
-          title={isVisualizationAdded ? 'Visualization already added' : `${visibleCount} of ${totalCount} values. Add visualization`}
-          aria-label={isVisualizationAdded ? 'Visualization already added' : 'Add visualization'}
-          data-testid="add-visualization-button"
-        >
-          {isVisualizationAdded ? (
-            <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-            </svg>
-          ) : (
-            <span aria-hidden="true">+</span>
-          )}
-        </button>
+        <AddVisualizationButton
+          visibleCount={visibleCount}
+          totalCount={totalCount}
+          isVisualizationAdded={isVisualizationAdded}
+          onAddVisualization={onAddVisualization}
+        />
       ) : (
         <span className="sr-only" data-testid="analytics-chart-count">
           {visibleCount} of {totalCount}
@@ -529,6 +656,67 @@ function ChartScrollFrame({ children }: { children: ReactNode }) {
   );
 }
 
+function ResultTableControls({
+  search,
+  sortMode,
+  sortLabelColumn,
+  visibleCount,
+  totalCount,
+  isVisualizationAdded,
+  onSearchChange,
+  onSortModeChange,
+  onAddVisualization,
+}: {
+  search: string;
+  sortMode: TableSortMode;
+  sortLabelColumn: string;
+  visibleCount: number;
+  totalCount: number;
+  isVisualizationAdded?: boolean;
+  onSearchChange: (value: string) => void;
+  onSortModeChange: (value: TableSortMode) => void;
+  onAddVisualization?: () => void;
+}) {
+  return (
+    <div
+      className={`mb-3 grid min-w-0 gap-2 ${
+        onAddVisualization
+          ? 'sm:grid-cols-[minmax(0,1fr)_minmax(8rem,12rem)_auto]'
+          : 'sm:grid-cols-[minmax(0,1fr)_minmax(8rem,12rem)]'
+      } sm:items-center`}
+    >
+      <input
+        type="search"
+        value={search}
+        onChange={(event) => onSearchChange(event.target.value)}
+        className="input-oracle h-9 min-w-0 rounded-lg py-1.5 text-xs"
+        placeholder="Filter table values..."
+        aria-label="Filter table values"
+        data-testid="analytics-table-filter"
+      />
+      <select
+        value={sortMode}
+        onChange={(event) => onSortModeChange(event.target.value as TableSortMode)}
+        className="input-oracle h-9 min-w-0 rounded-lg py-1.5 text-xs"
+        aria-label="Sort table values"
+        data-testid="analytics-table-sort"
+      >
+        <option value="original">Original order</option>
+        <option value="column-asc">{sortLabelColumn} A-Z</option>
+        <option value="column-desc">{sortLabelColumn} Z-A</option>
+      </select>
+      {onAddVisualization ? (
+        <AddVisualizationButton
+          visibleCount={visibleCount}
+          totalCount={totalCount}
+          isVisualizationAdded={isVisualizationAdded}
+          onAddVisualization={onAddVisualization}
+        />
+      ) : null}
+    </div>
+  );
+}
+
 export function ChartPreview({
   spec,
   columns,
@@ -582,9 +770,12 @@ export function ChartPreview({
 
   if (!rows.length || spec.type === 'table' || (!singleRowNumericComparison && (!x || !y)) || allPoints.length === 0) {
     return (
-      <div className="rounded-lg border border-[#e2d8d0] bg-[#fffdfb] p-4 text-sm text-oracle-medium-gray">
-        This result is best reviewed as a table because there are not enough numeric columns for a chart.
-      </div>
+      <ResultTable
+        columns={columns}
+        rows={rows}
+        isVisualizationAdded={isVisualizationAdded}
+        onAddVisualization={onAddVisualization}
+      />
     );
   }
 
@@ -592,8 +783,18 @@ export function ChartPreview({
     const metric = points[0];
     const metricLabel = formatMetricLabel([metric?.label, y, spec.y, columns[0]]);
     return (
-      <div className="rounded-lg border border-[#e2d8d0] bg-[#fffdfb] p-5 shadow-sm">
-        <p className="text-xs font-semibold uppercase tracking-[0.14em] text-oracle-light-gray">{metricLabel}</p>
+      <div className="relative rounded-lg border border-[#e2d8d0] bg-[#fffdfb] p-5 shadow-sm">
+        {onAddVisualization ? (
+          <div className="absolute right-4 top-4">
+            <AddVisualizationButton
+              visibleCount={1}
+              totalCount={1}
+              isVisualizationAdded={isVisualizationAdded}
+              onAddVisualization={onAddVisualization}
+            />
+          </div>
+        ) : null}
+        <p className="pr-12 text-xs font-semibold uppercase tracking-[0.14em] text-oracle-light-gray">{metricLabel}</p>
         <p className="mt-2 text-4xl font-semibold text-oracle-dark-gray">
           {formatCellValue(metric?.value ?? rows.length)}
         </p>
@@ -752,7 +953,8 @@ export function ChartPreview({
   }
 
   const compactBarChart = points.length <= 4;
-  const barChartWidth = Math.max(360, points.length * 96);
+  const barChartWidth = Math.max(420, points.length * 112);
+  const yAxisTicks = buildYAxisTicks(maxValue);
 
   return (
     <div className="rounded-lg border border-[#e2d8d0] bg-[#fffdfb] p-4 shadow-sm">
@@ -766,105 +968,214 @@ export function ChartPreview({
         onSortModeChange={setChartSortMode}
         onAddVisualization={onAddVisualization}
       />
-      <ChartScrollFrame>
+      <div className="grid min-w-0 grid-cols-[3.75rem_minmax(0,1fr)] gap-2">
         <div
-          className={`flex h-72 items-end gap-3 pb-7 ${compactBarChart ? 'mx-auto justify-center' : ''}`}
-          style={
-            compactBarChart
-              ? { width: 'max-content' }
-              : { minWidth: `${barChartWidth}px` }
-          }
+          aria-hidden="true"
+          className="flex flex-col justify-between pr-2 text-right text-[10px] font-medium tabular-nums text-oracle-light-gray"
+          style={{
+            height: `${BAR_CHART_HEIGHT_PX}px`,
+            paddingTop: `${BAR_CHART_TOP_PADDING_PX}px`,
+            paddingBottom: `${BAR_CHART_BOTTOM_PADDING_PX}px`,
+          }}
         >
-        {points.map((point, index) => {
-          const height = Math.max(8, (Math.abs(point.value) / maxValue) * 230);
-          return (
-            <div key={`${point.label}-${index}`} className="flex w-20 shrink-0 flex-col items-center justify-end gap-2">
-              <div className="text-xs font-semibold text-oracle-medium-gray">{formatCellValue(point.value)}</div>
-              <div
-                className="w-full rounded-t-md shadow-[0_8px_16px_rgba(49,45,42,0.12)]"
-                style={{ height: `${height}px`, backgroundColor: CHART_COLORS[index % CHART_COLORS.length] }}
-                title={`${point.label}: ${formatCellValue(point.value)}`}
-              />
-              <div className="w-full truncate text-center text-xs text-oracle-light-gray" title={point.label}>
-                {point.label}
-              </div>
-            </div>
-          );
-        })}
+          {yAxisTicks.map((tick, index) => (
+            <span key={`${tick}-${index}`}>{formatAxisValue(tick)}</span>
+          ))}
         </div>
-      </ChartScrollFrame>
+        <ChartScrollFrame>
+          <div
+            className={`relative ${compactBarChart ? 'min-w-full' : ''}`}
+            style={
+              compactBarChart
+                ? { height: `${BAR_CHART_HEIGHT_PX}px` }
+                : { minWidth: `${barChartWidth}px`, height: `${BAR_CHART_HEIGHT_PX}px` }
+            }
+          >
+            <div
+              aria-hidden="true"
+              className="pointer-events-none absolute left-0 right-0 flex flex-col justify-between border-l border-[#c9c0b8]"
+              style={{
+                top: `${BAR_CHART_TOP_PADDING_PX}px`,
+                bottom: `${BAR_CHART_BOTTOM_PADDING_PX}px`,
+              }}
+            >
+              {yAxisTicks.map((tick, index) => (
+                <span
+                  key={`${tick}-${index}`}
+                  className={`border-t ${index === yAxisTicks.length - 1 ? 'border-[#c9c0b8]' : 'border-[#eee6df]'}`}
+                />
+              ))}
+            </div>
+            <div
+              className={`relative z-10 flex h-full gap-4 ${compactBarChart ? 'justify-center' : ''}`}
+            >
+              {points.map((point, index) => {
+                const height = Math.max(8, (Math.abs(point.value) / maxValue) * BAR_CHART_MAX_BAR_HEIGHT_PX);
+                return (
+                  <div
+                    key={`${point.label}-${index}`}
+                    className="relative h-full w-24 shrink-0"
+                  >
+                    <div
+                      className="absolute left-0 right-0 flex flex-col items-center justify-end"
+                      style={{
+                        top: `${BAR_CHART_TOP_PADDING_PX}px`,
+                        bottom: `${BAR_CHART_BOTTOM_PADDING_PX}px`,
+                      }}
+                    >
+                      <div className="mb-2 max-w-full whitespace-nowrap text-center text-xs font-semibold tabular-nums text-oracle-medium-gray">
+                        {formatCellValue(point.value)}
+                      </div>
+                      <div
+                        className="w-full rounded-t-md shadow-[0_8px_16px_rgba(49,45,42,0.12)]"
+                        style={{ height: `${height}px`, backgroundColor: CHART_COLORS[index % CHART_COLORS.length] }}
+                        title={`${point.label}: ${formatCellValue(point.value)}`}
+                      />
+                    </div>
+                    <div
+                      className="absolute bottom-0 left-0 right-0 flex items-start justify-center pt-2 text-center text-xs text-oracle-light-gray"
+                      style={{ height: `${BAR_CHART_BOTTOM_PADDING_PX}px` }}
+                      title={point.label}
+                    >
+                      <span className="w-full truncate">
+                        {point.label}
+                      </span>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        </ChartScrollFrame>
+      </div>
     </div>
   );
 }
 
-function ResultTable({ columns, rows }: { columns: string[]; rows: Array<Record<string, unknown>> }) {
+function ResultTable({
+  columns,
+  rows,
+  onAddVisualization,
+  isVisualizationAdded = false,
+}: {
+  columns: string[];
+  rows: Array<Record<string, unknown>>;
+  onAddVisualization?: () => void;
+  isVisualizationAdded?: boolean;
+}) {
   const [page, setPage] = useState(0);
-  const totalPages = Math.max(1, Math.ceil(rows.length / PAGE_SIZE));
+  const [tableSearch, setTableSearch] = useState('');
+  const [tableSortMode, setTableSortMode] = useState<TableSortMode>('original');
+  const normalizedTableSearch = normalizeChartSearch(tableSearch);
+  const filteredRows = useMemo(() => {
+    if (!normalizedTableSearch) return rows;
+    return rows.filter((row) =>
+      columns.some((column) => normalizeChartSearch(formatCellValue(row[column])).includes(normalizedTableSearch))
+    );
+  }, [columns, normalizedTableSearch, rows]);
+  const sortedRows = useMemo(() => {
+    if (tableSortMode === 'original') return filteredRows;
+    const sortColumn = columns[0];
+    if (!sortColumn) return filteredRows;
+    const direction = tableSortMode === 'column-asc' ? 1 : -1;
+    return filteredRows
+      .map((row, index) => ({ row, index }))
+      .sort((left, right) => {
+        const comparison = compareTableCellValues(left.row[sortColumn], right.row[sortColumn]);
+        return comparison === 0 ? left.index - right.index : comparison * direction;
+      })
+      .map((item) => item.row);
+  }, [columns, filteredRows, tableSortMode]);
+  const totalPages = Math.max(1, Math.ceil(sortedRows.length / PAGE_SIZE));
   const safePage = Math.min(page, totalPages - 1);
   const start = safePage * PAGE_SIZE;
-  const visibleRows = rows.slice(start, start + PAGE_SIZE);
+  const visibleRows = sortedRows.slice(start, start + PAGE_SIZE);
+  const sortLabelColumn = columns[0] ? columns[0].replace(/_/g, ' ') : 'First column';
 
   useEffect(() => {
     setPage(0);
-  }, [rows.length, columns.join('|')]);
+  }, [sortedRows.length, columns.join('|'), normalizedTableSearch, tableSortMode]);
 
   if (!rows.length) {
     return <p className="text-sm text-oracle-medium-gray">The query returned no rows.</p>;
   }
 
   return (
-    <div className="analytics-result-table overflow-hidden rounded-lg border border-[#e2d8d0] bg-white">
-      <div className="overflow-auto">
-        <table className="min-w-full border-collapse text-left text-sm text-oracle-dark-gray">
-          <thead className="bg-oracle-table-header">
-            <tr>
-              {columns.map((column) => (
-                <th
-                  key={column}
-                  className="whitespace-nowrap border-b border-[#e2d8d0] px-4 py-3 text-xs font-semibold uppercase text-oracle-dark-gray"
-                >
-                  {column}
-                </th>
-              ))}
-            </tr>
-          </thead>
-          <tbody className="bg-white">
-            {visibleRows.map((row, rowIndex) => (
-              <tr key={`${safePage}-${rowIndex}`} className="border-b border-[#eee6df] last:border-b-0 hover:bg-[#faf8f6]">
+    <div className="rounded-lg border border-[#e2d8d0] bg-[#fffdfb] p-4 shadow-sm">
+      <ResultTableControls
+        search={tableSearch}
+        sortMode={tableSortMode}
+        sortLabelColumn={sortLabelColumn}
+        visibleCount={sortedRows.length}
+        totalCount={rows.length}
+        isVisualizationAdded={isVisualizationAdded}
+        onSearchChange={setTableSearch}
+        onSortModeChange={setTableSortMode}
+        onAddVisualization={onAddVisualization}
+      />
+      <div className="analytics-result-table overflow-hidden rounded-lg border border-[#e2d8d0] bg-white">
+        <div className="overflow-auto">
+          <table className="min-w-full border-collapse text-left text-sm text-oracle-dark-gray">
+            <thead className="bg-oracle-table-header">
+              <tr>
                 {columns.map((column) => (
-                  <td key={column} className="whitespace-nowrap px-4 py-3 text-oracle-dark-gray">
-                    {formatCellValue(row[column])}
-                  </td>
+                  <th
+                    key={column}
+                    className="whitespace-nowrap border-b border-[#e2d8d0] px-4 py-3 text-xs font-semibold uppercase text-oracle-dark-gray"
+                  >
+                    {column}
+                  </th>
                 ))}
               </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
-      <div className="flex flex-wrap items-center justify-between gap-2 border-t border-[#e2d8d0] bg-[#fbf9f7] px-4 py-3 text-xs text-oracle-medium-gray">
-        <span>
-          Showing {start + 1}-{Math.min(start + PAGE_SIZE, rows.length)} of {rows.length}
-        </span>
-        <div className="flex items-center gap-2">
-          <button
-            type="button"
-            className="rounded border border-[#e2d8d0] bg-white px-3 py-1 text-xs font-medium text-oracle-dark-gray transition-colors hover:bg-[#f6f2ef] disabled:cursor-not-allowed disabled:opacity-50"
-            disabled={safePage === 0}
-            onClick={() => setPage((prev) => Math.max(0, prev - 1))}
-          >
-            Previous
-          </button>
+            </thead>
+            <tbody className="bg-white">
+              {visibleRows.length > 0 ? (
+                visibleRows.map((row, rowIndex) => (
+                  <tr key={`${safePage}-${rowIndex}`} className="border-b border-[#eee6df] last:border-b-0 hover:bg-[#faf8f6]">
+                    {columns.map((column) => (
+                      <td key={column} className="whitespace-nowrap px-4 py-3 text-oracle-dark-gray">
+                        {formatCellValue(row[column])}
+                      </td>
+                    ))}
+                  </tr>
+                ))
+              ) : (
+                <tr>
+                  <td className="px-4 py-5 text-sm text-oracle-medium-gray" colSpan={Math.max(1, columns.length)}>
+                    No table rows match the current filter.
+                  </td>
+                </tr>
+              )}
+            </tbody>
+          </table>
+        </div>
+        <div className="flex flex-wrap items-center justify-between gap-2 border-t border-[#e2d8d0] bg-[#fbf9f7] px-4 py-3 text-xs text-oracle-medium-gray">
           <span>
-            Page {safePage + 1} of {totalPages}
+            {sortedRows.length > 0
+              ? `Showing ${start + 1}-${Math.min(start + PAGE_SIZE, sortedRows.length)} of ${sortedRows.length}`
+              : 'No rows to show'}
           </span>
-          <button
-            type="button"
-            className="rounded border border-[#e2d8d0] bg-white px-3 py-1 text-xs font-medium text-oracle-dark-gray transition-colors hover:bg-[#f6f2ef] disabled:cursor-not-allowed disabled:opacity-50"
-            disabled={safePage >= totalPages - 1}
-            onClick={() => setPage((prev) => Math.min(totalPages - 1, prev + 1))}
-          >
-            Next
-          </button>
+          <div className="flex items-center gap-2">
+            <button
+              type="button"
+              className="rounded border border-[#e2d8d0] bg-white px-3 py-1 text-xs font-medium text-oracle-dark-gray transition-colors hover:bg-[#f6f2ef] disabled:cursor-not-allowed disabled:opacity-50"
+              disabled={safePage === 0}
+              onClick={() => setPage((prev) => Math.max(0, prev - 1))}
+            >
+              Previous
+            </button>
+            <span>
+              Page {safePage + 1} of {totalPages}
+            </span>
+            <button
+              type="button"
+              className="rounded border border-[#e2d8d0] bg-white px-3 py-1 text-xs font-medium text-oracle-dark-gray transition-colors hover:bg-[#f6f2ef] disabled:cursor-not-allowed disabled:opacity-50"
+              disabled={safePage >= totalPages - 1}
+              onClick={() => setPage((prev) => Math.min(totalPages - 1, prev + 1))}
+            >
+              Next
+            </button>
+          </div>
         </div>
       </div>
     </div>
@@ -1549,6 +1860,15 @@ export function AnalyticsChatPanel() {
   const [dashboardDraftItems, setDashboardDraftItems] = useState<DashboardDraftItem[]>([]);
   const [isDashboardTrayOpen, setIsDashboardTrayOpen] = useState(false);
   const [dashboardName, setDashboardName] = useState('');
+  const [dashboardVisibility, setDashboardVisibility] = useState<DashboardVisibility>('private');
+  const [dashboardTargetMode, setDashboardTargetMode] = useState<DashboardTargetMode>('new');
+  const [dashboardTargetId, setDashboardTargetId] = useState('');
+  const [pendingDashboardItem, setPendingDashboardItem] = useState<DashboardDraftItem | null>(null);
+  const [addDashboardStep, setAddDashboardStep] = useState<AddDashboardStep>('target');
+  const [addDashboardMode, setAddDashboardMode] = useState<DashboardTargetMode>('new');
+  const [addDashboardId, setAddDashboardId] = useState('');
+  const [addDashboardName, setAddDashboardName] = useState('');
+  const [addDashboardVisibility, setAddDashboardVisibility] = useState<DashboardVisibility>('private');
   const currentConversationId = activeConversationId || conversationId;
 
   const conversationQuery = useQuery({
@@ -1565,6 +1885,12 @@ export function AnalyticsChatPanel() {
     queryKey: queryKeys.dataSources.list,
     queryFn: () => dataSourcesApi.list().then((response) => response.data.items),
     enabled: isGraphPanelOpen,
+  });
+
+  const dashboardsQuery = useQuery({
+    queryKey: queryKeys.dashboards.ownerList,
+    queryFn: () => dashboardsApi.list(100, true).then((response) => response.data.items),
+    enabled: Boolean(pendingDashboardItem) || isDashboardTrayOpen,
   });
 
   useEffect(() => {
@@ -1634,44 +1960,118 @@ export function AnalyticsChatPanel() {
     [messages]
   );
   const conversationTitle = activeConversationTitle || conversationQuery.data?.title || 'New analytics chat';
+  const defaultDashboardName = useMemo(() => {
+    const normalized = conversationTitle.replace(/^New analytics chat$/i, 'Analytics dashboard').trim();
+    return normalized || 'Analytics dashboard';
+  }, [conversationTitle]);
+  const dashboardOptions = dashboardsQuery.data || [];
+  const selectedExistingDashboard = useMemo(
+    () => dashboardOptions.find((dashboard) => dashboard.dashboard_id === dashboardTargetId) || null,
+    [dashboardOptions, dashboardTargetId]
+  );
   const selectedVisualizationIds = useMemo(
     () => new Set(dashboardDraftItems.map((item) => item.draft_id)),
     [dashboardDraftItems]
   );
 
-  const addVisualizationToDraft = useCallback(
+  useEffect(() => {
+    if (!pendingDashboardItem || addDashboardMode !== 'existing' || addDashboardId || dashboardOptions.length === 0) {
+      return;
+    }
+    setAddDashboardId(dashboardOptions[0].dashboard_id);
+  }, [addDashboardId, addDashboardMode, dashboardOptions, pendingDashboardItem]);
+
+  const openAddVisualizationModal = useCallback(
     (item: DashboardDraftItem) => {
-      setDashboardDraftItems((current) => {
-        if (current.some((existing) => existing.draft_id === item.draft_id)) {
-          return current;
-        }
-        return [...current, item];
-      });
-      setIsDashboardTrayOpen(true);
-      setDashboardName((current) => current || `${conversationTitle.replace(/^New analytics chat$/i, 'Analytics dashboard')}`);
+      setPendingDashboardItem(item);
+      setAddDashboardStep('target');
+      setAddDashboardMode(dashboardTargetMode);
+      setAddDashboardId(dashboardTargetId);
+      setAddDashboardName(dashboardTargetMode === 'new' ? dashboardName.trim() || defaultDashboardName : defaultDashboardName);
+      setAddDashboardVisibility(dashboardVisibility);
     },
-    [conversationTitle]
+    [dashboardName, dashboardTargetId, dashboardTargetMode, dashboardVisibility, defaultDashboardName]
   );
+
+  const closeAddVisualizationModal = () => {
+    setPendingDashboardItem(null);
+    setAddDashboardStep('target');
+  };
+
+  const advanceAddVisualizationStep = () => {
+    if (addDashboardMode === 'existing') {
+      const nextDashboardId = addDashboardId || dashboardOptions[0]?.dashboard_id || '';
+      if (!nextDashboardId) {
+        showToast('No dashboards available.', 'error');
+        return;
+      }
+      setAddDashboardId(nextDashboardId);
+    }
+    setAddDashboardStep('details');
+  };
+
+  const confirmAddVisualizationTarget = () => {
+    if (!pendingDashboardItem) return;
+
+    const nextItems = (current: DashboardDraftItem[]) => {
+      if (current.some((existing) => existing.draft_id === pendingDashboardItem.draft_id)) {
+        return current;
+      }
+      return [...current, pendingDashboardItem];
+    };
+
+    if (addDashboardMode === 'existing') {
+      if (!addDashboardId) {
+        showToast('Select a dashboard.', 'error');
+        return;
+      }
+      const selectedDashboard = dashboardOptions.find((dashboard) => dashboard.dashboard_id === addDashboardId);
+      setDashboardTargetMode('existing');
+      setDashboardTargetId(addDashboardId);
+      setDashboardName(selectedDashboard?.dashboard_name || '');
+      setDashboardVisibility(selectedDashboard?.visibility || 'private');
+    } else {
+      const normalizedName = addDashboardName.trim() || defaultDashboardName;
+      setDashboardTargetMode('new');
+      setDashboardTargetId('');
+      setDashboardName(normalizedName);
+      setDashboardVisibility(addDashboardVisibility);
+    }
+
+    setDashboardDraftItems(nextItems);
+    setIsDashboardTrayOpen(true);
+    setPendingDashboardItem(null);
+  };
 
   const removeVisualizationFromDraft = (draftId: string) => {
     setDashboardDraftItems((current) => current.filter((item) => item.draft_id !== draftId));
   };
 
-  const createDashboardMutation = useMutation({
+  const saveDashboardMutation = useMutation({
     mutationFn: () => {
       const normalizedName = dashboardName.trim() || conversationTitle || 'Analytics dashboard';
       const items = dashboardDraftItems.map(({ draft_id, ...item }) => item);
+      if (dashboardTargetMode === 'existing' && dashboardTargetId) {
+        return dashboardsApi.addItems(dashboardTargetId, { items }).then((response) => response.data);
+      }
       return dashboardsApi.create({
         name: normalizedName,
+        description: `Generated from chat: ${conversationTitle}`,
+        visibility: dashboardVisibility,
         items,
       }).then((response) => response.data);
     },
     onSuccess: (dashboard) => {
       queryClient.invalidateQueries({ queryKey: queryKeys.dashboards.list });
+      queryClient.invalidateQueries({ queryKey: queryKeys.dashboards.ownerList });
+      queryClient.setQueryData(queryKeys.dashboards.detail(dashboard.dashboard_id), dashboard);
       setDashboardDraftItems([]);
       setDashboardName('');
+      setDashboardVisibility('private');
+      setDashboardTargetMode('new');
+      setDashboardTargetId('');
       setIsDashboardTrayOpen(false);
-      showToast('Dashboard generated.', 'success');
+      showToast(dashboardTargetMode === 'existing' ? 'Visualization added to dashboard.' : 'Dashboard generated.', 'success');
       navigate(`/analytics?dashboard=${encodeURIComponent(dashboard.dashboard_id)}`);
     },
     onError: (error) => showToast(getErrorMessage(error), 'error'),
@@ -1973,9 +2373,7 @@ export function AnalyticsChatPanel() {
                       setIsHeaderMenuOpen(false);
                     }}
                   >
-                    <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 7h12M9 7V5a1 1 0 011-1h4a1 1 0 011 1v2m-7 0l1 12h6l1-12M10 11v6m4-6v6" />
-                    </svg>
+                    <TrashIcon />
                     Delete chat
                   </button>
                   </div>
@@ -2026,13 +2424,13 @@ export function AnalyticsChatPanel() {
                           </div>
                           <button
                             type="button"
-                            className="rounded p-1 text-oracle-light-gray transition-colors hover:bg-red-50 hover:text-red-600"
+                            className="rounded border border-red-300 bg-white p-1.5 text-red-600 transition-colors hover:bg-red-50"
                             onClick={() => removeVisualizationFromDraft(item.draft_id)}
-                            title="Remove visualization"
-                            aria-label="Remove visualization"
+                            title="Delete"
+                            aria-label="Delete visualization"
                           >
-                            <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.8} d="M6 7h12M9 7V5a1 1 0 011-1h4a1 1 0 011 1v2m-7 0l1 12h6l1-12" />
+                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
                             </svg>
                           </button>
                         </div>
@@ -2042,21 +2440,62 @@ export function AnalyticsChatPanel() {
                 )}
               </div>
               <div className="space-y-2 border-t border-[#eadfd7] bg-[#fbf8f5] p-3">
-                <input
-                  type="text"
-                  value={dashboardName}
-                  onChange={(event) => setDashboardName(event.target.value)}
-                  className="input-oracle h-9 rounded-lg py-1.5 text-xs"
-                  placeholder="Dashboard name"
-                  aria-label="Dashboard name"
-                />
+                {dashboardTargetMode === 'existing' ? (
+                  <div className="space-y-1.5">
+                    <label className="text-[10px] font-semibold uppercase tracking-[0.08em] text-oracle-light-gray">
+                      Existing dashboard
+                    </label>
+                    <select
+                      value={dashboardTargetId}
+                      onChange={(event) => {
+                        const nextId = event.target.value;
+                        const dashboard = dashboardOptions.find((item) => item.dashboard_id === nextId);
+                        setDashboardTargetId(nextId);
+                        setDashboardName(dashboard?.dashboard_name || '');
+                      }}
+                      className="input-oracle h-9 rounded-lg py-1.5 text-xs"
+                      aria-label="Existing dashboard"
+                    >
+                      {selectedExistingDashboard && !dashboardOptions.some((item) => item.dashboard_id === selectedExistingDashboard.dashboard_id) ? (
+                        <option value={selectedExistingDashboard.dashboard_id}>{selectedExistingDashboard.dashboard_name}</option>
+                      ) : null}
+                      {dashboardOptions.map((dashboard) => (
+                        <option key={dashboard.dashboard_id} value={dashboard.dashboard_id}>
+                          {dashboard.visibility === 'shared' ? 'Shared' : 'Private'} - {dashboard.dashboard_name}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                ) : (
+                  <div className="space-y-2">
+                    <input
+                      type="text"
+                      value={dashboardName}
+                      onChange={(event) => setDashboardName(event.target.value)}
+                      className="input-oracle h-9 rounded-lg py-1.5 text-xs"
+                      placeholder="Dashboard name"
+                      aria-label="Dashboard name"
+                    />
+                    <DashboardVisibilityControl value={dashboardVisibility} onChange={setDashboardVisibility} />
+                  </div>
+                )}
                 <button
                   type="button"
                   className="w-full rounded-lg bg-oracle-red px-3 py-2 text-sm font-semibold text-white transition-colors hover:bg-red-700 disabled:cursor-not-allowed disabled:opacity-50"
-                  disabled={dashboardDraftItems.length === 0 || createDashboardMutation.isPending}
-                  onClick={() => createDashboardMutation.mutate()}
+                  disabled={
+                    dashboardDraftItems.length === 0 ||
+                    saveDashboardMutation.isPending ||
+                    (dashboardTargetMode === 'existing' && !dashboardTargetId)
+                  }
+                  onClick={() => saveDashboardMutation.mutate()}
                 >
-                  {createDashboardMutation.isPending ? 'Generating...' : 'Generate dashboard'}
+                  {saveDashboardMutation.isPending
+                    ? dashboardTargetMode === 'existing'
+                      ? 'Adding...'
+                      : 'Generating...'
+                    : dashboardTargetMode === 'existing'
+                      ? 'Add to dashboard'
+                      : 'Generate dashboard'}
                 </button>
               </div>
             </aside>
@@ -2065,7 +2504,7 @@ export function AnalyticsChatPanel() {
           <div ref={listRef} className="chat-message-list chat-scrollbar flex min-h-0 flex-1 flex-col gap-5 overflow-y-auto overflow-x-hidden p-4">
             {conversationQuery.isLoading ? (
               <div className="flex h-full items-center justify-center">
-                <LoadingState size="sm" label="Loading chat..." textClassName="text-oracle-medium-gray" />
+                <LoadingState size="sm" label="Loading..." textClassName="text-oracle-medium-gray" />
               </div>
             ) : (
               <>
@@ -2106,7 +2545,7 @@ export function AnalyticsChatPanel() {
                             <AssistantResult
                               result={message.result}
                               question={message.question}
-                              onAddVisualization={addVisualizationToDraft}
+                              onAddVisualization={openAddVisualizationModal}
                               isVisualizationAdded={selectedVisualizationIds.has(message.result.run_id)}
                             />
                           )}
@@ -2150,11 +2589,153 @@ export function AnalyticsChatPanel() {
           onClose={() => setIsGraphPanelOpen(false)}
         />
       )}
+      {pendingDashboardItem && (
+        <GlassModal
+          open={Boolean(pendingDashboardItem)}
+          onClose={closeAddVisualizationModal}
+          containerClassName="items-center justify-center p-4"
+          panelClassName="w-full max-w-md border-0"
+          panelStyle={{
+            background: '#ffffff',
+            backdropFilter: 'none',
+            WebkitBackdropFilter: 'none',
+          }}
+        >
+          <div className="flex w-full min-w-0 flex-col items-center px-6 pb-5 pt-7 text-center">
+            <div className="mb-5 flex h-20 w-20 items-center justify-center rounded-full bg-red-100 ring-8 ring-red-50">
+              <svg className="h-10 w-10 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.75} d="M4 19V5m4 14v-8m4 8V7m4 12v-5m4 5V9" />
+              </svg>
+            </div>
+            <h2 className="text-xl font-bold text-oracle-dark-gray">
+              {addDashboardStep === 'target'
+                ? 'Add visualization'
+                : addDashboardMode === 'existing'
+                  ? 'Select dashboard'
+                  : 'New dashboard'}
+            </h2>
+            <p className="mt-2 text-sm leading-relaxed text-oracle-medium-gray">
+              {addDashboardStep === 'target'
+                ? 'Choose where this visualization will be saved.'
+                : addDashboardMode === 'existing'
+                  ? 'Pick the dashboard that will receive this visualization.'
+                  : 'Name the dashboard that will be generated.'}
+            </p>
+            <p className="mt-3 max-w-full truncate text-xs font-medium text-oracle-dark-gray" title={pendingDashboardItem.title}>
+              {pendingDashboardItem.title}
+            </p>
+
+            {addDashboardStep === 'target' ? (
+              <div className="mt-5 grid w-full gap-3">
+                <button
+                  type="button"
+                  className={`rounded-lg border px-4 py-3 text-left transition-colors ${
+                    addDashboardMode === 'existing'
+                      ? 'border-oracle-red bg-red-50 text-oracle-red'
+                      : 'border-gray-200 bg-white text-oracle-dark-gray hover:bg-gray-50'
+                  } disabled:cursor-not-allowed disabled:opacity-50`}
+                  disabled={!dashboardsQuery.isLoading && dashboardOptions.length === 0}
+                  onClick={() => setAddDashboardMode('existing')}
+                >
+                  <span className="block text-sm font-semibold">Existing dashboard</span>
+                  <span className="mt-1 block text-xs text-oracle-medium-gray">
+                    Add it to one of your dashboards.
+                  </span>
+                </button>
+                <button
+                  type="button"
+                  className={`rounded-lg border px-4 py-3 text-left transition-colors ${
+                    addDashboardMode === 'new'
+                      ? 'border-oracle-red bg-red-50 text-oracle-red'
+                      : 'border-gray-200 bg-white text-oracle-dark-gray hover:bg-gray-50'
+                  }`}
+                  onClick={() => setAddDashboardMode('new')}
+                >
+                  <span className="block text-sm font-semibold">New dashboard</span>
+                  <span className="mt-1 block text-xs text-oracle-medium-gray">
+                    Start a new dashboard with this visualization.
+                  </span>
+                </button>
+              </div>
+            ) : (
+              <div className="mt-5 w-full text-left">
+                {addDashboardMode === 'existing' ? (
+                  <div className="space-y-1.5">
+                    <label className="text-xs font-semibold text-oracle-dark-gray" htmlFor="add-dashboard-existing">
+                      Dashboard
+                    </label>
+                    {dashboardsQuery.isLoading ? (
+                      <div className="rounded-lg border border-gray-200 bg-gray-50 px-3 py-2 text-sm text-oracle-medium-gray">
+                        Loading...
+                      </div>
+                    ) : dashboardOptions.length > 0 ? (
+                      <select
+                        id="add-dashboard-existing"
+                        value={addDashboardId}
+                        onChange={(event) => setAddDashboardId(event.target.value)}
+                        className="input-oracle h-10 rounded-lg py-2 text-sm"
+                        aria-label="Dashboard"
+                      >
+                        {dashboardOptions.map((dashboard) => (
+                          <option key={dashboard.dashboard_id} value={dashboard.dashboard_id}>
+                            {dashboard.visibility === 'shared' ? 'Shared' : 'Private'} - {dashboard.dashboard_name}
+                          </option>
+                        ))}
+                      </select>
+                    ) : (
+                      <div className="rounded-lg border border-gray-200 bg-gray-50 px-3 py-2 text-sm text-oracle-medium-gray">
+                        No dashboards available.
+                      </div>
+                    )}
+                  </div>
+                ) : (
+                  <div className="space-y-1.5">
+                    <label className="text-xs font-semibold text-oracle-dark-gray" htmlFor="add-dashboard-new">
+                      Dashboard name
+                    </label>
+                    <input
+                      id="add-dashboard-new"
+                      type="text"
+                      value={addDashboardName}
+                      onChange={(event) => setAddDashboardName(event.target.value)}
+                      className="input-oracle h-10 rounded-lg py-2 text-sm"
+                      placeholder="Dashboard name"
+                    />
+                    <DashboardVisibilityControl value={addDashboardVisibility} onChange={setAddDashboardVisibility} />
+                  </div>
+                )}
+              </div>
+            )}
+          </div>
+          <div className="flex border-t border-gray-100">
+            <button
+              type="button"
+              onClick={addDashboardStep === 'target' ? closeAddVisualizationModal : () => setAddDashboardStep('target')}
+              className="flex-1 py-4 text-sm font-medium text-oracle-medium-gray transition-colors hover:bg-gray-50"
+            >
+              {addDashboardStep === 'target' ? 'Cancel' : 'Back'}
+            </button>
+            <div className="w-px bg-gray-100" />
+            <button
+              type="button"
+              onClick={addDashboardStep === 'target' ? advanceAddVisualizationStep : confirmAddVisualizationTarget}
+              disabled={
+                addDashboardStep === 'target'
+                  ? addDashboardMode === 'existing' && (dashboardsQuery.isLoading || dashboardOptions.length === 0)
+                  : addDashboardMode === 'existing' && (!addDashboardId || dashboardsQuery.isLoading)
+              }
+              className="flex-1 bg-oracle-red py-4 text-sm font-semibold text-white transition-colors hover:bg-red-700 disabled:cursor-not-allowed disabled:opacity-50"
+            >
+              {addDashboardStep === 'target' ? 'Next' : 'Add'}
+            </button>
+          </div>
+        </GlassModal>
+      )}
       {isDeleteConfirmOpen && currentConversationId && (
         <ConfirmModal
           icon={
             <svg className="h-10 w-10 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.75} d="M6 7h12M9 7V5a1 1 0 011-1h4a1 1 0 011 1v2m-7 0l1 12h6l1-12M10 11v6m4-6v6" />
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
             </svg>
           }
           iconBg="bg-red-100"
@@ -2167,7 +2748,7 @@ export function AnalyticsChatPanel() {
           }
           detail="The analytical conversation and its question runs will be removed."
           confirmText="Delete"
-          confirmClass="text-red-700 hover:bg-red-50"
+          confirmClass="bg-oracle-red text-white hover:bg-red-700"
           onConfirm={() => deleteConversationMutation.mutate(currentConversationId)}
           onCancel={() => setIsDeleteConfirmOpen(false)}
           loading={deleteConversationMutation.isPending}

@@ -8,7 +8,8 @@ import { ChartPreview } from '../common/AnalyticsChatPanel';
 import { GlassModal } from '../common/GlassModal';
 import { ConfirmDeleteModal } from '../common/ConfirmDeleteModal';
 import { useToast } from '../../context/ToastContext';
-import { dashboardsApi, type DashboardDetail, type DashboardItem } from '../../services/api';
+import { useAuth } from '../../context/AuthContext';
+import { dashboardsApi, type DashboardDetail, type DashboardItem, type DashboardVisibility } from '../../services/api';
 import { queryKeys } from '../../lib/queryClient';
 
 type VisualizationWidth = 'half' | 'full';
@@ -22,6 +23,35 @@ type DropPosition = {
   placement: DropPlacement;
   targetColumn: DropColumn;
 };
+
+function TrashIcon({ className = 'h-4 w-4' }: { className?: string }) {
+  return (
+    <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+    </svg>
+  );
+}
+
+function VisibilityIcon({
+  visibility,
+  className = 'h-4 w-4',
+}: {
+  visibility: DashboardVisibility;
+  className?: string;
+}) {
+  if (visibility === 'shared') {
+    return (
+      <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a4 4 0 00-3-3.87M9 20H2v-2a4 4 0 013-3.87m9-6.13a4 4 0 11-8 0 4 4 0 018 0zm7 0a3 3 0 11-6 0 3 3 0 016 0z" />
+      </svg>
+    );
+  }
+  return (
+    <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15.25a1.25 1.25 0 100-2.5 1.25 1.25 0 000 2.5zM6.75 10.5V8a5.25 5.25 0 0110.5 0v2.5m-11.5 0h12.5a1 1 0 011 1v8a1 1 0 01-1 1H5.75a1 1 0 01-1-1v-8a1 1 0 011-1z" />
+    </svg>
+  );
+}
 
 function formatCellValue(value: unknown): string {
   if (value === null || value === undefined) return '';
@@ -52,6 +82,7 @@ function getMetricLabel(item: DashboardItem): string {
 function applyDashboardCache(queryClient: ReturnType<typeof useQueryClient>, dashboard: DashboardDetail) {
   queryClient.setQueryData(queryKeys.dashboards.detail(dashboard.dashboard_id), dashboard);
   queryClient.invalidateQueries({ queryKey: queryKeys.dashboards.list });
+  queryClient.invalidateQueries({ queryKey: queryKeys.dashboards.ownerList });
 }
 
 function isDragBlockedTarget(target: EventTarget | null): boolean {
@@ -309,6 +340,7 @@ export function Analytics() {
   const dragSessionRef = useRef<DragSession | null>(null);
   const queryClient = useQueryClient();
   const { showToast } = useToast();
+  const { user } = useAuth();
 
   const dashboardsQuery = useQuery({
     queryKey: queryKeys.dashboards.list,
@@ -425,12 +457,23 @@ export function Analytics() {
   });
 
   const updateDashboardMutation = useMutation({
-    mutationFn: ({ dashboardId, name }: { dashboardId: string; name: string }) =>
-      dashboardsApi.update(dashboardId, { name }).then((response) => response.data),
-    onSuccess: (dashboard) => {
+    mutationFn: ({
+      dashboardId,
+      name,
+      visibility,
+    }: {
+      dashboardId: string;
+      name?: string;
+      visibility?: DashboardVisibility;
+    }) => dashboardsApi.update(dashboardId, { name, visibility }).then((response) => response.data),
+    onSuccess: (dashboard, variables) => {
       applyDashboardCache(queryClient, dashboard);
-      setRenameDashboard(null);
-      showToast('Dashboard renamed.', 'success');
+      if (variables.name) {
+        setRenameDashboard(null);
+        showToast('Dashboard renamed.', 'success');
+      } else if (variables.visibility) {
+        showToast(variables.visibility === 'shared' ? 'Dashboard shared.' : 'Dashboard set to private.', 'success');
+      }
     },
     onError: (error) => showToast(getErrorMessage(error), 'error'),
   });
@@ -451,6 +494,7 @@ export function Analytics() {
     mutationFn: (dashboardId: string) => dashboardsApi.delete(dashboardId).then((response) => response.data),
     onSuccess: ({ dashboard_id: deletedDashboardId }) => {
       queryClient.invalidateQueries({ queryKey: queryKeys.dashboards.list });
+      queryClient.invalidateQueries({ queryKey: queryKeys.dashboards.ownerList });
       queryClient.removeQueries({ queryKey: queryKeys.dashboards.detail(deletedDashboardId) });
       const nextDashboardId = dashboards.find((item) => item.dashboard_id !== deletedDashboardId)?.dashboard_id || null;
       setSelectedDashboardId(nextDashboardId);
@@ -464,6 +508,10 @@ export function Analytics() {
 
   const dashboard = dashboardQuery.data || null;
   const dashboardItems = dashboard?.items || [];
+  const currentUserId = Number(user?.user_id || 0);
+  const canManageDashboard = Boolean(
+    dashboard && (currentUserId === 0 || dashboard.created_by_user_id === currentUserId)
+  );
 
   const resetDragState = () => {
     dragSessionRef.current = null;
@@ -808,20 +856,28 @@ export function Analytics() {
         <div className="flex overflow-x-auto" role="tablist" aria-label="Available dashboards">
           {dashboards.map((dashboardSummary) => {
             const isSelected = dashboardSummary.dashboard_id === selectedDashboardId;
+            const visibility = dashboardSummary.visibility || 'private';
+            const visibilityLabel = visibility === 'shared' ? 'Shared' : 'Private';
             return (
               <button
                 key={dashboardSummary.dashboard_id}
                 type="button"
                 role="tab"
                 aria-selected={isSelected}
-                className={`inline-flex min-w-[12rem] max-w-[18rem] shrink-0 flex-col border border-l-0 border-t-0 px-3 py-2 text-left transition-colors first:border-l ${
+                aria-label={`${dashboardSummary.dashboard_name}. ${visibilityLabel} dashboard`}
+                title={`${dashboardSummary.dashboard_name} - ${visibilityLabel}`}
+                className={`inline-flex w-56 max-w-56 shrink-0 items-center gap-2 border border-l-0 border-t-0 px-3 py-2 text-left transition-colors first:border-l ${
                   isSelected
                     ? 'border-oracle-red bg-oracle-red text-white shadow-[0_10px_24px_rgba(199,70,52,0.18)]'
                     : 'border-oracle-border bg-white text-oracle-dark-gray hover:border-oracle-red/50 hover:text-oracle-red'
                 }`}
                 onClick={() => selectDashboard(dashboardSummary.dashboard_id)}
               >
-                <span className="truncate text-sm font-semibold">{dashboardSummary.dashboard_name}</span>
+                <VisibilityIcon
+                  visibility={visibility}
+                  className={`h-4 w-4 shrink-0 ${isSelected ? 'text-white' : 'text-oracle-medium-gray'}`}
+                />
+                <span className="min-w-0 flex-1 truncate text-sm font-semibold">{dashboardSummary.dashboard_name}</span>
               </button>
             );
           })}
@@ -835,6 +891,12 @@ export function Analytics() {
         isHeaderMenuOpen ? 'chat-conversation-header--menu-open' : ''
       }`}
     >
+      {(() => {
+        const visibility = dashboard?.visibility || 'private';
+        const nextVisibility: DashboardVisibility = visibility === 'shared' ? 'private' : 'shared';
+        const visibilityLabel = visibility === 'shared' ? 'Shared' : 'Private';
+        return (
+          <>
       <div className="flex h-9 w-9 shrink-0 items-center justify-center overflow-hidden rounded-xl bg-oracle-red">
         <span className="text-sm font-bold text-white">AI</span>
       </div>
@@ -843,6 +905,12 @@ export function Analytics() {
           {title}
         </h1>
         <div className="flex items-center gap-1.5">
+          {dashboard ? (
+            <span className="inline-flex items-center gap-1 text-xs text-oracle-light-gray" title={visibilityLabel}>
+              <VisibilityIcon visibility={visibility} className="h-3.5 w-3.5" />
+              {visibilityLabel}
+            </span>
+          ) : null}
           <span className="text-xs text-oracle-light-gray">Select AI Analytics</span>
         </div>
       </div>
@@ -870,7 +938,7 @@ export function Analytics() {
               type="button"
               role="menuitem"
               className="flex w-full items-center gap-2 px-4 py-2 text-left text-sm text-gray-700 hover:bg-gray-100 disabled:cursor-not-allowed disabled:opacity-60"
-              disabled={!dashboard || updateDashboardMutation.isPending || deleteDashboardMutation.isPending}
+              disabled={!canManageDashboard || updateDashboardMutation.isPending || deleteDashboardMutation.isPending}
               onClick={() => {
                 if (!dashboard) return;
                 setRenameDashboard(dashboard);
@@ -885,21 +953,39 @@ export function Analytics() {
             <button
               type="button"
               role="menuitem"
+              className="flex w-full items-center gap-2 px-4 py-2 text-left text-sm text-gray-700 hover:bg-gray-100 disabled:cursor-not-allowed disabled:opacity-60"
+              disabled={!canManageDashboard || updateDashboardMutation.isPending || deleteDashboardMutation.isPending}
+              onClick={() => {
+                if (!dashboard) return;
+                updateDashboardMutation.mutate({
+                  dashboardId: dashboard.dashboard_id,
+                  visibility: nextVisibility,
+                });
+                setIsHeaderMenuOpen(false);
+              }}
+            >
+              <VisibilityIcon visibility={nextVisibility} className="h-4 w-4" />
+              {nextVisibility === 'shared' ? 'Share' : 'Make private'}
+            </button>
+            <button
+              type="button"
+              role="menuitem"
               className="flex w-full items-center gap-2 px-4 py-2 text-left text-sm text-red-600 hover:bg-red-50 disabled:cursor-not-allowed disabled:opacity-60"
-              disabled={!dashboard || deleteDashboardMutation.isPending}
+              disabled={!canManageDashboard || deleteDashboardMutation.isPending}
               onClick={() => {
                 setIsDeleteDashboardOpen(true);
                 setIsHeaderMenuOpen(false);
               }}
             >
-              <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 7h12M9 7V5a1 1 0 011-1h4a1 1 0 011 1v2m-7 0l1 12h6l1-12M10 11v6m4-6v6" />
-              </svg>
+              <TrashIcon />
               Delete
             </button>
           </div>
         )}
       </div>
+          </>
+        );
+      })()}
     </div>
   );
 
@@ -910,7 +996,7 @@ export function Analytics() {
           <section className="app-light-surface flex h-full flex-col overflow-hidden border border-oracle-border bg-white shadow-md">
             {renderDashboardHeader('Analytics dashboards')}
             <div className="flex min-h-0 flex-1 items-center justify-center">
-              <LoadingState label="Loading analytics..." textClassName="text-oracle-medium-gray" />
+              <LoadingState label="Loading..." textClassName="text-oracle-medium-gray" />
             </div>
           </section>
         ) : dashboards.length === 0 ? (
@@ -930,9 +1016,9 @@ export function Analytics() {
           </section>
         ) : dashboardQuery.isLoading ? (
           <section className="app-light-surface flex h-full flex-col overflow-hidden border border-oracle-border bg-white shadow-md">
-            {renderDashboardHeader(selectedDashboard?.dashboard_name || 'Loading dashboard')}
+            {renderDashboardHeader(selectedDashboard?.dashboard_name || 'Loading...')}
             <div className="flex min-h-0 flex-1 items-center justify-center">
-              <LoadingState label="Loading dashboard..." textClassName="text-oracle-medium-gray" />
+              <LoadingState label="Loading..." textClassName="text-oracle-medium-gray" />
             </div>
             {dashboardTabs}
           </section>
@@ -955,11 +1041,12 @@ export function Analytics() {
                 ) : (
                   <div className="grid min-w-0 gap-4 md:grid-cols-2" data-dashboard-grid="true">
                     {dashboardItems.map((item, itemIndex) => {
-                      const isBusy =
+                      const isMutating =
                         updateItemMutation.isPending ||
                         deleteItemMutation.isPending ||
                         reorderItemsMutation.isPending ||
                         moveItemMutation.isPending;
+                      const isBusy = !canManageDashboard || isMutating;
                       const isDragging = draggedItemId === item.dashboard_item_id;
                       const visualizationWidth = getVisualizationWidth(item);
                       const visualizationColumn = getDashboardItemColumn(dashboardItems, itemIndex);
@@ -1050,7 +1137,7 @@ export function Analytics() {
                                   aria-label="Visualization actions"
                                   aria-haspopup="menu"
                                   aria-expanded={openItemMenuId === item.dashboard_item_id}
-                                  disabled={isBusy}
+                                  disabled={isMutating}
                                   onClick={() => {
                                     setOpenItemMenuId((current) =>
                                       current === item.dashboard_item_id ? null : item.dashboard_item_id
@@ -1085,7 +1172,7 @@ export function Analytics() {
                                       type="button"
                                       role="menuitem"
                                       className="flex w-full items-center gap-2 px-4 py-2 text-left text-sm text-gray-700 hover:bg-gray-100 disabled:cursor-not-allowed disabled:opacity-60"
-                                      disabled={updateItemMutation.isPending}
+                                      disabled={!canManageDashboard || updateItemMutation.isPending}
                                       onClick={() => {
                                         setRenameItem(item);
                                         setOpenItemMenuId(null);
@@ -1100,15 +1187,13 @@ export function Analytics() {
                                       type="button"
                                       role="menuitem"
                                       className="flex w-full items-center gap-2 px-4 py-2 text-left text-sm text-red-600 hover:bg-red-50 disabled:cursor-not-allowed disabled:opacity-60"
-                                      disabled={deleteItemMutation.isPending}
+                                      disabled={!canManageDashboard || deleteItemMutation.isPending}
                                       onClick={() => {
                                         setDeleteItem(item);
                                         setOpenItemMenuId(null);
                                       }}
                                     >
-                                      <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 7h12M9 7V5a1 1 0 011-1h4a1 1 0 011 1v2m-7 0l1 12h6l1-12M10 11v6m4-6v6" />
-                                      </svg>
+                                      <TrashIcon />
                                       Delete
                                     </button>
                                   </div>

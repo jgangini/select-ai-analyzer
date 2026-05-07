@@ -42,7 +42,7 @@ Luego abre `http://localhost:8080`.
 El script siguiente parsea `.source/decoupling_tables_structures.sql`, omite objetos sin DDL real y genera DDL/CSV consistentes para pruebas:
 
 ```powershell
-py -3 scripts\generate_source_seed.py --default-rows 100 --fact-rows 2000
+py -3 scripts\generate_source_seed.py --default-rows 365 --fact-rows 2000
 ```
 
 Salida esperada:

@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import csv
+from dataclasses import dataclass
 from datetime import date, datetime
 from decimal import Decimal
 import hashlib
@@ -27,8 +28,15 @@ DEFAULT_DATA_SCHEMA = "APP_AGENT_DATA"
 DEFAULT_PROFILE = "APP_AGENT_ANALYTICS"
 SCOPED_PROFILE_LIMIT = 6
 
+
+@dataclass(frozen=True, slots=True)
+class CsvUploadRows:
+    fieldnames: list[str]
+    rows: list[dict[str, Any]]
+
 QUESTION_SYNONYMS = {
     "ATM": {"ATM"},
+    "TELLER": {"TELLER", "TL"},
     "MONEDA": {"CCY", "CURRENCY"},
     "SALDO": {"BAL", "BALANCE", "ACY", "LCY", "FCY"},
     "PROMEDIO": {"AVERAGE", "AVG"},
@@ -64,6 +72,8 @@ QUESTION_SYNONYMS = {
     "LIQUIDACION": {"LIQ", "LIQUIDATION"},
     "CALCULO": {"CALC", "CALCULATION"},
     "PROGRAMADO": {"SCHEDULED", "NEXT"},
+    "PROXIMO": {"NEXT"},
+    "PROXIMA": {"NEXT"},
     "FECHA": {"DATE", "DT"},
     "FECHAS": {"DATE", "DT"},
     "HABIL": {"WORKING", "BUSINESS", "NEXT", "PREV"},
@@ -102,6 +112,13 @@ QUESTION_SYNONYMS = {
     "HISTORICA": {"HISTORICAL", "REAL_DT_TIME"},
     "SEMANA": {"WEEK"},
     "PASADA": {"PREVIOUS"},
+    "CONTRATO": {"CONTRACT", "REFERENCE", "REF"},
+    "CONTRATOS": {"CONTRACT", "REFERENCE", "REF"},
+    "DEPOSITO": {"DEPOSIT", "TD"},
+    "DEPOSITOS": {"DEPOSIT", "TD"},
+    "VENCER": {"MATURITY", "LIQD_DATE", "DUE"},
+    "VENCE": {"MATURITY", "LIQD_DATE", "DUE"},
+    "VENCIMIENTO": {"MATURITY", "LIQD_DATE", "DUE"},
 }
 
 TRANSACTION_INTENT_TOKENS = {
@@ -186,6 +203,32 @@ def _qualified_name(owner: str, table_name: str) -> str:
     return f"{_safe_identifier(owner)}.{_safe_identifier(table_name)}"
 
 
+def _safe_constraint_name(value: str) -> str:
+    digest = hashlib.sha1(str(value or "").encode("utf-8")).hexdigest()[:8].upper()
+    base = _safe_identifier(value, max_len=21)
+    return f"{base}_{digest}"[:30]
+
+
+def _sql_string_literal(value: str) -> str:
+    return "'" + str(value or "").replace("'", "''") + "'"
+
+
+def _clean_optional_text(value: Any, *, limit: int) -> str:
+    return str(value or "").strip()[:limit]
+
+
+def _read_csv_upload(csv_path: Path) -> CsvUploadRows:
+    with csv_path.open("r", encoding="utf-8-sig", newline="") as handle:
+        reader = csv.DictReader(handle)
+        fieldnames = [_safe_identifier(field or "") for field in (reader.fieldnames or [])]
+        if not fieldnames:
+            raise ValueError("CSV must include a header row.")
+        rows = [{fieldnames[index]: value for index, value in enumerate(raw.values())} for raw in reader]
+    if not rows:
+        raise ValueError("CSV must include at least one data row.")
+    return CsvUploadRows(fieldnames=fieldnames, rows=rows)
+
+
 def _safe_password_literal(value: str) -> str:
     return '"' + str(value).replace('"', '""') + '"'
 
@@ -224,6 +267,36 @@ def _is_velocity_window_intent(question: str) -> bool:
     )
 
 
+def _is_teller_intent(question_tokens: set[str]) -> bool:
+    return _question_has_any(question_tokens, "TELLER", "TL")
+
+
+def _is_term_deposit_maturity_intent(question_tokens: set[str]) -> bool:
+    has_deposit_or_contract = _question_has_any(
+        question_tokens,
+        "DEPOSITO",
+        "DEPOSITOS",
+        "DEPOSIT",
+        "TD",
+        "CONTRATO",
+        "CONTRATOS",
+        "CONTRACT",
+    )
+    has_maturity_or_next = _question_has_any(
+        question_tokens,
+        "VENCER",
+        "VENCE",
+        "VENCIMIENTO",
+        "MATURITY",
+        "LIQD_DATE",
+        "DUE",
+        "PROXIMO",
+        "PROXIMA",
+        "NEXT",
+    )
+    return has_deposit_or_contract and has_maturity_or_next
+
+
 def _uses_current_clock(sql: str) -> bool:
     return bool(re.search(r"\b(SYSTIMESTAMP|SYSDATE|CURRENT_DATE|CURRENT_TIMESTAMP)\b", str(sql or ""), re.IGNORECASE))
 
@@ -250,6 +323,10 @@ def _sql_generation_hints(question: str) -> str:
     hints: list[str] = []
     if _question_has_any(question_tokens, "DEBITO", "DEBITOS", "CREDITO", "CREDITOS", "DR", "CR"):
         hints.append("For debit and credit movement analysis, DRCR_IND='D' means debit and DRCR_IND='C' means credit.")
+        hints.append(
+            "For account debit vs credit totals by month, use FLEX_EXT_ACCOUNT_TRANSACTIONS with ACCOUNT_NO, TRN_DT, LCY_AMOUNT, and DRCR_IND. "
+            "For March in this demo data, use TRN_DT >= DATE '2026-03-01' and TRN_DT < DATE '2026-04-01'."
+        )
     if _question_has_any(question_tokens, "SALDO", "BAL", "BALANCE") and _question_has_any(
         question_tokens, "PROMEDIO", "PROMEDIOS", "AVERAGE", "AVG"
     ):
@@ -273,8 +350,22 @@ def _sql_generation_hints(question: str) -> str:
     if _question_has_any(question_tokens, "ATM", "CAJERO", "CAJEROS", "TARJETA", "TARJETAS", "RETIRO", "RETIROS"):
         hints.append("In ATM logs, TRANS_STATUS='F' means failed, TRANS_CODE='WDR' means withdrawal, and CARD_NO stores the card number.")
     if _is_clearing_intent(question_tokens):
-        hints.append("In clearing tables, STATUS='PEND' means pending and STATUS='REJ' means rejected.")
+        hints.append(
+            "For pending clearing transactions, use FLEX_CSTB_CLEARING_MASTER and return a SELECT statement only. "
+            "STATUS='PEND' means pending and STATUS='REJ' means rejected."
+        )
         hints.append("For clearing amount differences, compare ACC_CCY_AMT with INSTRUMENT_AMT.")
+    if _is_teller_intent(question_tokens):
+        hints.append(
+            "For teller authorization questions, use FLEX_DETB_RTL_TELLER_1 or FLEX_DETB_RTL_TELLER_2. "
+            "AUTH_STAT='U' means pending authorization and MODULE='TL' identifies teller activity."
+        )
+    if _is_term_deposit_maturity_intent(question_tokens):
+        hints.append(
+            "For the next deposit contract to mature, use FLEX_ICTM_TD_DETAILS. "
+            "LIQD_DATE is the maturity or liquidation date, REFERENCE_NO is the contract reference, TD_AMOUNT is principal, and TD_MATURITY_AMT is the maturity amount. "
+            "Return the row where LIQD_DATE >= TRUNC(SYSDATE), ordered by LIQD_DATE, FETCH FIRST 1 ROW ONLY."
+        )
     if _question_has_any(question_tokens, "INTERES", "INTERESES", "LIQUIDACION", "CALCULO"):
         hints.append("For account interest processing, FLEX_ICTB_ACC_PR.ACC is the account and LAST_LIQ_DT is the last liquidation date.")
     if _question_has_any(question_tokens, "HABIL", "WORKING", "BUSINESS"):
@@ -290,14 +381,12 @@ def _sql_generation_hints(question: str) -> str:
     return " ".join(hints)
 
 
-def _score_source_match(question: str, table_name: str, columns: list[str]) -> int:
-    question_upper = str(question or "").upper()
-    question_tokens = _expanded_question_tokens(question)
-    column_set = {column.upper() for column in columns}
-    table_upper = table_name.upper()
+def _score_domain_intents(question_tokens: set[str], table_upper: str, column_set: set[str]) -> int:
     score = 0
-    if table_upper in question_upper:
-        score += 1000
+    if _is_teller_intent(question_tokens):
+        score += 3600 if "RTL_TELLER" in table_upper else -250
+    if _is_term_deposit_maturity_intent(question_tokens):
+        score += 3600 if "TD_DETAILS" in table_upper else -250
     if _question_has_any(question_tokens, "ATM", "CAJERO", "CAJEROS", "TARJETA", "TARJETAS", "RETIRO", "RETIROS"):
         score += 3200 if "ATM_TRANS_LOG" in table_upper else -250
     if _is_clearing_intent(question_tokens):
@@ -323,6 +412,11 @@ def _score_source_match(question: str, table_name: str, columns: list[str]) -> i
         score += 3200
     if _question_has_any(question_tokens, "PRODUCTO", "PRODUCTOS", "PRODUCT", "PROD", "VOLUMEN") and "EXT_ACCOUNT_TRANSACTIONS" in table_upper:
         score += 1800
+    return score
+
+
+def _score_lexical_match(question_upper: str, question_tokens: set[str], table_name: str, columns: list[str]) -> int:
+    score = 0
     table_tokens = _tokenize_for_match(table_name)
     score += 25 * len(question_tokens & table_tokens)
     for column_name in columns:
@@ -330,38 +424,88 @@ def _score_source_match(question: str, table_name: str, columns: list[str]) -> i
         if upper_column in question_upper:
             score += 80
         score += 8 * len(question_tokens & _tokenize_for_match(upper_column))
-
-    is_transaction_question = bool(question_tokens & TRANSACTION_INTENT_TOKENS)
-    if is_transaction_question:
-        has_drcr = "DRCR_IND" in column_set or any("DRCR" in column for column in column_set)
-        has_amount = bool(column_set & AMOUNT_COLUMNS) or any(token in column for column in column_set for token in ("AMOUNT", "AMT"))
-        has_account = bool(column_set & ACCOUNT_COLUMNS)
-        has_date = bool(column_set & DATE_COLUMNS) or any(column.endswith("_DT") or "DATE" in column for column in column_set)
-        is_fact_like = any(token in table_upper for token in ("TRANSACTION", "DAILY_LOG", "STATEMENT", "TELLER", "ATM_TRANS"))
-
-        if has_drcr:
-            score += 420
-        if has_amount:
-            score += 260
-        if has_account:
-            score += 180
-        if has_date:
-            score += 140
-        if is_fact_like:
-            score += 280
-        if has_drcr and has_amount and has_account and has_date:
-            score += 320
-        if "EXT_ACCOUNT_TRANSACTIONS" in table_upper:
-            score += 1500
-        if "EXT_ACCOUNT_STATEMENT" in table_upper:
-            score += 700
-        if "TELLER" in table_upper and "TELLER" not in question_tokens:
-            score -= 750
-        if not has_drcr and {"DEBITO", "DEBITOS", "CREDITO", "CREDITOS"} & question_tokens:
-            score -= 260
-        if "CUST_ACCOUNT" in table_upper and not has_drcr:
-            score -= 220
     return score
+
+
+def _score_transaction_intent(question_tokens: set[str], table_upper: str, column_set: set[str]) -> int:
+    if not question_tokens & TRANSACTION_INTENT_TOKENS:
+        return 0
+
+    score = 0
+    has_drcr = "DRCR_IND" in column_set or any("DRCR" in column for column in column_set)
+    has_amount = bool(column_set & AMOUNT_COLUMNS) or any(
+        token in column for column in column_set for token in ("AMOUNT", "AMT")
+    )
+    has_account = bool(column_set & ACCOUNT_COLUMNS)
+    has_date = bool(column_set & DATE_COLUMNS) or any(
+        column.endswith("_DT") or "DATE" in column for column in column_set
+    )
+    is_fact_like = any(token in table_upper for token in ("TRANSACTION", "DAILY_LOG", "STATEMENT", "TELLER", "ATM_TRANS"))
+
+    if has_drcr:
+        score += 420
+    if has_amount:
+        score += 260
+    if has_account:
+        score += 180
+    if has_date:
+        score += 140
+    if is_fact_like:
+        score += 280
+    if has_drcr and has_amount and has_account and has_date:
+        score += 320
+    if "EXT_ACCOUNT_TRANSACTIONS" in table_upper:
+        score += 1500
+    if "EXT_ACCOUNT_STATEMENT" in table_upper:
+        score += 700
+    if "TELLER" in table_upper and "TELLER" not in question_tokens:
+        score -= 750
+    if not has_drcr and {"DEBITO", "DEBITOS", "CREDITO", "CREDITOS"} & question_tokens:
+        score -= 260
+    if "CUST_ACCOUNT" in table_upper and not has_drcr:
+        score -= 220
+    return score
+
+
+def _score_source_match(question: str, table_name: str, columns: list[str]) -> int:
+    question_upper = str(question or "").upper()
+    question_tokens = _expanded_question_tokens(question)
+    column_set = {column.upper() for column in columns}
+    table_upper = table_name.upper()
+    score = 1000 if table_upper in question_upper else 0
+    score += _score_domain_intents(question_tokens, table_upper, column_set)
+    score += _score_lexical_match(question_upper, question_tokens, table_name, columns)
+    score += _score_transaction_intent(question_tokens, table_upper, column_set)
+    return score
+
+
+def _fallback_sql_for_question(question: str) -> str | None:
+    question_tokens = _expanded_question_tokens(question)
+    if _is_teller_intent(question_tokens):
+        return """
+            SELECT TRN_REF_NO, TXN_ACC, TXN_CCY, TXN_AMOUNT, TRN_DT, MAKER_ID, AUTH_STAT
+            FROM APP_AGENT_DATA.FLEX_DETB_RTL_TELLER_2
+            WHERE UPPER(AUTH_STAT) = 'U'
+            ORDER BY TRN_DT DESC, TRN_REF_NO
+            FETCH FIRST 50 ROWS ONLY
+        """
+    if _is_term_deposit_maturity_intent(question_tokens):
+        return """
+            SELECT REFERENCE_NO, ACC, BRN, CCY, LIQD_DATE, TD_AMOUNT, TD_MATURITY_AMT
+            FROM APP_AGENT_DATA.FLEX_ICTM_TD_DETAILS
+            WHERE LIQD_DATE >= TRUNC(SYSDATE)
+            ORDER BY LIQD_DATE, REFERENCE_NO
+            FETCH FIRST 1 ROW ONLY
+        """
+    if _is_clearing_intent(question_tokens):
+        return """
+            SELECT REFERENCE_NO, STATUS, AUTH_STAT, TXN_DATE, REM_ACCOUNT, BEN_ACCOUNT, ACC_CCY_AMT, INSTRUMENT_AMT
+            FROM APP_AGENT_DATA.FLEX_CSTB_CLEARING_MASTER
+            WHERE UPPER(STATUS) = 'PEND' OR UPPER(AUTH_STAT) = 'U'
+            ORDER BY TXN_DATE DESC, REFERENCE_NO
+            FETCH FIRST 50 ROWS ONLY
+        """
+    return None
 
 
 class SelectAIAnalyticsService:
@@ -460,6 +604,172 @@ class SelectAIAnalyticsService:
                 }
                 for schema in schemas
             ]
+        finally:
+            cursor.close()
+            conn.close()
+
+    def list_catalog_owners(self) -> list[dict[str, Any]]:
+        conn = self._connection()
+        cursor = conn.cursor()
+        try:
+            try:
+                cursor.execute(
+                    """
+                    SELECT t.owner, COUNT(*) AS table_count
+                    FROM all_tables t
+                    JOIN all_users u
+                      ON u.username = t.owner
+                    WHERE NVL(u.oracle_maintained, 'N') = 'N'
+                      AND t.owner <> :app_schema
+                      AND t.table_name NOT LIKE 'BIN$%'
+                      AND NVL(t.nested, 'NO') = 'NO'
+                    GROUP BY t.owner
+                    ORDER BY t.owner
+                    """,
+                    app_schema=APP_SCHEMA,
+                )
+            except Exception:
+                cursor.execute(
+                    """
+                    SELECT owner, COUNT(*) AS table_count
+                    FROM all_tables
+                    WHERE owner <> :app_schema
+                      AND owner NOT LIKE 'SYS%'
+                      AND owner NOT LIKE 'APEX\\_%' ESCAPE '\\'
+                      AND owner NOT IN ('XDB', 'ORDS_METADATA', 'ORDS_PUBLIC_USER', 'MDSYS', 'CTXSYS')
+                      AND table_name NOT LIKE 'BIN$%'
+                    GROUP BY owner
+                    ORDER BY owner
+                    """,
+                    app_schema=APP_SCHEMA,
+                )
+            return [
+                {"owner_name": str(owner_name).upper(), "table_count": int(table_count or 0)}
+                for owner_name, table_count in cursor.fetchall()
+            ]
+        finally:
+            cursor.close()
+            conn.close()
+
+    def list_catalog_tables(self, owner: str) -> list[dict[str, Any]]:
+        owner_name = self._assert_data_schema(owner)
+        conn = self._connection()
+        cursor = conn.cursor()
+        try:
+            cursor.execute(
+                """
+                SELECT t.owner,
+                       t.table_name,
+                       NVL(t.num_rows, 0) AS row_count,
+                       COUNT(c.column_name) AS column_count,
+                       tc.comments AS table_comment
+                FROM all_tables t
+                LEFT JOIN all_tab_columns c
+                  ON c.owner = t.owner
+                 AND c.table_name = t.table_name
+                LEFT JOIN all_tab_comments tc
+                  ON tc.owner = t.owner
+                 AND tc.table_name = t.table_name
+                 AND tc.table_type = 'TABLE'
+                WHERE t.owner = :owner_name
+                  AND t.table_name NOT LIKE 'BIN$%'
+                  AND NVL(t.nested, 'NO') = 'NO'
+                GROUP BY t.owner, t.table_name, t.num_rows, tc.comments
+                ORDER BY t.table_name
+                """,
+                owner_name=owner_name,
+            )
+            return [
+                {
+                    "owner_name": str(owner).upper(),
+                    "table_name": str(table_name).upper(),
+                    "row_count": int(row_count or 0),
+                    "column_count": int(column_count or 0),
+                    "table_comment": str(_read_lob(table_comment) or ""),
+                }
+                for owner, table_name, row_count, column_count, table_comment in cursor.fetchall()
+            ]
+        finally:
+            cursor.close()
+            conn.close()
+
+    def describe_catalog_table(self, *, owner: str, table_name: str) -> dict[str, Any]:
+        owner_name = self._assert_data_schema(owner)
+        table = _safe_identifier(table_name)
+        qualified = _qualified_name(owner_name, table)
+        conn = self._connection()
+        cursor = conn.cursor()
+        try:
+            cursor.execute(f"SELECT * FROM {qualified} WHERE 1 = 0")
+            cursor.execute(
+                """
+                SELECT comments
+                FROM all_tab_comments
+                WHERE owner = :owner_name
+                  AND table_name = :table_name
+                  AND table_type = 'TABLE'
+                """,
+                owner_name=owner_name,
+                table_name=table,
+            )
+            table_comment_row = cursor.fetchone()
+            table_comment = str(_read_lob(table_comment_row[0]) or "") if table_comment_row else ""
+            cursor.execute(
+                """
+                SELECT cols.column_name,
+                       cols.data_type,
+                       cols.data_length,
+                       cols.nullable,
+                       cols.column_id,
+                       comments.comments,
+                       CASE WHEN pk_cols.column_name IS NULL THEN 'N' ELSE 'Y' END AS primary_key_flag
+                FROM all_tab_columns cols
+                LEFT JOIN all_col_comments comments
+                  ON comments.owner = cols.owner
+                 AND comments.table_name = cols.table_name
+                 AND comments.column_name = cols.column_name
+                LEFT JOIN (
+                    SELECT acc.owner, acc.table_name, acc.column_name
+                    FROM all_constraints ac
+                    JOIN all_cons_columns acc
+                      ON acc.owner = ac.owner
+                     AND acc.constraint_name = ac.constraint_name
+                     AND acc.table_name = ac.table_name
+                    WHERE ac.constraint_type = 'P'
+                ) pk_cols
+                  ON pk_cols.owner = cols.owner
+                 AND pk_cols.table_name = cols.table_name
+                 AND pk_cols.column_name = cols.column_name
+                WHERE cols.owner = :owner_name
+                  AND cols.table_name = :table_name
+                ORDER BY cols.column_id
+                """,
+                owner_name=owner_name,
+                table_name=table,
+            )
+            columns = [
+                {
+                    "column_name": str(column_name).upper(),
+                    "data_type": str(data_type).upper(),
+                    "data_length": int(data_length or 0),
+                    "nullable": str(nullable or "Y")[:1],
+                    "ordinal_position": int(column_id or 0),
+                    "comment": str(_read_lob(comment) or ""),
+                    "ui_display": "",
+                    "classification": "",
+                    "primary_key": str(primary_key_flag or "N") == "Y",
+                }
+                for column_name, data_type, data_length, nullable, column_id, comment, primary_key_flag
+                in cursor.fetchall()
+            ]
+            if not columns:
+                raise ValueError(f"Table {qualified} was not found or has no visible columns.")
+            return {
+                "owner_name": owner_name,
+                "table_name": table,
+                "table_comment": table_comment,
+                "columns": columns,
+            }
         finally:
             cursor.close()
             conn.close()
@@ -580,7 +890,13 @@ class SelectAIAnalyticsService:
             conversation_id=conversation_id,
             profile_name=profile_name,
         )
-        safe_sql = validate_read_only_select(sql)
+        try:
+            safe_sql = validate_read_only_select(sql)
+        except ValueError:
+            fallback_sql = _fallback_sql_for_question(question)
+            if not fallback_sql:
+                raise
+            safe_sql = validate_read_only_select(fallback_sql)
         if (
             _is_velocity_window_intent(question)
             and _uses_current_clock(safe_sql)
@@ -666,7 +982,11 @@ class SelectAIAnalyticsService:
             return exact_matches[:limit]
 
         preferred_objects: list[dict[str, str]] = []
-        if _question_has_any(question_tokens, "ATM", "CAJERO", "CAJEROS", "TARJETA", "TARJETAS", "RETIRO", "RETIROS"):
+        if _is_teller_intent(question_tokens):
+            preferred_objects = _objects_named(objects, "FLEX_DETB_RTL_TELLER_1", "FLEX_DETB_RTL_TELLER_2")
+        elif _is_term_deposit_maturity_intent(question_tokens):
+            preferred_objects = _objects_named(objects, "FLEX_ICTM_TD_DETAILS", "FLEX_ICTW_TD_DETAILS")
+        elif _question_has_any(question_tokens, "ATM", "CAJERO", "CAJEROS", "TARJETA", "TARJETAS", "RETIRO", "RETIROS"):
             preferred_objects = _objects_named(objects, "FLEX_IFTB_ATM_TRANS_LOG")
         elif _is_clearing_intent(question_tokens):
             preferred_objects = _objects_named(objects, "FLEX_CSTB_CLEARING_MASTER")
@@ -864,6 +1184,13 @@ class SelectAIAnalyticsService:
                 profile_name=scoped_profile_name,
             )
             columns, rows = self.execute_select(sql, max_rows=max_rows)
+            fallback_sql = _fallback_sql_for_question(question)
+            if fallback_sql and not rows and validate_read_only_select(fallback_sql) != sql:
+                fallback_columns, fallback_rows = self.execute_select(fallback_sql, max_rows=max_rows)
+                if fallback_rows:
+                    sql = validate_read_only_select(fallback_sql)
+                    columns = fallback_columns
+                    rows = fallback_rows
             answer = self.narrate(
                 question,
                 conversation_id=resolved_conversation_id,
@@ -1313,6 +1640,61 @@ class SelectAIAnalyticsService:
         columns = [desc[0].lower() for desc in cursor.description or []]
         return {column: _json_safe(value) for column, value in zip(columns, row)}
 
+    @staticmethod
+    def _source_column_details(cursor, source: dict[str, Any]) -> list[dict[str, Any]]:
+        cursor.execute(
+            """
+            SELECT sc.column_name,
+                   sc.data_type,
+                   sc.data_length,
+                   sc.nullable_flag,
+                   sc.ordinal_position,
+                   sc.business_comment,
+                   sc.classification,
+                   CASE WHEN pk_cols.column_name IS NULL THEN 'N' ELSE 'Y' END AS primary_key_flag
+            FROM source_columns sc
+            LEFT JOIN (
+                SELECT acc.owner, acc.table_name, acc.column_name
+                FROM all_constraints ac
+                JOIN all_cons_columns acc
+                  ON acc.owner = ac.owner
+                 AND acc.constraint_name = ac.constraint_name
+                 AND acc.table_name = ac.table_name
+                WHERE ac.constraint_type = 'P'
+            ) pk_cols
+              ON pk_cols.owner = :owner_name
+             AND pk_cols.table_name = :table_name
+             AND pk_cols.column_name = sc.column_name
+            WHERE sc.data_source_id = :data_source_id
+            ORDER BY sc.ordinal_position
+            """,
+            owner_name=str(source["owner_name"]).upper(),
+            table_name=str(source["table_name"]).upper(),
+            data_source_id=source["data_source_id"],
+        )
+        return [
+            {
+                "column_name": str(column_name).upper(),
+                "data_type": str(data_type or "").upper(),
+                "data_length": int(data_length or 0),
+                "nullable": str(nullable or "Y")[:1],
+                "ordinal_position": int(ordinal_position or 0),
+                "comment": str(_read_lob(comment) or ""),
+                "classification": str(classification or ""),
+                "primary_key": str(primary_key_flag or "N") == "Y",
+            }
+            for (
+                column_name,
+                data_type,
+                data_length,
+                nullable,
+                ordinal_position,
+                comment,
+                classification,
+                primary_key_flag,
+            ) in cursor.fetchall()
+        ]
+
     def preview_data_source_rows(
         self,
         data_source_id: str,
@@ -1326,6 +1708,7 @@ class SelectAIAnalyticsService:
         cursor = conn.cursor()
         try:
             source = self._data_source_from_cursor(cursor, data_source_id)
+            column_details = self._source_column_details(cursor, source)
             qualified_table = _qualified_name(str(source["owner_name"]), str(source["table_name"]))
             cursor.execute(f"SELECT COUNT(*) FROM {qualified_table}")
             total_row = cursor.fetchone()
@@ -1343,6 +1726,7 @@ class SelectAIAnalyticsService:
             return {
                 "data_source": source,
                 "columns": columns,
+                "column_details": column_details,
                 "rows": rows,
                 "row_count": total_rows,
                 "limit": safe_limit,
@@ -1404,6 +1788,8 @@ class SelectAIAnalyticsService:
         owner: str,
         table_name: str,
         display_name: str | None = None,
+        table_comment: str | None = None,
+        column_metadata: list[dict[str, Any]] | None = None,
         access_scope: str = "all",
         user_id: int = 0,
     ) -> dict[str, Any]:
@@ -1429,6 +1815,13 @@ class SelectAIAnalyticsService:
             if not columns:
                 raise ValueError(f"Table {qualified} was not found or has no visible columns.")
             data_source_id = uuid.uuid4().hex
+            metadata_warnings = self._apply_select_ai_metadata(
+                cursor,
+                owner_name=owner_name,
+                table_name=table,
+                table_comment=table_comment,
+                column_metadata=column_metadata or [],
+            )
             cursor.execute(
                 "DELETE FROM data_sources WHERE owner_name = :owner_name AND table_name = :table_name",
                 owner_name=owner_name,
@@ -1451,13 +1844,130 @@ class SelectAIAnalyticsService:
                 scope=access_scope,
                 user_id=user_id,
             )
-            self._replace_source_columns(cursor, data_source_id, columns)
+            self._replace_source_columns(cursor, data_source_id, columns, column_metadata or [])
             conn.commit()
         finally:
             cursor.close()
             conn.close()
         self.refresh_profile(user_id=user_id)
-        return {"data_source_id": data_source_id, "owner_name": owner_name, "table_name": table}
+        return {
+            "data_source_id": data_source_id,
+            "owner_name": owner_name,
+            "table_name": table,
+            "metadata_warnings": metadata_warnings,
+        }
+
+    def _ensure_csv_target_schema(self, owner_name: str, create_schema: bool) -> str | None:
+        if self.schema_exists(owner_name):
+            return None
+        if not create_schema:
+            raise ValueError(f"Schema {owner_name} does not exist. Confirm schema creation before uploading.")
+        schema_result = self.create_data_schema(owner_name, include_password=True)
+        return str(schema_result.get("password") or "") or None
+
+    @staticmethod
+    def _insert_load_job(cursor, load_job_id: str, original_filename: str, qualified_table: str) -> None:
+        cursor.execute(
+            """
+            INSERT INTO load_jobs (load_job_id, source_file_name, target_table_name, status)
+            VALUES (:id, :source_file_name, :target_table_name, 'running')
+            """,
+            id=load_job_id,
+            source_file_name=original_filename,
+            target_table_name=qualified_table,
+        )
+
+    def _load_csv_table_as_app_agent(
+        self,
+        cursor,
+        *,
+        owner_name: str,
+        table_name: str,
+        qualified_table: str,
+        fieldnames: list[str],
+        rows: list[dict[str, Any]],
+    ) -> None:
+        try:
+            self._drop_table_if_exists(cursor, table_name, owner_name=owner_name)
+            ddl_columns = ", ".join(f"{column} VARCHAR2(4000)" for column in fieldnames)
+            cursor.execute(f"CREATE TABLE {qualified_table} ({ddl_columns})")
+            bind_columns = ", ".join(fieldnames)
+            bind_values = ", ".join(f":{column}" for column in fieldnames)
+            cursor.executemany(f"INSERT INTO {qualified_table} ({bind_columns}) VALUES ({bind_values})", rows)
+        except Exception as exc:
+            if "ORA-01031" in str(exc) or "insufficient privileges" in str(exc).lower():
+                raise ValueError(
+                    f"APP_AGENT cannot create or load tables in existing schema {owner_name}. "
+                    "Grant the required cross-schema privileges or create a new data schema from this upload."
+                ) from exc
+            raise
+
+    @staticmethod
+    def _assert_csv_table_selectable(cursor, qualified_table: str) -> None:
+        try:
+            cursor.execute(f"SELECT * FROM {qualified_table} WHERE 1 = 0")
+        except Exception as exc:
+            raise ValueError(
+                f"APP_AGENT cannot SELECT from {qualified_table}. Grant SELECT on this table before registering it."
+            ) from exc
+
+    @staticmethod
+    def _complete_load_job(cursor, load_job_id: str, row_count: int) -> None:
+        cursor.execute(
+            "UPDATE load_jobs SET status = 'completed', row_count = :row_count WHERE load_job_id = :id",
+            row_count=row_count,
+            id=load_job_id,
+        )
+
+    @staticmethod
+    def _mark_load_job_failed(conn, cursor, load_job_id: str, exc: Exception) -> None:
+        conn.rollback()
+        try:
+            cursor.execute(
+                "UPDATE load_jobs SET status = 'failed', error_message = :message WHERE load_job_id = :id",
+                message=str(exc)[:4000],
+                id=load_job_id,
+            )
+            conn.commit()
+        except Exception:
+            conn.rollback()
+
+    def _register_csv_data_source(
+        self,
+        cursor,
+        *,
+        data_source_id: str,
+        original_filename: str,
+        owner_name: str,
+        table_name: str,
+        access_scope: str,
+        row_count: int,
+        user_id: int,
+    ) -> None:
+        cursor.execute(
+            "DELETE FROM data_sources WHERE owner_name = :owner_name AND table_name = :table_name",
+            owner_name=owner_name,
+            table_name=table_name,
+        )
+        cursor.execute(
+            """
+            INSERT INTO data_sources (
+                data_source_id, source_name, source_type, owner_name, table_name,
+                source_file_name, access_scope, row_count, status, created_by_user_id
+            ) VALUES (
+                :id, :name, 'csv', :owner_name, :table_name,
+                :source_file_name, :scope, :row_count, 'active', :user_id
+            )
+            """,
+            id=data_source_id,
+            name=Path(original_filename).stem,
+            owner_name=owner_name,
+            table_name=table_name,
+            source_file_name=original_filename,
+            scope=access_scope,
+            row_count=row_count,
+            user_id=user_id,
+        )
 
     def create_table_from_csv(
         self,
@@ -1465,6 +1975,8 @@ class SelectAIAnalyticsService:
         csv_path: Path,
         original_filename: str,
         table_name: str | None,
+        table_comment: str | None = None,
+        column_metadata: list[dict[str, Any]] | None = None,
         target_schema: str | None = DEFAULT_DATA_SCHEMA,
         create_schema: bool = False,
         access_scope: str = "all",
@@ -1473,112 +1985,62 @@ class SelectAIAnalyticsService:
         if not csv_path.exists():
             raise ValueError("CSV upload was not saved.")
         owner_name = self._assert_data_schema(target_schema or DEFAULT_DATA_SCHEMA)
-        target_password: str | None = None
-        if not self.schema_exists(owner_name):
-            if not create_schema:
-                raise ValueError(f"Schema {owner_name} does not exist. Confirm schema creation before uploading.")
-            schema_result = self.create_data_schema(owner_name, include_password=True)
-            target_password = str(schema_result.get("password") or "") or None
+        target_password = self._ensure_csv_target_schema(owner_name, create_schema)
         target_table = _safe_identifier(table_name or Path(original_filename).stem)
         qualified_table = _qualified_name(owner_name, target_table)
-        with csv_path.open("r", encoding="utf-8-sig", newline="") as handle:
-            reader = csv.DictReader(handle)
-            fieldnames = [_safe_identifier(field or "") for field in (reader.fieldnames or [])]
-            if not fieldnames:
-                raise ValueError("CSV must include a header row.")
-            rows = [{fieldnames[index]: value for index, value in enumerate(raw.values())} for raw in reader]
-        if not rows:
-            raise ValueError("CSV must include at least one data row.")
+        upload = _read_csv_upload(csv_path)
 
         conn = self._connection()
         cursor = conn.cursor()
         load_job_id = uuid.uuid4().hex
         data_source_id = uuid.uuid4().hex
+        metadata_warnings: list[str] = []
         try:
-            cursor.execute(
-                """
-                INSERT INTO load_jobs (load_job_id, source_file_name, target_table_name, status)
-                VALUES (:id, :source_file_name, :target_table_name, 'running')
-                """,
-                id=load_job_id,
-                source_file_name=original_filename,
-                target_table_name=qualified_table,
-            )
+            self._insert_load_job(cursor, load_job_id, original_filename, qualified_table)
             if target_password:
-                self._load_csv_table_as_owner(
+                metadata_warnings = self._load_csv_table_as_owner(
                     owner_name=owner_name,
                     password=target_password,
                     table_name=target_table,
-                    fieldnames=fieldnames,
-                    rows=rows,
+                    fieldnames=upload.fieldnames,
+                    rows=upload.rows,
+                    table_comment=table_comment,
+                    column_metadata=column_metadata or [],
                 )
             else:
-                try:
-                    self._drop_table_if_exists(cursor, target_table, owner_name=owner_name)
-                    ddl_columns = ", ".join(f"{column} VARCHAR2(4000)" for column in fieldnames)
-                    cursor.execute(f"CREATE TABLE {qualified_table} ({ddl_columns})")
-                    bind_columns = ", ".join(fieldnames)
-                    bind_values = ", ".join(f":{column}" for column in fieldnames)
-                    cursor.executemany(
-                        f"INSERT INTO {qualified_table} ({bind_columns}) VALUES ({bind_values})",
-                        rows,
-                    )
-                except Exception as exc:
-                    if "ORA-01031" in str(exc) or "insufficient privileges" in str(exc).lower():
-                        raise ValueError(
-                            f"APP_AGENT cannot create or load tables in existing schema {owner_name}. "
-                            "Grant the required cross-schema privileges or create a new data schema from this upload."
-                        ) from exc
-                    raise
-            try:
-                cursor.execute(f"SELECT * FROM {qualified_table} WHERE 1 = 0")
-            except Exception as exc:
-                raise ValueError(
-                    f"APP_AGENT cannot SELECT from {qualified_table}. Grant SELECT on this table before registering it."
-                ) from exc
-            cursor.execute(
-                "DELETE FROM data_sources WHERE owner_name = :owner_name AND table_name = :table_name",
-                owner_name=owner_name,
-                table_name=target_table,
-            )
-            cursor.execute(
-                """
-                INSERT INTO data_sources (
-                    data_source_id, source_name, source_type, owner_name, table_name,
-                    source_file_name, access_scope, row_count, status, created_by_user_id
-                ) VALUES (
-                    :id, :name, 'csv', :owner_name, :table_name,
-                    :source_file_name, :scope, :row_count, 'active', :user_id
+                self._load_csv_table_as_app_agent(
+                    cursor,
+                    owner_name=owner_name,
+                    table_name=target_table,
+                    qualified_table=qualified_table,
+                    fieldnames=upload.fieldnames,
+                    rows=upload.rows,
                 )
-                """,
-                id=data_source_id,
-                name=Path(original_filename).stem,
+            self._assert_csv_table_selectable(cursor, qualified_table)
+            if not target_password:
+                metadata_warnings = self._apply_select_ai_metadata(
+                    cursor,
+                    owner_name=owner_name,
+                    table_name=target_table,
+                    table_comment=table_comment,
+                    column_metadata=column_metadata or [],
+                )
+            self._register_csv_data_source(
+                cursor,
+                data_source_id=data_source_id,
+                original_filename=original_filename,
                 owner_name=owner_name,
                 table_name=target_table,
-                source_file_name=original_filename,
-                scope=access_scope,
-                row_count=len(rows),
+                access_scope=access_scope,
+                row_count=len(upload.rows),
                 user_id=user_id,
             )
-            column_rows = [(name, "VARCHAR2", 4000, "Y", index + 1) for index, name in enumerate(fieldnames)]
-            self._replace_source_columns(cursor, data_source_id, column_rows)
-            cursor.execute(
-                "UPDATE load_jobs SET status = 'completed', row_count = :row_count WHERE load_job_id = :id",
-                row_count=len(rows),
-                id=load_job_id,
-            )
+            column_rows = [(name, "VARCHAR2", 4000, "Y", index + 1) for index, name in enumerate(upload.fieldnames)]
+            self._replace_source_columns(cursor, data_source_id, column_rows, column_metadata or [])
+            self._complete_load_job(cursor, load_job_id, len(upload.rows))
             conn.commit()
         except Exception as exc:
-            conn.rollback()
-            try:
-                cursor.execute(
-                    "UPDATE load_jobs SET status = 'failed', error_message = :message WHERE load_job_id = :id",
-                    message=str(exc)[:4000],
-                    id=load_job_id,
-                )
-                conn.commit()
-            except Exception:
-                conn.rollback()
+            self._mark_load_job_failed(conn, cursor, load_job_id, exc)
             raise
         finally:
             cursor.close()
@@ -1589,7 +2051,8 @@ class SelectAIAnalyticsService:
             "load_job_id": load_job_id,
             "owner_name": owner_name,
             "table_name": target_table,
-            "row_count": len(rows),
+            "row_count": len(upload.rows),
+            "metadata_warnings": metadata_warnings,
         }
 
     def _load_csv_table_as_owner(
@@ -1600,7 +2063,9 @@ class SelectAIAnalyticsService:
         table_name: str,
         fieldnames: list[str],
         rows: list[dict[str, Any]],
-    ) -> None:
+        table_comment: str | None = None,
+        column_metadata: list[dict[str, Any]] | None = None,
+    ) -> list[str]:
         conn = self._connect_as(user=owner_name, password=password)
         cursor = conn.cursor()
         try:
@@ -1613,14 +2078,144 @@ class SelectAIAnalyticsService:
                 f"INSERT INTO {_safe_identifier(table_name)} ({bind_columns}) VALUES ({bind_values})",
                 rows,
             )
+            metadata_warnings = self._apply_select_ai_metadata(
+                cursor,
+                owner_name=owner_name,
+                table_name=table_name,
+                table_comment=table_comment,
+                column_metadata=column_metadata or [],
+            )
             cursor.execute(f"GRANT SELECT ON {_safe_identifier(table_name)} TO {APP_SCHEMA}")
             conn.commit()
+            return metadata_warnings
         except Exception:
             conn.rollback()
             raise
         finally:
             cursor.close()
             conn.close()
+
+    @staticmethod
+    def _metadata_by_column(column_metadata: list[dict[str, Any]]) -> dict[str, dict[str, Any]]:
+        metadata: dict[str, dict[str, Any]] = {}
+        for raw_item in column_metadata:
+            if not isinstance(raw_item, dict):
+                continue
+            raw_name = raw_item.get("column_name") or raw_item.get("name")
+            if not raw_name:
+                continue
+            metadata[_safe_identifier(str(raw_name))] = raw_item
+        return metadata
+
+    @staticmethod
+    def _metadata_annotation_clause(annotation_name: str, annotation_value: str) -> str:
+        safe_name = _safe_identifier(annotation_name)
+        if annotation_value:
+            return f"{safe_name} {_sql_string_literal(annotation_value)}"
+        return safe_name
+
+    @staticmethod
+    def _execute_metadata_statement(cursor, statement: str, warnings: list[str], label: str) -> None:
+        try:
+            cursor.execute(statement)
+        except Exception as exc:
+            warnings.append(f"{label}: {str(exc)[:240]}")
+
+    @staticmethod
+    def _primary_key_exists(cursor, *, owner_name: str, table_name: str) -> bool:
+        cursor.execute(
+            """
+            SELECT COUNT(*)
+            FROM all_constraints
+            WHERE owner = :owner_name
+              AND table_name = :table_name
+              AND constraint_type = 'P'
+            """,
+            owner_name=owner_name,
+            table_name=table_name,
+        )
+        row = cursor.fetchone()
+        return bool(row and int(row[0] or 0) > 0)
+
+    def _apply_select_ai_metadata(
+        self,
+        cursor,
+        *,
+        owner_name: str,
+        table_name: str,
+        table_comment: str | None,
+        column_metadata: list[dict[str, Any]],
+    ) -> list[str]:
+        warnings: list[str] = []
+        qualified_table = _qualified_name(owner_name, table_name)
+        clean_table_comment = _clean_optional_text(table_comment, limit=1000)
+        if clean_table_comment:
+            self._execute_metadata_statement(
+                cursor,
+                f"COMMENT ON TABLE {qualified_table} IS {_sql_string_literal(clean_table_comment)}",
+                warnings,
+                "Table comment was not applied",
+            )
+            self._execute_metadata_statement(
+                cursor,
+                "ALTER TABLE "
+                f"{qualified_table} ANNOTATIONS "
+                f"(ADD {self._metadata_annotation_clause('UI_Display', clean_table_comment)})",
+                warnings,
+                "Table annotation was not applied",
+            )
+
+        metadata_by_column = self._metadata_by_column(column_metadata)
+        primary_key_columns: list[str] = []
+        for column_name, raw_item in metadata_by_column.items():
+            comment = _clean_optional_text(raw_item.get("comment"), limit=1000)
+            if comment:
+                self._execute_metadata_statement(
+                    cursor,
+                    f"COMMENT ON COLUMN {qualified_table}.{column_name} IS {_sql_string_literal(comment)}",
+                    warnings,
+                    f"Comment for {column_name} was not applied",
+                )
+
+            ui_display = _clean_optional_text(raw_item.get("ui_display"), limit=255)
+            if ui_display:
+                self._execute_metadata_statement(
+                    cursor,
+                    "ALTER TABLE "
+                    f"{qualified_table} MODIFY ({column_name} ANNOTATIONS "
+                    f"(ADD {self._metadata_annotation_clause('UI_Display', ui_display)}))",
+                    warnings,
+                    f"UI display annotation for {column_name} was not applied",
+                )
+
+            classification = _clean_optional_text(raw_item.get("classification"), limit=100)
+            if classification:
+                self._execute_metadata_statement(
+                    cursor,
+                    "ALTER TABLE "
+                    f"{qualified_table} MODIFY ({column_name} ANNOTATIONS "
+                    f"(ADD {self._metadata_annotation_clause('Classification', classification)}))",
+                    warnings,
+                    f"Classification annotation for {column_name} was not applied",
+                )
+
+            if bool(raw_item.get("primary_key")):
+                primary_key_columns.append(column_name)
+
+        if primary_key_columns and not self._primary_key_exists(
+            cursor,
+            owner_name=owner_name,
+            table_name=table_name,
+        ):
+            constraint_name = _safe_constraint_name(f"PK_{table_name}")
+            columns_sql = ", ".join(primary_key_columns)
+            self._execute_metadata_statement(
+                cursor,
+                f"ALTER TABLE {qualified_table} ADD CONSTRAINT {constraint_name} PRIMARY KEY ({columns_sql})",
+                warnings,
+                "Primary key constraint was not applied",
+            )
+        return warnings
 
     @staticmethod
     def _drop_table_if_exists(cursor, table_name: str, *, owner_name: str | None = None) -> None:
@@ -1632,25 +2227,35 @@ class SelectAIAnalyticsService:
                 raise
 
     @staticmethod
-    def _replace_source_columns(cursor, data_source_id: str, columns: list[tuple[Any, ...]]) -> None:
+    def _replace_source_columns(
+        cursor,
+        data_source_id: str,
+        columns: list[tuple[Any, ...]],
+        column_metadata: list[dict[str, Any]] | None = None,
+    ) -> None:
+        metadata_by_column = SelectAIAnalyticsService._metadata_by_column(column_metadata or [])
         cursor.execute("DELETE FROM source_columns WHERE data_source_id = :id", id=data_source_id)
         for row in columns:
             column_name, data_type, data_length, nullable, column_id = row[:5]
+            normalized_column = str(column_name).upper()
+            metadata = metadata_by_column.get(normalized_column, {})
             cursor.execute(
                 """
                 INSERT INTO source_columns (
                     source_column_id, data_source_id, column_name, data_type,
-                    data_length, nullable_flag, ordinal_position
+                    data_length, nullable_flag, ordinal_position, business_comment, classification
                 ) VALUES (
                     :source_column_id, :data_source_id, :column_name, :data_type,
-                    :data_length, :nullable_flag, :ordinal_position
+                    :data_length, :nullable_flag, :ordinal_position, :business_comment, :classification
                 )
                 """,
                 source_column_id=uuid.uuid4().hex,
                 data_source_id=data_source_id,
-                column_name=str(column_name).upper(),
+                column_name=normalized_column,
                 data_type=str(data_type).upper(),
                 data_length=int(data_length or 0),
                 nullable_flag=str(nullable or "Y")[:1],
                 ordinal_position=int(column_id or 0),
+                business_comment=_clean_optional_text(metadata.get("comment"), limit=1000) or None,
+                classification=_clean_optional_text(metadata.get("classification"), limit=100) or None,
             )

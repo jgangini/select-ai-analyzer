@@ -9,6 +9,8 @@ import { useToast } from '../../context/ToastContext';
 import { queryKeys } from '../../lib/queryClient';
 import {
   dataSourcesApi,
+  type DataSourceCatalogTable,
+  type DataSourceColumnMetadata,
   type DataSourceRowsResponse,
   type DataSourceSchema,
   type DataSourceSummary,
@@ -55,6 +57,16 @@ function formatCellValue(value: unknown): string {
   return String(value);
 }
 
+function formatColumnType(column: DataSourceColumnMetadata): string {
+  const type = String(column.data_type || '').trim().toUpperCase();
+  if (!type) return '-';
+  if (type.includes('(') || !column.data_length) return type;
+  if (['VARCHAR2', 'CHAR', 'NCHAR', 'NVARCHAR2'].includes(type)) {
+    return `${type}(${column.data_length})`;
+  }
+  return type;
+}
+
 function SourceTypeBadge({ source }: { source: DataSourceSummary }) {
   const label = source.source_type === 'csv' ? 'CSV' : 'Existing table';
   return (
@@ -87,16 +99,16 @@ function getStatusBadge(status: string): string {
 }
 
 function DataSourceObjectCell({ source }: { source: DataSourceSummary }) {
+  const qualifiedName = `${source.owner_name}.${source.table_name}`;
+
   return (
     <div className="flex items-center">
-      <div className="flex min-w-0 flex-wrap items-center gap-0.5">
-        <div className="flex min-w-0 shrink-0 items-center gap-0.5">
-          <span className="rounded bg-oracle-bg-gray px-1.5 py-0.5 text-xs">
-            {source.owner_name}
-          </span>
-          <span className="text-xs text-oracle-light-gray">/</span>
-        </div>
-        <span className="inline-block w-fit max-w-xs truncate rounded bg-oracle-bg-gray px-1.5 py-0.5 text-xs">
+      <div className="min-w-0 whitespace-nowrap" title={qualifiedName}>
+        <span className="inline-block rounded bg-oracle-bg-gray px-1.5 py-0.5 align-middle text-xs">
+          {source.owner_name}
+        </span>
+        <span className="inline-block px-0.5 align-middle text-xs text-oracle-light-gray">.</span>
+        <span className="inline-block max-w-xs truncate rounded bg-oracle-bg-gray px-1.5 py-0.5 align-middle text-xs">
           {source.table_name}
         </span>
       </div>
@@ -113,7 +125,7 @@ function DeleteDataSourceConfirmMessage({ source }: { source: DataSourceSummary 
         Are you sure you want to {isCsv ? 'delete' : 'unregister'}{' '}
         <span className="font-mono font-medium text-oracle-dark-gray">{qualifiedName}</span>?
       </p>
-      <p>{isCsv ? 'The managed CSV table will be dropped.' : 'The original table will not be dropped.'}</p>
+      {!isCsv && <p>The original table will not be dropped.</p>}
     </div>
   );
 }
@@ -162,18 +174,257 @@ function Pagination({
   );
 }
 
+function parseCsvHeaderLine(line: string): string[] {
+  const values: string[] = [];
+  let current = '';
+  let inQuotes = false;
+  for (let index = 0; index < line.length; index += 1) {
+    const char = line[index];
+    const next = line[index + 1];
+    if (char === '"' && inQuotes && next === '"') {
+      current += '"';
+      index += 1;
+      continue;
+    }
+    if (char === '"') {
+      inQuotes = !inQuotes;
+      continue;
+    }
+    if (char === ',' && !inQuotes) {
+      values.push(current.trim());
+      current = '';
+      continue;
+    }
+    current += char;
+  }
+  values.push(current.trim());
+  return values;
+}
+
+function parseCsvHeaders(csvText: string): string[] {
+  const firstLine = csvText.split(/\r?\n/, 1)[0] || '';
+  return parseCsvHeaderLine(firstLine)
+    .map((column) => normalizeIdentifier(column))
+    .filter(Boolean);
+}
+
+function columnsToMetadata(columnNames: string[]): DataSourceColumnMetadata[] {
+  return columnNames.map((columnName, index) => ({
+    column_name: columnName,
+    ordinal_position: index + 1,
+    comment: '',
+    ui_display: '',
+    classification: '',
+    primary_key: false,
+  }));
+}
+
+function pickMetadataValue(raw: Record<string, unknown>, keys: string[]): unknown {
+  const normalizedEntries = new Map(Object.entries(raw).map(([key, value]) => [key.trim().toLowerCase(), value]));
+  for (const key of keys) {
+    const value = normalizedEntries.get(key.trim().toLowerCase());
+    if (value !== undefined) return value;
+  }
+  return undefined;
+}
+
+function metadataText(raw: unknown): string {
+  return String(raw || '').trim();
+}
+
+function metadataBoolean(raw: unknown): boolean {
+  if (typeof raw === 'boolean') return raw;
+  if (typeof raw === 'number') return raw !== 0;
+  return ['1', 'true', 't', 'yes', 'y', 'si', 's'].includes(String(raw || '').trim().toLowerCase());
+}
+
+function parseMetadataJson(text: string): { tableComment: string; columns: DataSourceColumnMetadata[] } {
+  const payload = JSON.parse(text) as unknown;
+  const payloadObject = payload && !Array.isArray(payload) && typeof payload === 'object'
+    ? (payload as Record<string, unknown>)
+    : null;
+  const tableComment = payloadObject
+    ? metadataText(
+        pickMetadataValue(payloadObject, ['table_comment', 'tableComment', 'table comment', 'description', 'table_description'])
+      )
+    : '';
+  const rawColumns = Array.isArray(payload)
+    ? payload
+    : payloadObject
+      ? pickMetadataValue(payloadObject, ['columns', 'data_dictionary', 'dataDictionary', 'fields', 'items'])
+      : null;
+
+  if (!Array.isArray(rawColumns)) {
+    throw new Error('Metadata JSON must include a columns array.');
+  }
+
+  const columns: DataSourceColumnMetadata[] = [];
+  rawColumns.forEach((rawColumn, index) => {
+      if (!rawColumn || typeof rawColumn !== 'object' || Array.isArray(rawColumn)) return;
+      const column = rawColumn as Record<string, unknown>;
+      const rawName = pickMetadataValue(column, ['column_name', 'columnName', 'Column Name', 'name', 'column', 'field']);
+      const columnName = normalizeIdentifier(metadataText(rawName));
+      if (!columnName) return;
+      const dataLength = Number(pickMetadataValue(column, ['data_length', 'dataLength', 'length']) || 0);
+      const ordinal = Number(pickMetadataValue(column, ['ordinal_position', 'ordinalPosition', 'position', 'order']) || index + 1);
+      columns.push({
+        column_name: columnName,
+        data_type: metadataText(pickMetadataValue(column, ['data_type', 'dataType', 'type'])) || undefined,
+        data_length: Number.isFinite(dataLength) && dataLength > 0 ? dataLength : undefined,
+        nullable: metadataText(pickMetadataValue(column, ['nullable', 'nullable_flag', 'nullableFlag'])) || undefined,
+        ordinal_position: Number.isFinite(ordinal) && ordinal > 0 ? ordinal : index + 1,
+        comment: metadataText(pickMetadataValue(column, ['comment', 'Comment', 'description'])),
+        ui_display: metadataText(pickMetadataValue(column, ['ui_display', 'uiDisplay', 'UI_Display', 'UI Display'])),
+        classification: metadataText(pickMetadataValue(column, ['classification', 'Classification', 'data_class'])),
+        primary_key: metadataBoolean(pickMetadataValue(column, ['primary_key', 'primaryKey', 'Primary Key', 'PK', 'pk'])),
+      });
+    });
+
+  return { tableComment, columns };
+}
+
+function mergeMetadataWithColumns(
+  columnNames: string[],
+  metadata: DataSourceColumnMetadata[]
+): DataSourceColumnMetadata[] {
+  const metadataByColumn = new Map(metadata.map((column) => [normalizeIdentifier(column.column_name), column]));
+  return columnNames.map((columnName, index) => {
+    const normalizedColumnName = normalizeIdentifier(columnName);
+    return {
+      ...columnsToMetadata([normalizedColumnName])[0],
+      ...metadataByColumn.get(normalizedColumnName),
+      column_name: normalizedColumnName,
+      ordinal_position: index + 1,
+    };
+  });
+}
+
+function DataDictionaryEditor({
+  tableComment,
+  columns,
+  isLoading,
+  onTableCommentChange,
+  onColumnChange,
+}: {
+  tableComment: string;
+  columns: DataSourceColumnMetadata[];
+  isLoading?: boolean;
+  onTableCommentChange: (value: string) => void;
+  onColumnChange: (index: number, patch: Partial<DataSourceColumnMetadata>) => void;
+}) {
+  return (
+    <div className="rounded-lg border border-oracle-border bg-white">
+      <div className="border-b border-oracle-border px-4 py-3">
+        <h3 className="text-sm font-semibold text-oracle-dark-gray">Data dictionary</h3>
+      </div>
+      <div className="space-y-3 p-4">
+        <div>
+          <label className="block text-sm font-medium text-oracle-dark-gray">Table comment</label>
+          <textarea
+            value={tableComment}
+            onChange={(event) => onTableCommentChange(event.target.value)}
+            className="input-oracle mt-1 min-h-20 resize-y"
+            placeholder="Business meaning for this table"
+          />
+        </div>
+        <div className="max-h-72 overflow-auto rounded border border-gray-200">
+          <table className="min-w-[760px] divide-y divide-gray-200">
+            <thead className="bg-gray-50">
+              <tr>
+                <th className="px-3 py-2 text-left text-xs font-medium uppercase tracking-wider text-gray-500">Column</th>
+                <th className="px-3 py-2 text-left text-xs font-medium uppercase tracking-wider text-gray-500">Comment</th>
+                <th className="px-3 py-2 text-left text-xs font-medium uppercase tracking-wider text-gray-500">UI display</th>
+                <th className="px-3 py-2 text-left text-xs font-medium uppercase tracking-wider text-gray-500">Classification</th>
+                <th className="w-16 px-3 py-2 text-center text-xs font-medium uppercase tracking-wider text-gray-500">PK</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-gray-200 bg-white">
+              {isLoading ? (
+                <tr>
+                  <td colSpan={5} className="px-3 py-5">
+                    <LoadingState size="sm" label="Loading..." />
+                  </td>
+                </tr>
+              ) : columns.length === 0 ? (
+                <tr>
+                  <td colSpan={5} className="px-3 py-5 text-center text-sm text-oracle-light-gray">
+                    Select an object to edit metadata.
+                  </td>
+                </tr>
+              ) : (
+                columns.map((column, index) => (
+                  <tr key={`${column.column_name}-${index}`}>
+                    <td className="max-w-[180px] px-3 py-2 align-top">
+                      <div className="truncate font-mono text-xs text-oracle-dark-gray" title={column.column_name}>
+                        {column.column_name}
+                      </div>
+                      {column.data_type ? (
+                        <div className="mt-0.5 truncate text-[11px] text-oracle-light-gray">
+                          {column.data_type}
+                          {column.data_length ? `(${column.data_length})` : ''}
+                        </div>
+                      ) : null}
+                    </td>
+                    <td className="px-3 py-2 align-top">
+                      <input
+                        value={column.comment || ''}
+                        onChange={(event) => onColumnChange(index, { comment: event.target.value })}
+                        className="input-oracle h-8 text-xs"
+                        placeholder="Column meaning"
+                      />
+                    </td>
+                    <td className="px-3 py-2 align-top">
+                      <input
+                        value={column.ui_display || ''}
+                        onChange={(event) => onColumnChange(index, { ui_display: event.target.value })}
+                        className="input-oracle h-8 text-xs"
+                        placeholder="Display label"
+                      />
+                    </td>
+                    <td className="px-3 py-2 align-top">
+                      <input
+                        value={column.classification || ''}
+                        onChange={(event) => onColumnChange(index, { classification: event.target.value })}
+                        className="input-oracle h-8 text-xs"
+                        placeholder="PII, amount, date"
+                      />
+                    </td>
+                    <td className="px-3 py-2 text-center align-top">
+                      <input
+                        type="checkbox"
+                        checked={Boolean(column.primary_key)}
+                        onChange={(event) => onColumnChange(index, { primary_key: event.target.checked })}
+                        className="mt-2 h-4 w-4 rounded border-gray-300 text-oracle-red accent-oracle-red focus:ring-oracle-red"
+                        aria-label={`Primary key ${column.column_name}`}
+                      />
+                    </td>
+                  </tr>
+                ))
+              )}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 export function DataSources() {
   const queryClient = useQueryClient();
   const { showToast } = useToast();
   const [isObjectModalOpen, setIsObjectModalOpen] = useState(false);
   const [objectMode, setObjectMode] = useState<'csv' | 'existing_table'>('csv');
   const [csvFile, setCsvFile] = useState<File | null>(null);
+  const [metadataJsonFile, setMetadataJsonFile] = useState<File | null>(null);
+  const [csvHeaderColumns, setCsvHeaderColumns] = useState<string[]>([]);
   const [csvTableName, setCsvTableName] = useState('');
   const [csvSchemaName, setCsvSchemaName] = useState(DEFAULT_DATA_SCHEMA);
   const [pendingSchemaCreation, setPendingSchemaCreation] = useState<string | null>(null);
   const [tableOwner, setTableOwner] = useState('');
   const [tableName, setTableName] = useState('');
   const [displayName, setDisplayName] = useState('');
+  const [tableComment, setTableComment] = useState('');
+  const [columnMetadata, setColumnMetadata] = useState<DataSourceColumnMetadata[]>([]);
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState('');
   const [page, setPage] = useState(0);
@@ -194,6 +445,28 @@ export function DataSources() {
     enabled: isObjectModalOpen && objectMode === 'csv',
   });
 
+  const catalogOwnersQuery = useQuery({
+    queryKey: ['data-sources', 'catalog-owners'],
+    queryFn: () => dataSourcesApi.catalogOwners().then((response) => response.data.items),
+    enabled: isObjectModalOpen && objectMode === 'existing_table',
+  });
+
+  const catalogTablesQuery = useQuery({
+    queryKey: ['data-sources', 'catalog-tables', tableOwner],
+    queryFn: () => dataSourcesApi.catalogTables(tableOwner).then((response) => response.data.items),
+    enabled: isObjectModalOpen && objectMode === 'existing_table' && Boolean(tableOwner.trim()),
+  });
+
+  const catalogTableQuery = useQuery({
+    queryKey: ['data-sources', 'catalog-table', tableOwner, tableName],
+    queryFn: () => dataSourcesApi.catalogTable(tableOwner, tableName).then((response) => response.data),
+    enabled:
+      isObjectModalOpen &&
+      objectMode === 'existing_table' &&
+      Boolean(tableOwner.trim()) &&
+      Boolean(tableName.trim()),
+  });
+
   const previewRowsQuery = useQuery<DataSourceRowsResponse>({
     queryKey: queryKeys.dataSources.rows(viewingSource?.data_source_id ?? null, previewPage),
     queryFn: () =>
@@ -211,16 +484,32 @@ export function DataSources() {
   const uploadMutation = useMutation({
     mutationFn: ({ createSchema }: { createSchema: boolean }) => {
       if (!csvFile) throw new Error('Select a CSV file.');
-      return dataSourcesApi.uploadCsv(csvFile, csvTableName, 'all', normalizeIdentifier(csvSchemaName), createSchema);
+      return dataSourcesApi.uploadCsv(
+        csvFile,
+        csvTableName,
+        tableComment,
+        columnMetadata,
+        'all',
+        normalizeIdentifier(csvSchemaName),
+        createSchema
+      );
     },
-    onSuccess: () => {
+    onSuccess: (response) => {
       setCsvFile(null);
+      setMetadataJsonFile(null);
+      setCsvHeaderColumns([]);
       setCsvTableName('');
       setCsvSchemaName(DEFAULT_DATA_SCHEMA);
+      setTableComment('');
+      setColumnMetadata([]);
       setPendingSchemaCreation(null);
       setIsObjectModalOpen(false);
       invalidateSources();
       showToast('CSV loaded and Select AI profile updated.', 'success');
+      const warnings = response.data.metadata_warnings || [];
+      if (warnings.length > 0) {
+        showToast(`Metadata saved with ${warnings.length} warning${warnings.length === 1 ? '' : 's'}.`, 'warning');
+      }
     },
     onError: (error) => showToast(getErrorMessage(error), 'error'),
   });
@@ -231,15 +520,23 @@ export function DataSources() {
         owner: tableOwner.trim(),
         table_name: tableName.trim(),
         display_name: displayName.trim() || undefined,
+        table_comment: tableComment.trim() || undefined,
+        columns: columnMetadata,
         access_scope: 'all',
       }),
-    onSuccess: () => {
+    onSuccess: (response) => {
       setTableOwner('');
       setTableName('');
       setDisplayName('');
+      setTableComment('');
+      setColumnMetadata([]);
       setIsObjectModalOpen(false);
       invalidateSources();
       showToast('Table registered and Select AI profile updated.', 'success');
+      const warnings = response.data.metadata_warnings || [];
+      if (warnings.length > 0) {
+        showToast(`Metadata saved with ${warnings.length} warning${warnings.length === 1 ? '' : 's'}.`, 'warning');
+      }
     },
     onError: (error) => showToast(getErrorMessage(error), 'error'),
   });
@@ -317,6 +614,12 @@ export function DataSources() {
     });
   }, [sources]);
 
+  useEffect(() => {
+    if (!catalogTableQuery.data || objectMode !== 'existing_table') return;
+    setTableComment(catalogTableQuery.data.table_comment || '');
+    setColumnMetadata(catalogTableQuery.data.columns || []);
+  }, [catalogTableQuery.data, objectMode]);
+
   const stats = useMemo(
     () => ({
       active: sources.filter((source) => String(source.status || '').toLowerCase() === 'active').length,
@@ -338,6 +641,11 @@ export function DataSources() {
         }),
     [schemasQuery.data]
   );
+  const ownerOptions = catalogOwnersQuery.data || [];
+  const tableOptions = useMemo<DataSourceCatalogTable[]>(
+    () => (catalogTablesQuery.data || []).slice().sort((left, right) => left.table_name.localeCompare(right.table_name)),
+    [catalogTablesQuery.data]
+  );
   const normalizedCsvSchema = normalizeIdentifier(csvSchemaName);
   const selectedSchema = schemaOptions.find(
     (schema: DataSourceSchema) => schema.schema_name === normalizedCsvSchema
@@ -349,6 +657,49 @@ export function DataSources() {
     event.preventDefault();
     if (!tableOwner.trim() || !tableName.trim() || registerMutation.isPending) return;
     registerMutation.mutate();
+  };
+
+  const updateColumnMetadata = (index: number, patch: Partial<DataSourceColumnMetadata>) => {
+    setColumnMetadata((current) =>
+      current.map((column, columnIndex) => (columnIndex === index ? { ...column, ...patch } : column))
+    );
+  };
+
+  const handleCsvFileChange = (file: File | null) => {
+    setCsvFile(file);
+    setCsvHeaderColumns([]);
+    if (!file) {
+      setColumnMetadata([]);
+      return;
+    }
+    file
+      .text()
+      .then((text) => {
+        const headers = parseCsvHeaders(text);
+        setCsvHeaderColumns(headers);
+        setColumnMetadata((current) => mergeMetadataWithColumns(headers, current));
+      })
+      .catch(() => showToast('Could not read CSV header.', 'error'));
+  };
+
+  const handleMetadataJsonFileChange = (file: File | null) => {
+    setMetadataJsonFile(file);
+    if (!file) return;
+    file
+      .text()
+      .then((text) => {
+        const metadata = parseMetadataJson(text);
+        if (metadata.tableComment) {
+          setTableComment(metadata.tableComment);
+        }
+        setColumnMetadata(
+          csvHeaderColumns.length > 0
+            ? mergeMetadataWithColumns(csvHeaderColumns, metadata.columns)
+            : metadata.columns
+        );
+        showToast('Metadata JSON loaded.', 'success');
+      })
+      .catch((error) => showToast(getErrorMessage(error), 'error'));
   };
 
   const submitCsv = (event: FormEvent) => {
@@ -400,6 +751,19 @@ export function DataSources() {
 
   const previewData = previewRowsQuery.data;
   const previewColumns = previewData?.columns ?? [];
+  const previewColumnDetails = useMemo<DataSourceColumnMetadata[]>(() => {
+    const details = previewData?.column_details || [];
+    const detailsByColumn = new Map(details.map((column) => [normalizeIdentifier(column.column_name), column]));
+    return previewColumns.map((columnName, index) => {
+      const normalizedColumnName = normalizeIdentifier(columnName);
+      return (
+        detailsByColumn.get(normalizedColumnName) || {
+          column_name: normalizedColumnName,
+          ordinal_position: index + 1,
+        }
+      );
+    });
+  }, [previewColumns, previewData?.column_details]);
   const previewRows = previewData?.rows ?? [];
   const previewTotalRows = Number(previewData?.row_count ?? viewingSource?.row_count ?? 0);
   const previewTotalPages = Math.max(1, Math.ceil(previewTotalRows / PAGE_SIZE));
@@ -418,6 +782,10 @@ export function DataSources() {
             type="button"
             onClick={() => {
               setObjectMode('csv');
+              setMetadataJsonFile(null);
+              setCsvHeaderColumns([]);
+              setTableComment('');
+              setColumnMetadata([]);
               setIsObjectModalOpen(true);
             }}
             className="inline-flex h-10 flex-shrink-0 items-center gap-2 rounded-lg border border-transparent bg-oracle-red px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-oracle-red/90"
@@ -533,7 +901,7 @@ export function DataSources() {
                     </tr>
                   ) : (
                     paginatedSources.map((source) => (
-                      <tr key={source.data_source_id} className="hover:bg-gray-50">
+                      <tr key={source.data_source_id}>
                         <td className="px-4 py-3 text-center align-top">
                           <input
                             type="checkbox"
@@ -606,7 +974,7 @@ export function DataSources() {
         open={isObjectModalOpen}
         onClose={closeObjectModal}
         containerClassName="items-start justify-center p-4"
-        panelClassName="mt-20 w-full max-w-xl border-0"
+        panelClassName="mt-8 flex max-h-[88vh] w-full max-w-4xl flex-col border-0"
       >
         <div className="flex items-center gap-3 bg-oracle-dark-gray px-5 py-4">
           <h2 className="text-lg font-semibold text-white">Add Object</h2>
@@ -624,7 +992,7 @@ export function DataSources() {
         </div>
         <form
           onSubmit={objectMode === 'csv' ? submitCsv : submitExistingTable}
-          className="space-y-4 bg-white/90 p-5"
+          className="space-y-4 overflow-y-auto bg-white/90 p-5"
         >
           <div>
             <label className="block text-sm font-medium text-oracle-dark-gray">Object source</label>
@@ -633,6 +1001,10 @@ export function DataSources() {
               onChange={(event) => {
                 setPendingSchemaCreation(null);
                 setObjectMode(event.target.value as 'csv' | 'existing_table');
+                setMetadataJsonFile(null);
+                setCsvHeaderColumns([]);
+                setTableComment('');
+                setColumnMetadata([]);
               }}
               className="input-oracle mt-1"
               disabled={uploadMutation.isPending || registerMutation.isPending}
@@ -662,7 +1034,28 @@ export function DataSources() {
                   id="data-source-csv-file"
                   type="file"
                   accept=".csv,text/csv"
-                  onChange={(event) => setCsvFile(event.target.files?.[0] ?? null)}
+                  onChange={(event) => handleCsvFileChange(event.target.files?.[0] ?? null)}
+                  className="hidden"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-oracle-dark-gray">Metadata JSON</label>
+                <div className="mt-1 flex min-h-11 items-center gap-3 rounded border border-oracle-border bg-white px-3 py-2">
+                  <label
+                    htmlFor="data-source-metadata-json-file"
+                    className="shrink-0 cursor-pointer rounded border border-gray-300 bg-white px-3 py-1.5 text-sm font-medium text-gray-700 transition-colors hover:bg-gray-50"
+                  >
+                    Choose file
+                  </label>
+                  <span className="min-w-0 truncate text-sm text-oracle-medium-gray">
+                    {metadataJsonFile?.name || 'No file selected'}
+                  </span>
+                </div>
+                <input
+                  id="data-source-metadata-json-file"
+                  type="file"
+                  accept=".json,application/json"
+                  onChange={(event) => handleMetadataJsonFileChange(event.target.files?.[0] ?? null)}
                   className="hidden"
                 />
               </div>
@@ -708,21 +1101,46 @@ export function DataSources() {
               <div className="grid gap-4 sm:grid-cols-2">
                 <div>
                   <label className="block text-sm font-medium text-oracle-dark-gray">Owner</label>
-                  <input
+                  <select
                     value={tableOwner}
-                    onChange={(event) => setTableOwner(normalizeIdentifier(event.target.value))}
+                    onChange={(event) => {
+                      setTableOwner(event.target.value);
+                      setTableName('');
+                      setTableComment('');
+                      setColumnMetadata([]);
+                    }}
                     className="input-oracle mt-1 font-mono uppercase"
-                    placeholder="FLEXCUBE"
-                  />
+                    disabled={catalogOwnersQuery.isLoading}
+                  >
+                    <option value="">{catalogOwnersQuery.isLoading ? 'Loading...' : 'Select owner'}</option>
+                    {ownerOptions.map((owner) => (
+                      <option key={owner.owner_name} value={owner.owner_name}>
+                        {owner.owner_name} ({formatNumber(owner.table_count)})
+                      </option>
+                    ))}
+                  </select>
                 </div>
                 <div>
                   <label className="block text-sm font-medium text-oracle-dark-gray">Table</label>
-                  <input
+                  <select
                     value={tableName}
-                    onChange={(event) => setTableName(normalizeIdentifier(event.target.value))}
+                    onChange={(event) => {
+                      setTableName(event.target.value);
+                      setTableComment('');
+                      setColumnMetadata([]);
+                    }}
                     className="input-oracle mt-1 font-mono uppercase"
-                    placeholder="ACTB_DAILY_LOG"
-                  />
+                    disabled={!tableOwner || catalogTablesQuery.isLoading}
+                  >
+                    <option value="">
+                      {catalogTablesQuery.isLoading ? 'Loading...' : tableOwner ? 'Select table' : 'Select owner first'}
+                    </option>
+                    {tableOptions.map((table) => (
+                      <option key={`${table.owner_name}.${table.table_name}`} value={table.table_name}>
+                        {table.table_name} ({formatNumber(table.column_count)})
+                      </option>
+                    ))}
+                  </select>
                 </div>
               </div>
               <div>
@@ -737,6 +1155,14 @@ export function DataSources() {
             </>
           )}
 
+          <DataDictionaryEditor
+            tableComment={tableComment}
+            columns={columnMetadata}
+            isLoading={objectMode === 'existing_table' && catalogTableQuery.isFetching}
+            onTableCommentChange={setTableComment}
+            onColumnChange={updateColumnMetadata}
+          />
+
           <div className="flex justify-end gap-2">
             <button type="button" className="btn-secondary" onClick={closeObjectModal}>
               Cancel
@@ -747,7 +1173,7 @@ export function DataSources() {
               disabled={
                 objectMode === 'csv'
                   ? !csvFile || uploadMutation.isPending || schemasQuery.isLoading
-                  : !tableOwner.trim() || !tableName.trim() || registerMutation.isPending
+                  : !tableOwner.trim() || !tableName.trim() || registerMutation.isPending || catalogTableQuery.isFetching
               }
             >
               {objectMode === 'csv'
@@ -804,6 +1230,77 @@ export function DataSources() {
             </div>
           ) : (
             <>
+              <div className="max-h-[32vh] shrink-0 overflow-auto border-b border-gray-200">
+                <table className="min-w-full divide-y divide-gray-200 text-left text-xs">
+                  <thead className="sticky top-0 z-10 bg-gray-50">
+                    <tr>
+                      <th className="w-12 whitespace-nowrap px-3 py-2 font-semibold uppercase tracking-wide text-gray-500">
+                        PK
+                      </th>
+                      <th className="whitespace-nowrap px-3 py-2 font-semibold uppercase tracking-wide text-gray-500">
+                        Column
+                      </th>
+                      <th className="whitespace-nowrap px-3 py-2 font-semibold uppercase tracking-wide text-gray-500">
+                        Type
+                      </th>
+                      <th className="whitespace-nowrap px-3 py-2 font-semibold uppercase tracking-wide text-gray-500">
+                        UI display
+                      </th>
+                      <th className="min-w-[320px] px-3 py-2 font-semibold uppercase tracking-wide text-gray-500">
+                        Comment
+                      </th>
+                      <th className="whitespace-nowrap px-3 py-2 font-semibold uppercase tracking-wide text-gray-500">
+                        Classification
+                      </th>
+                      <th className="whitespace-nowrap px-3 py-2 font-semibold uppercase tracking-wide text-gray-500">
+                        Nullable
+                      </th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-gray-100 bg-white">
+                    {previewColumnDetails.map((column) => (
+                      <tr key={`field-${column.column_name}`} className="odd:bg-white even:bg-gray-50/60">
+                        <td className="px-3 py-2 align-top">
+                          {column.primary_key ? (
+                            <span className="inline-flex rounded border border-amber-200 bg-amber-50 px-1.5 py-0.5 text-[11px] font-semibold text-amber-700">
+                              PK
+                            </span>
+                          ) : (
+                            <span className="text-gray-300">-</span>
+                          )}
+                        </td>
+                        <td className="whitespace-nowrap px-3 py-2 align-top font-mono text-oracle-dark-gray">
+                          {column.column_name}
+                        </td>
+                        <td className="whitespace-nowrap px-3 py-2 align-top font-mono text-oracle-medium-gray">
+                          {formatColumnType(column)}
+                        </td>
+                        <td className="whitespace-nowrap px-3 py-2 align-top text-oracle-medium-gray">
+                          {column.ui_display || formatLabel(column.column_name)}
+                        </td>
+                        <td className="max-w-[520px] px-3 py-2 align-top text-oracle-medium-gray">
+                          <span className="line-clamp-2" title={column.comment || ''}>
+                            {column.comment || '-'}
+                          </span>
+                        </td>
+                        <td className="whitespace-nowrap px-3 py-2 align-top">
+                          {column.classification ? (
+                            <span className="inline-flex rounded border border-blue-200 bg-blue-50 px-1.5 py-0.5 text-[11px] font-semibold text-blue-700">
+                              {column.classification}
+                            </span>
+                          ) : (
+                            <span className="text-gray-300">-</span>
+                          )}
+                        </td>
+                        <td className="whitespace-nowrap px-3 py-2 align-top text-oracle-medium-gray">
+                          {String(column.nullable || '').toUpperCase() === 'N' ? 'No' : 'Yes'}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+
               <div className="min-h-0 flex-1 overflow-auto">
                 <table className="min-w-full divide-y divide-gray-200 text-left text-xs">
                   <thead className="sticky top-0 z-10 bg-gray-50">
@@ -885,7 +1382,7 @@ export function DataSources() {
         <ConfirmModal
           icon={
             <svg className="h-10 w-10 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.75} d="M6 7h12M9 7V5a1 1 0 011-1h4a1 1 0 011 1v2m-7 0l1 12h6l1-12M10 11v6m4-6v6" />
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
             </svg>
           }
           iconBg="bg-red-100"
@@ -894,7 +1391,7 @@ export function DataSources() {
           message={<DeleteDataSourceConfirmMessage source={deletingSource} />}
           detail="The Select AI profile will be refreshed."
           confirmText={deletingSource.source_type === 'csv' ? 'Delete' : 'Unregister'}
-          confirmClass="text-red-700 hover:bg-red-50"
+          confirmClass="bg-oracle-red text-white hover:bg-red-700"
           onConfirm={() => deleteMutation.mutate(deletingSource)}
           onCancel={() => setDeletingSource(null)}
           loading={deleteMutation.isPending}

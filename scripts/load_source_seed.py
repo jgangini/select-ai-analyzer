@@ -5,6 +5,7 @@ import csv
 from dataclasses import dataclass
 from datetime import date, datetime
 from decimal import Decimal, InvalidOperation
+import hashlib
 from pathlib import Path
 import sys
 import uuid
@@ -17,6 +18,7 @@ sys.path.insert(0, str(ROOT))
 
 from apps.backend.app.core.config import get_settings
 from apps.backend.app.core.db_runtime_config import RuntimeDBConfigStore
+from apps.backend.app.select_ai.source_metadata import read_metadata_sidecar
 from apps.backend.app.select_ai.source_parser import SourceTable, build_create_table_sql, parse_source_tables
 
 
@@ -138,6 +140,119 @@ def _drop_table_if_exists(cursor, table_name: str) -> None:
             raise
 
 
+def _safe_constraint_name(value: str) -> str:
+    cleaned = "".join(ch if ch.isalnum() or ch in "_$#" else "_" for ch in str(value or "").upper())
+    cleaned = cleaned.strip("_") or "PK_SOURCE"
+    digest = hashlib.sha1(cleaned.encode("utf-8")).hexdigest()[:8].upper()
+    return f"{cleaned[:21]}_{digest}"[:30]
+
+
+def _sql_string_literal(value: str) -> str:
+    return "'" + str(value or "").replace("'", "''") + "'"
+
+
+def _metadata_by_column(column_metadata: list[dict[str, Any]]) -> dict[str, dict[str, Any]]:
+    return {
+        str(item.get("column_name") or "").upper(): item
+        for item in column_metadata
+        if isinstance(item, dict) and item.get("column_name")
+    }
+
+
+def _annotation_clause(name: str, value: str) -> str:
+    return f"{name} {_sql_string_literal(value)}" if value else name
+
+
+def _execute_metadata_statement(cursor, statement: str, warnings: list[str], label: str) -> None:
+    try:
+        cursor.execute(statement)
+    except Exception as exc:
+        warnings.append(f"{label}: {str(exc)[:240]}")
+
+
+def _primary_key_exists(cursor, table_name: str) -> bool:
+    cursor.execute(
+        """
+        SELECT COUNT(*)
+        FROM all_constraints
+        WHERE owner = :owner_name
+          AND table_name = :table_name
+          AND constraint_type = 'P'
+        """,
+        owner_name=DATA_SCHEMA,
+        table_name=table_name,
+    )
+    row = cursor.fetchone()
+    return bool(row and int(row[0] or 0) > 0)
+
+
+def _apply_metadata(
+    cursor,
+    table_name: str,
+    *,
+    table_comment: str | None,
+    column_metadata: list[dict[str, Any]],
+) -> list[str]:
+    warnings: list[str] = []
+    qualified_table = f"{DATA_SCHEMA}.{table_name}"
+    clean_table_comment = str(table_comment or "").strip()[:1000]
+    if clean_table_comment:
+        _execute_metadata_statement(
+            cursor,
+            f"COMMENT ON TABLE {qualified_table} IS {_sql_string_literal(clean_table_comment)}",
+            warnings,
+            f"Table comment for {table_name} was not applied",
+        )
+        _execute_metadata_statement(
+            cursor,
+            f"ALTER TABLE {qualified_table} ANNOTATIONS (ADD {_annotation_clause('UI_Display', clean_table_comment)})",
+            warnings,
+            f"Table annotation for {table_name} was not applied",
+        )
+
+    primary_key_columns: list[str] = []
+    for column_name, metadata in _metadata_by_column(column_metadata).items():
+        comment = str(metadata.get("comment") or "").strip()[:1000]
+        if comment:
+            _execute_metadata_statement(
+                cursor,
+                f"COMMENT ON COLUMN {qualified_table}.{column_name} IS {_sql_string_literal(comment)}",
+                warnings,
+                f"Comment for {table_name}.{column_name} was not applied",
+            )
+        ui_display = str(metadata.get("ui_display") or "").strip()[:255]
+        if ui_display:
+            _execute_metadata_statement(
+                cursor,
+                f"ALTER TABLE {qualified_table} MODIFY ({column_name} ANNOTATIONS "
+                f"(ADD {_annotation_clause('UI_Display', ui_display)}))",
+                warnings,
+                f"UI display for {table_name}.{column_name} was not applied",
+            )
+        classification = str(metadata.get("classification") or "").strip()[:100]
+        if classification:
+            _execute_metadata_statement(
+                cursor,
+                f"ALTER TABLE {qualified_table} MODIFY ({column_name} ANNOTATIONS "
+                f"(ADD {_annotation_clause('Classification', classification)}))",
+                warnings,
+                f"Classification for {table_name}.{column_name} was not applied",
+            )
+        if bool(metadata.get("primary_key")):
+            primary_key_columns.append(column_name)
+
+    if primary_key_columns and not _primary_key_exists(cursor, table_name):
+        columns_sql = ", ".join(primary_key_columns)
+        constraint_name = _safe_constraint_name(f"PK_{table_name}")
+        _execute_metadata_statement(
+            cursor,
+            f"ALTER TABLE {qualified_table} ADD CONSTRAINT {constraint_name} PRIMARY KEY ({columns_sql})",
+            warnings,
+            f"Primary key for {table_name} was not applied",
+        )
+    return warnings
+
+
 def _column_type_label(row: tuple[Any, ...]) -> str:
     data_type, data_length, precision, scale = row[1], row[2], row[3], row[4]
     normalized = str(data_type or "").upper()
@@ -200,8 +315,15 @@ def _read_csv_rows(csv_path: Path, columns: list[ColumnMetadata]) -> list[dict[s
     return rows
 
 
-def _replace_data_source(cursor, table_name: str, row_count: int, columns: list[ColumnMetadata]) -> str:
+def _replace_data_source(
+    cursor,
+    table_name: str,
+    row_count: int,
+    columns: list[ColumnMetadata],
+    column_metadata: list[dict[str, Any]],
+) -> str:
     data_source_id = uuid.uuid4().hex
+    metadata_by_column = _metadata_by_column(column_metadata)
     cursor.execute(
         """
         INSERT INTO data_sources (
@@ -220,14 +342,15 @@ def _replace_data_source(cursor, table_name: str, row_count: int, columns: list[
         row_count=row_count,
     )
     for column in columns:
+        metadata = metadata_by_column.get(column.name, {})
         cursor.execute(
             """
             INSERT INTO source_columns (
                 source_column_id, data_source_id, column_name, data_type,
-                data_length, nullable_flag, ordinal_position
+                data_length, nullable_flag, ordinal_position, business_comment, classification
             ) VALUES (
                 :source_column_id, :data_source_id, :column_name, :data_type,
-                :data_length, :nullable_flag, :ordinal_position
+                :data_length, :nullable_flag, :ordinal_position, :business_comment, :classification
             )
             """,
             source_column_id=uuid.uuid4().hex,
@@ -237,13 +360,32 @@ def _replace_data_source(cursor, table_name: str, row_count: int, columns: list[
             data_length=column.data_length,
             nullable_flag=column.nullable,
             ordinal_position=column.ordinal_position,
+            business_comment=str(metadata.get("comment") or "").strip()[:1000] or None,
+            classification=str(metadata.get("classification") or "").strip()[:100] or None,
         )
     return data_source_id
 
 
-def _load_table(cursor, table: SourceTable, csv_dir: Path, *, batch_size: int) -> int:
+def _load_table(
+    cursor,
+    table: SourceTable,
+    csv_dir: Path,
+    *,
+    batch_size: int,
+    require_metadata: bool,
+    apply_metadata_ddl: bool,
+) -> tuple[int, list[str]]:
+    csv_path = csv_dir / f"{table.name}.csv"
+    metadata_path = csv_path.with_suffix(".json")
+    table_comment: str | None = None
+    column_metadata: list[dict[str, Any]] = []
+    if metadata_path.exists():
+        table_comment, column_metadata = read_metadata_sidecar(metadata_path)
+    elif require_metadata:
+        raise FileNotFoundError(f"Metadata JSON sidecar not found: {metadata_path}")
+
     columns = _table_columns(cursor, table.name)
-    rows = _read_csv_rows(csv_dir / f"{table.name}.csv", columns)
+    rows = _read_csv_rows(csv_path, columns)
     column_names = [column.name for column in columns]
     insert_sql = (
         f"INSERT INTO {DATA_SCHEMA}.{table.name} ("
@@ -257,8 +399,18 @@ def _load_table(cursor, table: SourceTable, csv_dir: Path, *, batch_size: int) -
             cursor.executemany(insert_sql, batch)
         except Exception as exc:
             raise RuntimeError(f"Insert failed for {DATA_SCHEMA}.{table.name}: {exc}") from exc
-    _replace_data_source(cursor, table.name, len(rows), columns)
-    return len(rows)
+    metadata_warnings = (
+        _apply_metadata(
+            cursor,
+            table.name,
+            table_comment=table_comment,
+            column_metadata=column_metadata,
+        )
+        if apply_metadata_ddl
+        else []
+    )
+    _replace_data_source(cursor, table.name, len(rows), columns, column_metadata)
+    return len(rows), metadata_warnings
 
 
 def load_source_seed(
@@ -267,6 +419,8 @@ def load_source_seed(
     csv_dir: Path,
     batch_size: int = 1000,
     refresh_profile: bool = True,
+    require_metadata: bool = True,
+    apply_metadata_ddl: bool = False,
 ) -> dict[str, Any]:
     tables = parse_source_tables(source_path.read_text(encoding="utf-8", errors="ignore"))
     if not tables:
@@ -291,6 +445,7 @@ def load_source_seed(
 
         loaded: list[dict[str, Any]] = []
         total_rows = 0
+        metadata_warnings: list[dict[str, Any]] = []
         for table in tables:
             load_job_id = uuid.uuid4().hex
             cursor.execute(
@@ -304,7 +459,14 @@ def load_source_seed(
             )
             conn.commit()
             try:
-                row_count = _load_table(cursor, table, csv_dir, batch_size=batch_size)
+                row_count, table_warnings = _load_table(
+                    cursor,
+                    table,
+                    csv_dir,
+                    batch_size=batch_size,
+                    require_metadata=require_metadata,
+                    apply_metadata_ddl=apply_metadata_ddl,
+                )
                 cursor.execute(
                     "UPDATE load_jobs SET status = 'completed', row_count = :row_count WHERE load_job_id = :id",
                     row_count=row_count,
@@ -312,33 +474,50 @@ def load_source_seed(
                 )
                 conn.commit()
             except Exception as exc:
-                conn.rollback()
-                cursor.execute(
-                    "UPDATE load_jobs SET status = 'failed', error_message = :message WHERE load_job_id = :id",
-                    message=str(exc)[:4000],
-                    id=load_job_id,
-                )
-                conn.commit()
-                raise
+                original_error = str(exc)
+                try:
+                    conn.rollback()
+                    cursor.execute(
+                        "UPDATE load_jobs SET status = 'failed', error_message = :message WHERE load_job_id = :id",
+                        message=original_error[:4000],
+                        id=load_job_id,
+                    )
+                    conn.commit()
+                except Exception as marker_exc:
+                    raise RuntimeError(
+                        f"Load failed for {DATA_SCHEMA}.{table.name}: {original_error}. "
+                        f"Failed to mark load job as failed: {marker_exc}"
+                    ) from exc
+                raise RuntimeError(f"Load failed for {DATA_SCHEMA}.{table.name}: {original_error}") from exc
             loaded.append({"table_name": table.name, "row_count": row_count})
             total_rows += row_count
+            if table_warnings:
+                metadata_warnings.append({"table_name": table.name, "warnings": table_warnings})
 
         if refresh_profile:
             cursor.callproc("SP_SEL_AI_PROFILE", [DEFAULT_PROFILE, 0])
             cursor.callproc("SP_SEL_AI_AGENT", [DEFAULT_PROFILE])
             conn.commit()
 
-        return {"tables_loaded": len(loaded), "rows_loaded": total_rows, "tables": loaded}
+        return {
+            "tables_loaded": len(loaded),
+            "rows_loaded": total_rows,
+            "tables": loaded,
+            "metadata_warnings": metadata_warnings,
+            "metadata_ddl_applied": apply_metadata_ddl,
+        }
     finally:
         cursor.close()
         conn.close()
 
 
 def main() -> int:
-    parser = argparse.ArgumentParser(description="Load generated APP_AGENT_DATA source seed CSVs into Oracle.")
+    parser = argparse.ArgumentParser(description="Load generated APP_AGENT_DATA source seed CSV/JSON files into Oracle.")
     parser.add_argument("--source", type=Path, default=ROOT / ".source" / "decoupling_tables_structures.sql")
-    parser.add_argument("--csv-dir", type=Path, default=ROOT / "apps" / "backend" / "data" / "source_seed" / "csv")
+    parser.add_argument("--csv-dir", type=Path, default=ROOT / ".data" / "csv")
     parser.add_argument("--batch-size", type=int, default=1000)
+    parser.add_argument("--allow-missing-metadata", action="store_true")
+    parser.add_argument("--apply-metadata-ddl", action="store_true")
     parser.add_argument("--skip-profile-refresh", action="store_true")
     args = parser.parse_args()
 
@@ -347,11 +526,16 @@ def main() -> int:
         csv_dir=args.csv_dir,
         batch_size=args.batch_size,
         refresh_profile=not args.skip_profile_refresh,
+        require_metadata=not args.allow_missing_metadata,
+        apply_metadata_ddl=args.apply_metadata_ddl,
     )
     print(f"TABLES_LOADED={result['tables_loaded']}")
     print(f"ROWS_LOADED={result['rows_loaded']}")
     for table in result["tables"]:
         print(f"{table['table_name']}={table['row_count']}")
+    if result["metadata_warnings"]:
+        print(f"METADATA_WARNINGS={len(result['metadata_warnings'])}")
+    print(f"METADATA_DDL_APPLIED={result['metadata_ddl_applied']}")
     return 0
 
 

@@ -1229,8 +1229,14 @@ body {
   color: #312d2a;
 }
 
-.app-shell-dark .app-light-surface tbody tr:hover {
-  background-color: #f3f4f6 !important;
+.app-shell-dark .app-light-surface tbody tr,
+.app-shell-dark .app-light-surface tbody tr > td {
+  transition: background-color 150ms ease;
+}
+
+.app-shell-dark .app-light-surface tbody tr:hover,
+.app-shell-dark .app-light-surface tbody tr:hover > td {
+  background-color: #f0fbff !important;
 }
 
 .app-shell-dark .chat-graph-panel {

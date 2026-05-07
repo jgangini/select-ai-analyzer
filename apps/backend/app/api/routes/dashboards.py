@@ -30,12 +30,18 @@ class DashboardItemRequest(BaseModel):
 class DashboardCreateRequest(BaseModel):
     name: str = Field(min_length=1, max_length=255)
     description: str | None = Field(default=None, max_length=1000)
+    visibility: str = Field(default="private", pattern="^(private|shared)$")
+    items: list[DashboardItemRequest] = Field(min_length=1)
+
+
+class DashboardItemsCreateRequest(BaseModel):
     items: list[DashboardItemRequest] = Field(min_length=1)
 
 
 class DashboardUpdateRequest(BaseModel):
     name: str | None = Field(default=None, min_length=1, max_length=255)
     description: str | None = Field(default=None, max_length=1000)
+    visibility: str | None = Field(default=None, pattern="^(private|shared)$")
 
 
 class DashboardItemUpdateRequest(BaseModel):
@@ -54,6 +60,7 @@ def _service() -> DashboardService:
 @router.get("")
 def list_dashboards(
     limit: int = Query(default=50, ge=1, le=100),
+    owner_only: bool = Query(default=False),
     current_user: dict = Depends(get_current_user),
 ) -> dict:
     try:
@@ -61,6 +68,7 @@ def list_dashboards(
             "items": _service().list_dashboards(
                 user_id=int(current_user.get("user_id") or 0),
                 limit=limit,
+                owner_only=owner_only,
             )
         }
     except Exception as exc:
@@ -76,6 +84,7 @@ def create_dashboard(
         return _service().create_dashboard(
             name=request.name,
             description=request.description,
+            visibility=request.visibility,
             items=[item.model_dump() for item in request.items],
             user_id=int(current_user.get("user_id") or 0),
         )
@@ -94,6 +103,7 @@ def update_dashboard(
             dashboard_id=dashboard_id,
             name=request.name,
             description=request.description,
+            visibility=request.visibility,
             user_id=int(current_user.get("user_id") or 0),
         )
     except ValueError as exc:
@@ -114,6 +124,25 @@ def delete_dashboard(
         )
     except ValueError as exc:
         raise HTTPException(status_code=404, detail=str(exc)) from exc
+    except Exception as exc:
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
+
+
+@router.post("/{dashboard_id}/items")
+def add_dashboard_items(
+    dashboard_id: str,
+    request: DashboardItemsCreateRequest,
+    current_user: dict = Depends(get_current_user),
+) -> dict:
+    try:
+        return _service().add_dashboard_items(
+            dashboard_id=dashboard_id,
+            items=[item.model_dump() for item in request.items],
+            user_id=int(current_user.get("user_id") or 0),
+        )
+    except ValueError as exc:
+        status_code = 404 if "not found" in str(exc).lower() else 400
+        raise HTTPException(status_code=status_code, detail=str(exc)) from exc
     except Exception as exc:
         raise HTTPException(status_code=400, detail=str(exc)) from exc
 

@@ -3,11 +3,13 @@ CREATE TABLE analytics_dashboards (
     dashboard_name      VARCHAR2(255) NOT NULL,
     dashboard_desc      VARCHAR2(1000),
     status              VARCHAR2(40) DEFAULT 'active' NOT NULL,
+    visibility          VARCHAR2(20) DEFAULT 'private' NOT NULL,
     created_by_user_id  NUMBER DEFAULT 0 NOT NULL,
     created_at          TIMESTAMP(6) DEFAULT SYSDATE NOT NULL,
     updated_at          TIMESTAMP(6) DEFAULT SYSDATE NOT NULL,
     CONSTRAINT pk_analytics_dashboards PRIMARY KEY (dashboard_id),
-    CONSTRAINT ck_analytics_dashboards_status CHECK (status IN ('active', 'archived'))
+    CONSTRAINT ck_analytics_dashboards_status CHECK (status IN ('active', 'archived')),
+    CONSTRAINT ck_analytics_dashboards_visibility CHECK (visibility IN ('private', 'shared'))
 );
 --
 CREATE INDEX idx_analytics_dashboards_user

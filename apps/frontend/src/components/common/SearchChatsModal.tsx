@@ -1,10 +1,12 @@
 import { useMemo, useState } from 'react';
-import { useQuery } from '@tanstack/react-query';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 
 import { useAuth } from '../../context/AuthContext';
 import { useAnalyticsChat } from '../../context/AnalyticsChatContext';
 import { queryKeys } from '../../lib/queryClient';
-import { analyticsApi, type AnalyticsConversationSummary } from '../../services/api';
+import { useToast } from '../../context/ToastContext';
+import { analyticsApi, type AnalyticsConversationDetail, type AnalyticsConversationSummary } from '../../services/api';
+import { ConfirmModal } from './ConfirmModal';
 import { GlassModal } from './GlassModal';
 import { LoadingState } from './LoadingState';
 
@@ -61,10 +63,41 @@ function sortConversations(items: AnalyticsConversationSummary[]): AnalyticsConv
   });
 }
 
+function getSafeFileName(value: string): string {
+  return String(value || 'chat')
+    .replace(/[^\w\- ]/g, '')
+    .trim()
+    .replace(/\s+/g, '_')
+    .slice(0, 80) || 'chat';
+}
+
+function buildConversationMarkdown(conversation: AnalyticsConversationDetail): string {
+  const lines = [
+    `# ${conversation.title || 'Analytics chat'}`,
+    '',
+    `Created: ${formatDateTime(conversation.created_at)}`,
+    `Updated: ${formatDateTime(conversation.updated_at)}`,
+    '',
+  ];
+
+  conversation.messages.forEach((message, index) => {
+    lines.push(`## ${index + 1}. Question`, '', message.question, '', '## Answer', '', message.result.answer || '');
+    if (message.result.sql) {
+      lines.push('', '```sql', message.result.sql, '```');
+    }
+    lines.push('');
+  });
+
+  return lines.join('\n');
+}
+
 export function SearchChatsModal() {
+  const queryClient = useQueryClient();
+  const { showToast } = useToast();
   const { user, isAuthenticated } = useAuth();
-  const { isSearchOpen, closeSearch, openConversation } = useAnalyticsChat();
+  const { isSearchOpen, closeSearch, openConversation, openNewConversation, activeConversationId } = useAnalyticsChat();
   const [search, setSearch] = useState('');
+  const [deleteTarget, setDeleteTarget] = useState<AnalyticsConversationSummary | null>(null);
   const normalizedSearch = normalizeForSearch(search);
 
   const conversationsQuery = useQuery({
@@ -87,82 +120,168 @@ export function SearchChatsModal() {
     });
   }, [conversationsQuery.data, normalizedSearch]);
 
+  const deleteConversationMutation = useMutation({
+    mutationFn: (conversationId: string) => analyticsApi.deleteConversation(conversationId),
+    onSuccess: (_response, conversationId) => {
+      queryClient.invalidateQueries({ queryKey: ['analytics'] });
+      queryClient.removeQueries({ queryKey: queryKeys.analytics.conversation(conversationId) });
+      setDeleteTarget(null);
+      if (activeConversationId === conversationId) {
+        openNewConversation();
+      }
+      showToast('Chat deleted.', 'success');
+    },
+    onError: (error) => showToast(error instanceof Error ? error.message : 'Failed to delete chat.', 'error'),
+  });
+
+  const handleDownload = async (conversation: AnalyticsConversationSummary) => {
+    try {
+      const response = await analyticsApi.getConversation(conversation.conversation_id, 5000);
+      const markdown = buildConversationMarkdown(response.data);
+      const url = window.URL.createObjectURL(new Blob([markdown], { type: 'text/markdown;charset=utf-8' }));
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = `${getSafeFileName(conversation.title || 'chat')}.md`;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      window.URL.revokeObjectURL(url);
+    } catch {
+      showToast('Failed to download chat.', 'error');
+    }
+  };
+
   return (
-    <GlassModal
-      open={isSearchOpen}
-      onClose={closeSearch}
-      containerClassName="items-start justify-center p-4"
-      panelClassName="w-full max-w-4xl mt-16 border-0"
-    >
-      <div className="px-5 py-4 flex items-center gap-3 bg-oracle-dark-gray">
-        <h2 className="text-lg font-semibold text-white">Search Chats</h2>
-        <div className="ml-auto" />
-        <button
-          type="button"
-          onClick={closeSearch}
-          className="p-1.5 rounded-lg hover:bg-white/10 transition-colors text-gray-200"
-          aria-label="Close search chats"
-        >
-          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-          </svg>
-        </button>
-      </div>
-
-      <div className="p-4 space-y-3" style={{ background: 'rgba(255,255,255,0.75)' }}>
-        <input
-          type="text"
-          className="input-oracle w-full"
-          placeholder="Search chats..."
-          value={search}
-          onChange={(event) => setSearch(event.target.value)}
-          autoFocus
-        />
-
-        <div className="max-h-[60vh] overflow-y-auto overflow-x-hidden rounded-xl border border-white/30 bg-white/70">
-          {conversationsQuery.isLoading ? (
-            <LoadingState
-              size="sm"
-              label="Loading chats..."
-              className="p-4"
-              textClassName="text-oracle-light-gray"
-            />
-          ) : conversationsQuery.isError ? (
-            <p className="p-4 text-sm text-red-700">Could not load chats.</p>
-          ) : filteredConversations.length === 0 ? (
-            <p className="p-4 text-sm text-oracle-light-gray">No chats found.</p>
-          ) : (
-            <ul>
-              {filteredConversations.map((conversation) => (
-                <li key={conversation.conversation_id} className="border-b border-gray-200/70 last:border-b-0">
-                  <div className="flex min-w-0 items-center gap-2 px-3 py-2.5 hover:bg-gray-50/70">
-                    <button
-                      type="button"
-                      className="min-w-0 flex-1 text-left"
-                      onClick={() => {
-                        openConversation(conversation.conversation_id, conversation.title);
-                        closeSearch();
-                      }}
-                    >
-                      <p className="truncate text-sm font-medium text-oracle-dark-gray">
-                        {highlightSearchMatch(conversation.title || 'Analytics chat', search)}
-                      </p>
-                      <p className="truncate text-xs text-oracle-medium-gray">
-                        {conversation.last_message_preview
-                          ? highlightSearchMatch(conversation.last_message_preview, search)
-                          : 'No messages yet'}
-                      </p>
-                      <p className="mt-1 text-[11px] text-oracle-light-gray">
-                        {conversation.turns} turn(s) - Updated {formatDateTime(conversation.updated_at)}
-                      </p>
-                    </button>
-                  </div>
-                </li>
-              ))}
-            </ul>
-          )}
+    <>
+      <GlassModal
+        open={isSearchOpen}
+        onClose={closeSearch}
+        containerClassName="items-start justify-center p-4"
+        panelClassName="w-full max-w-4xl mt-16 border-0"
+      >
+        <div className="px-5 py-4 flex items-center gap-3 bg-oracle-dark-gray">
+          <h2 className="text-lg font-semibold text-white">Search Chats</h2>
+          <div className="ml-auto" />
+          <button
+            type="button"
+            onClick={closeSearch}
+            className="p-1.5 rounded-lg hover:bg-white/10 transition-colors text-gray-200"
+            aria-label="Close search chats"
+          >
+            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+            </svg>
+          </button>
         </div>
-      </div>
-    </GlassModal>
+
+        <div className="p-4 space-y-3" style={{ background: 'rgba(255,255,255,0.75)' }}>
+          <input
+            type="text"
+            className="input-oracle w-full"
+            placeholder="Search chats..."
+            value={search}
+            onChange={(event) => setSearch(event.target.value)}
+            autoFocus
+          />
+
+          <div className="max-h-[60vh] overflow-y-auto overflow-x-hidden rounded-xl border border-white/30 bg-white/70">
+            {conversationsQuery.isLoading ? (
+              <LoadingState
+                size="sm"
+                label="Loading chats..."
+                className="p-4"
+                textClassName="text-oracle-light-gray"
+              />
+            ) : conversationsQuery.isError ? (
+              <p className="p-4 text-sm text-red-700">Could not load chats.</p>
+            ) : filteredConversations.length === 0 ? (
+              <p className="p-4 text-sm text-oracle-light-gray">No chats found.</p>
+            ) : (
+              <ul>
+                {filteredConversations.map((conversation) => (
+                  <li key={conversation.conversation_id} className="border-b border-gray-200/70 last:border-b-0">
+                    <div className="flex min-w-0 items-center gap-2 px-3 py-2.5 hover:bg-gray-50/70">
+                      <button
+                        type="button"
+                        className="min-w-0 flex-1 text-left"
+                        onClick={() => {
+                          openConversation(conversation.conversation_id, conversation.title);
+                          closeSearch();
+                        }}
+                      >
+                        <p className="truncate text-sm font-medium text-oracle-dark-gray">
+                          {highlightSearchMatch(conversation.title || 'Analytics chat', search)}
+                        </p>
+                        <p className="truncate text-xs text-oracle-medium-gray">
+                          {conversation.last_message_preview
+                            ? highlightSearchMatch(conversation.last_message_preview, search)
+                            : 'No messages yet'}
+                        </p>
+                        <p className="mt-1 text-[11px] text-oracle-light-gray">
+                          {conversation.turns} turn(s) - Updated {formatDateTime(conversation.updated_at)}
+                        </p>
+                      </button>
+                      <button
+                        type="button"
+                        className="rounded border border-gray-300 bg-white p-1.5 text-gray-600 transition-colors hover:bg-gray-50"
+                        title="Download chat"
+                        aria-label={`Download ${conversation.title || 'chat'}`}
+                        onClick={(event) => {
+                          event.stopPropagation();
+                          void handleDownload(conversation);
+                        }}
+                      >
+                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+                        </svg>
+                      </button>
+                      <button
+                        type="button"
+                        className="rounded border border-red-300 bg-white p-1.5 text-red-600 transition-colors hover:bg-red-50"
+                        title="Delete"
+                        aria-label={`Delete ${conversation.title || 'chat'}`}
+                        onClick={(event) => {
+                          event.stopPropagation();
+                          setDeleteTarget(conversation);
+                        }}
+                      >
+                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                        </svg>
+                      </button>
+                    </div>
+                  </li>
+                ))}
+              </ul>
+            )}
+          </div>
+        </div>
+      </GlassModal>
+
+      {deleteTarget && (
+        <ConfirmModal
+          icon={
+            <svg className="h-10 w-10 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+            </svg>
+          }
+          iconBg="bg-red-100"
+          iconRing="ring-red-50"
+          title="Delete chat"
+          message={
+            <span>
+              Delete <span className="font-medium text-oracle-dark-gray">{deleteTarget.title || 'Analytics chat'}</span>?
+            </span>
+          }
+          detail="The analytical conversation and its question runs will be removed."
+          confirmText="Delete"
+          confirmClass="bg-oracle-red text-white hover:bg-red-700"
+          onConfirm={() => deleteConversationMutation.mutate(deleteTarget.conversation_id)}
+          onCancel={() => setDeleteTarget(null)}
+          loading={deleteConversationMutation.isPending}
+          loadingText="Deleting..."
+        />
+      )}
+    </>
   );
 }

@@ -142,16 +142,6 @@ class Settings(BaseSettings):
     def user_data_root(self) -> Path:
         return self.data_dir / "users" / self.user_runtime_scope
 
-    def _runtime_config_int(self, key: str, default_value: int) -> int:
-        try:
-            from apps.backend.app.core.session import get_db_manager
-            from apps.backend.app.services.runtime_config_service import ConfigService
-
-            raw_value = ConfigService(get_db_manager()).get_value(key, str(default_value)).strip()
-            return int(raw_value)
-        except Exception:
-            return int(default_value)
-
     @property
     def oci_genai_compartment_id(self) -> str:
         return ""

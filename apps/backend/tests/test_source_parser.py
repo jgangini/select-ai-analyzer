@@ -3,9 +3,11 @@ from pathlib import Path
 from apps.backend.app.select_ai.source_parser import build_create_table_sql, parse_source_tables
 
 
+FIXTURE_PATH = Path(__file__).resolve().parent / "fixtures" / "decoupling_tables_structures.sql"
+
+
 def test_source_parser_skips_missing_objects_and_deduplicates() -> None:
-    source_path = Path(__file__).resolve().parents[3] / ".source" / "decoupling_tables_structures.sql"
-    tables = parse_source_tables(source_path.read_text(encoding="utf-8", errors="ignore"))
+    tables = parse_source_tables(FIXTURE_PATH.read_text(encoding="utf-8", errors="ignore"))
 
     names = [table.qualified_name for table in tables]
     assert "FLEXCUBE.TDTM_RATE_DETAIL" not in names
@@ -14,9 +16,8 @@ def test_source_parser_skips_missing_objects_and_deduplicates() -> None:
 
 
 def test_build_create_table_sql_targets_data_schema() -> None:
-    source_path = Path(__file__).resolve().parents[3] / ".source" / "decoupling_tables_structures.sql"
     table = next(
-        table for table in parse_source_tables(source_path.read_text(encoding="utf-8", errors="ignore"))
+        table for table in parse_source_tables(FIXTURE_PATH.read_text(encoding="utf-8", errors="ignore"))
         if table.name == "FLEX_ACTB_ACCBAL_HISTORY"
     )
 

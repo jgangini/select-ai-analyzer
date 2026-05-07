@@ -39,6 +39,7 @@ apps/frontend/logs/
 # Local scratch / reports
 .oci/
 .source/
+.data/
 .playwright-cli/
 .playwright-runner/
 build/

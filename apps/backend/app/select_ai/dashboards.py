@@ -43,12 +43,62 @@ def _create_if_missing(cursor, ddl: str) -> None:
             raise
 
 
+def _alter_if_missing(cursor, ddl: str) -> None:
+    try:
+        cursor.execute(ddl)
+    except Exception as exc:
+        message = str(exc)
+        if "ORA-01430" not in message and "ORA-02264" not in message:
+            raise
+
+
+def _normalize_visibility(value: str | None) -> str:
+    visibility = str(value or "private").strip().lower()
+    if visibility not in {"private", "shared"}:
+        raise ValueError("Dashboard visibility must be private or shared.")
+    return visibility
+
+
 class DashboardService:
     def __init__(self, db_manager: DatabaseManager) -> None:
         self.db_manager = db_manager
 
     def _connection(self):
         return self.db_manager.get_connection()
+
+    def _insert_dashboard_items(
+        self,
+        cursor,
+        *,
+        dashboard_id: str,
+        items: list[dict[str, Any]],
+        start_order: int,
+    ) -> None:
+        for offset, item in enumerate(items):
+            sql = validate_read_only_select(str(item.get("sql") or ""))
+            chart_spec = item.get("chart_spec") or {}
+            if not isinstance(chart_spec, dict):
+                raise ValueError("chart_spec must be a JSON object.")
+            cursor.execute(
+                """
+                INSERT INTO analytics_dashboard_items (
+                    dashboard_item_id, dashboard_id, item_order, question_run_id,
+                    item_title, question_text, generated_sql, chart_spec_json, layout_json
+                ) VALUES (
+                    :dashboard_item_id, :dashboard_id, :item_order, :question_run_id,
+                    :item_title, :question_text, :generated_sql, :chart_spec_json, :layout_json
+                )
+                """,
+                dashboard_item_id=uuid.uuid4().hex,
+                dashboard_id=dashboard_id,
+                item_order=start_order + offset,
+                question_run_id=str(item.get("run_id") or "")[:32] or None,
+                item_title=str(item.get("title") or item.get("question") or "Visualization")[:500],
+                question_text=str(item.get("question") or item.get("title") or ""),
+                generated_sql=sql,
+                chart_spec_json=json.dumps(chart_spec, ensure_ascii=False),
+                layout_json=json.dumps(item.get("layout") or {}, ensure_ascii=False),
+            )
 
     def ensure_tables(self) -> None:
         conn = self._connection()
@@ -62,12 +112,29 @@ class DashboardService:
                     dashboard_name      VARCHAR2(255) NOT NULL,
                     dashboard_desc      VARCHAR2(1000),
                     status              VARCHAR2(40) DEFAULT 'active' NOT NULL,
+                    visibility          VARCHAR2(20) DEFAULT 'private' NOT NULL,
                     created_by_user_id  NUMBER DEFAULT 0 NOT NULL,
                     created_at          TIMESTAMP(6) DEFAULT SYSDATE NOT NULL,
                     updated_at          TIMESTAMP(6) DEFAULT SYSDATE NOT NULL,
                     CONSTRAINT pk_analytics_dashboards PRIMARY KEY (dashboard_id),
-                    CONSTRAINT ck_analytics_dashboards_status CHECK (status IN ('active', 'archived'))
+                    CONSTRAINT ck_analytics_dashboards_status CHECK (status IN ('active', 'archived')),
+                    CONSTRAINT ck_analytics_dashboards_visibility CHECK (visibility IN ('private', 'shared'))
                 )
+                """,
+            )
+            _alter_if_missing(
+                cursor,
+                """
+                ALTER TABLE analytics_dashboards
+                    ADD (visibility VARCHAR2(20) DEFAULT 'private' NOT NULL)
+                """,
+            )
+            _alter_if_missing(
+                cursor,
+                """
+                ALTER TABLE analytics_dashboards
+                    ADD CONSTRAINT ck_analytics_dashboards_visibility
+                    CHECK (visibility IN ('private', 'shared'))
                 """,
             )
             _create_if_missing(
@@ -116,8 +183,9 @@ class DashboardService:
         self,
         *,
         name: str,
-        description: str | None = None,
         items: list[dict[str, Any]],
+        description: str | None = None,
+        visibility: str | None = "private",
         user_id: int = 0,
     ) -> dict[str, Any]:
         self.ensure_tables()
@@ -129,6 +197,7 @@ class DashboardService:
         dashboard_name = str(name or "").strip()[:255]
         if not dashboard_name:
             dashboard_name = f"Analytics Dashboard {datetime.now().strftime('%Y-%m-%d %H:%M')}"
+        normalized_visibility = _normalize_visibility(visibility)
 
         conn = self._connection()
         cursor = conn.cursor()
@@ -136,42 +205,24 @@ class DashboardService:
             cursor.execute(
                 """
                 INSERT INTO analytics_dashboards (
-                    dashboard_id, dashboard_name, dashboard_desc, created_by_user_id
+                    dashboard_id, dashboard_name, dashboard_desc, visibility, created_by_user_id
                 ) VALUES (
-                    :dashboard_id, :dashboard_name, :dashboard_desc, :user_id
+                    :dashboard_id, :dashboard_name, :dashboard_desc, :visibility, :user_id
                 )
                 """,
                 dashboard_id=dashboard_id,
                 dashboard_name=dashboard_name,
                 dashboard_desc=(description or None),
+                visibility=normalized_visibility,
                 user_id=int(user_id or 0),
             )
 
-            for index, item in enumerate(normalized_items):
-                sql = validate_read_only_select(str(item.get("sql") or ""))
-                chart_spec = item.get("chart_spec") or {}
-                if not isinstance(chart_spec, dict):
-                    raise ValueError("chart_spec must be a JSON object.")
-                cursor.execute(
-                    """
-                    INSERT INTO analytics_dashboard_items (
-                        dashboard_item_id, dashboard_id, item_order, question_run_id,
-                        item_title, question_text, generated_sql, chart_spec_json, layout_json
-                    ) VALUES (
-                        :dashboard_item_id, :dashboard_id, :item_order, :question_run_id,
-                        :item_title, :question_text, :generated_sql, :chart_spec_json, :layout_json
-                    )
-                    """,
-                    dashboard_item_id=uuid.uuid4().hex,
-                    dashboard_id=dashboard_id,
-                    item_order=index + 1,
-                    question_run_id=str(item.get("run_id") or "")[:32] or None,
-                    item_title=str(item.get("title") or item.get("question") or "Visualization")[:500],
-                    question_text=str(item.get("question") or item.get("title") or ""),
-                    generated_sql=sql,
-                    chart_spec_json=json.dumps(chart_spec, ensure_ascii=False),
-                    layout_json=json.dumps(item.get("layout") or {}, ensure_ascii=False),
-                )
+            self._insert_dashboard_items(
+                cursor,
+                dashboard_id=dashboard_id,
+                items=normalized_items,
+                start_order=1,
+            )
             conn.commit()
         except Exception:
             conn.rollback()
@@ -182,9 +233,76 @@ class DashboardService:
 
         return self.get_dashboard(dashboard_id=dashboard_id, user_id=user_id)
 
-    def list_dashboards(self, *, user_id: int = 0, limit: int = 50) -> list[dict[str, Any]]:
+    def add_dashboard_items(
+        self,
+        *,
+        dashboard_id: str,
+        items: list[dict[str, Any]],
+        user_id: int = 0,
+    ) -> dict[str, Any]:
+        self.ensure_tables()
+        normalized_dashboard_id = str(dashboard_id or "").strip()
+        normalized_items = list(items or [])
+        if not normalized_dashboard_id:
+            raise ValueError("dashboard_id is required.")
+        if not normalized_items:
+            raise ValueError("At least one visualization is required.")
+
+        conn = self._connection()
+        cursor = conn.cursor()
+        try:
+            cursor.execute(
+                """
+                SELECT dashboard_id
+                  FROM analytics_dashboards
+                 WHERE dashboard_id = :dashboard_id
+                   AND status = 'active'
+                   AND (:user_id = 0 OR created_by_user_id = :user_id)
+                """,
+                dashboard_id=normalized_dashboard_id,
+                user_id=int(user_id or 0),
+            )
+            if not cursor.fetchone():
+                raise ValueError("Dashboard was not found.")
+
+            cursor.execute(
+                """
+                SELECT NVL(MAX(item_order), 0)
+                  FROM analytics_dashboard_items
+                 WHERE dashboard_id = :dashboard_id
+                """,
+                dashboard_id=normalized_dashboard_id,
+            )
+            next_order = int((cursor.fetchone() or [0])[0] or 0) + 1
+
+            self._insert_dashboard_items(
+                cursor,
+                dashboard_id=normalized_dashboard_id,
+                items=normalized_items,
+                start_order=next_order,
+            )
+            cursor.execute(
+                """
+                UPDATE analytics_dashboards
+                   SET updated_at = SYSDATE
+                 WHERE dashboard_id = :dashboard_id
+                """,
+                dashboard_id=normalized_dashboard_id,
+            )
+            conn.commit()
+        except Exception:
+            conn.rollback()
+            raise
+        finally:
+            cursor.close()
+            conn.close()
+
+        return self.get_dashboard(dashboard_id=normalized_dashboard_id, user_id=user_id)
+
+    def list_dashboards(self, *, user_id: int = 0, limit: int = 50, owner_only: bool = False) -> list[dict[str, Any]]:
         self.ensure_tables()
         safe_limit = max(1, min(int(limit or 50), 100))
+        owner_only_value = 1 if owner_only else 0
         conn = self._connection()
         cursor = conn.cursor()
         try:
@@ -197,6 +315,7 @@ class DashboardService:
                         d.dashboard_name,
                         d.dashboard_desc,
                         d.status,
+                        d.visibility,
                         d.created_by_user_id,
                         d.created_at,
                         d.updated_at,
@@ -207,12 +326,17 @@ class DashboardService:
                         ) AS item_count
                     FROM analytics_dashboards d
                     WHERE d.status = 'active'
-                      AND (:user_id = 0 OR d.created_by_user_id IN (:user_id, 0))
+                      AND (
+                            :user_id = 0
+                         OR d.created_by_user_id = :user_id
+                         OR (:owner_only = 0 AND d.visibility = 'shared')
+                      )
                     ORDER BY d.updated_at DESC, d.created_at DESC
                 )
                 WHERE ROWNUM <= :limit_value
                 """,
                 user_id=int(user_id or 0),
+                owner_only=owner_only_value,
                 limit_value=safe_limit,
             )
             columns = [desc[0].lower() for desc in cursor.description or []]
@@ -241,12 +365,16 @@ class DashboardService:
         try:
             cursor.execute(
                 """
-                SELECT dashboard_id, dashboard_name, dashboard_desc, status,
+                SELECT dashboard_id, dashboard_name, dashboard_desc, status, visibility,
                        created_by_user_id, created_at, updated_at
                 FROM analytics_dashboards
                 WHERE dashboard_id = :dashboard_id
                   AND status = 'active'
-                  AND (:user_id = 0 OR created_by_user_id IN (:user_id, 0))
+                  AND (
+                        :user_id = 0
+                     OR created_by_user_id = :user_id
+                     OR visibility = 'shared'
+                  )
                 """,
                 dashboard_id=normalized_dashboard_id,
                 user_id=int(user_id or 0),
@@ -306,9 +434,10 @@ class DashboardService:
             "dashboard_name": str(dashboard[1] or "Analytics dashboard"),
             "dashboard_desc": str(dashboard[2] or ""),
             "status": str(dashboard[3] or "active"),
-            "created_by_user_id": int(dashboard[4] or 0),
-            "created_at": _json_safe(dashboard[5]),
-            "updated_at": _json_safe(dashboard[6]),
+            "visibility": _normalize_visibility(str(dashboard[4] or "private")),
+            "created_by_user_id": int(dashboard[5] or 0),
+            "created_at": _json_safe(dashboard[6]),
+            "updated_at": _json_safe(dashboard[7]),
             "item_count": len(items),
             "items": items,
         }
@@ -367,7 +496,7 @@ class DashboardService:
                           FROM analytics_dashboards d
                          WHERE d.dashboard_id = i.dashboard_id
                            AND d.status = 'active'
-                           AND (:user_id = 0 OR d.created_by_user_id IN (:user_id, 0))
+                            AND (:user_id = 0 OR d.created_by_user_id = :user_id)
                    )
                 """,
                 params,
@@ -399,6 +528,7 @@ class DashboardService:
         user_id: int = 0,
         name: str | None = None,
         description: str | None = None,
+        visibility: str | None = None,
     ) -> dict[str, Any]:
         self.ensure_tables()
         normalized_dashboard_id = str(dashboard_id or "").strip()
@@ -422,6 +552,10 @@ class DashboardService:
             updates.append("dashboard_desc = :dashboard_desc")
             params["dashboard_desc"] = str(description or "").strip()[:1000] or None
 
+        if visibility is not None:
+            updates.append("visibility = :visibility")
+            params["visibility"] = _normalize_visibility(visibility)
+
         if not updates:
             return self.get_dashboard(dashboard_id=normalized_dashboard_id, user_id=user_id)
 
@@ -435,7 +569,7 @@ class DashboardService:
                        updated_at = SYSDATE
                  WHERE dashboard_id = :dashboard_id
                    AND status = 'active'
-                   AND (:user_id = 0 OR created_by_user_id IN (:user_id, 0))
+                    AND (:user_id = 0 OR created_by_user_id = :user_id)
                 """,
                 params,
             )
@@ -472,7 +606,7 @@ class DashboardService:
                        updated_at = SYSDATE
                  WHERE dashboard_id = :dashboard_id
                    AND status = 'active'
-                   AND (:user_id = 0 OR created_by_user_id IN (:user_id, 0))
+                    AND (:user_id = 0 OR created_by_user_id = :user_id)
                 """,
                 dashboard_id=normalized_dashboard_id,
                 user_id=int(user_id or 0),
@@ -517,7 +651,7 @@ class DashboardService:
                           FROM analytics_dashboards d
                          WHERE d.dashboard_id = i.dashboard_id
                            AND d.status = 'active'
-                           AND (:user_id = 0 OR d.created_by_user_id IN (:user_id, 0))
+                            AND (:user_id = 0 OR d.created_by_user_id = :user_id)
                    )
                 """,
                 dashboard_item_id=normalized_item_id,
@@ -595,7 +729,7 @@ class DashboardService:
                     ON d.dashboard_id = i.dashboard_id
                  WHERE i.dashboard_id = :dashboard_id
                    AND d.status = 'active'
-                   AND (:user_id = 0 OR d.created_by_user_id IN (:user_id, 0))
+                    AND (:user_id = 0 OR d.created_by_user_id = :user_id)
                 """,
                 dashboard_id=normalized_dashboard_id,
                 user_id=int(user_id or 0),
