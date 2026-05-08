@@ -7,7 +7,6 @@ from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 
 # HTTP Bearer security scheme
 security = HTTPBearer()
-optional_security = HTTPBearer(auto_error=False)
 
 # Settings global (will be injected from main.py)
 _settings = None
@@ -91,24 +90,5 @@ async def get_current_user(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Could not validate credentials"
         )
-    return {"username": username, **payload}
-
-
-async def get_optional_current_user(
-    credentials: HTTPAuthorizationCredentials | None = Depends(optional_security),
-):
-    """Optional auth dependency used by endpoints that support anonymous mode in tests."""
-    if credentials is None:
-        return None
-    settings = get_settings()
-    if not settings:
-        return None
-    try:
-        payload = decode_access_token(credentials.credentials, settings)
-    except HTTPException:
-        return None
-    username: str | None = payload.get("sub")
-    if not username:
-        return None
     return {"username": username, **payload}
 

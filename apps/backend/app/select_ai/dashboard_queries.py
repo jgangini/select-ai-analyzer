@@ -9,7 +9,7 @@ from apps.backend.app.select_ai.dashboard_query_store import (
     _select_dashboard_items,
     _select_dashboards,
 )
-from apps.backend.app.select_ai.dashboard_visibility import _normalize_visibility
+from apps.backend.app.select_ai.dashboard_schema import _normalize_visibility
 from apps.backend.app.select_ai.sql_validation import validate_read_only_select
 from apps.backend.app.select_ai.value_serialization import _json_safe
 

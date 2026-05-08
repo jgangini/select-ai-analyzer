@@ -1,3 +1,40 @@
+export type AnalyticsChatResult = {
+  run_id: string;
+  conversation_id: string;
+  answer: string;
+  sql: string;
+  columns: string[];
+  rows: Array<Record<string, unknown>>;
+  row_count: number;
+  chart_spec: {
+    type: 'bar' | 'line' | 'area' | 'pie' | 'table' | 'metric';
+    title?: string;
+    x?: string;
+    y?: string;
+    series?: string;
+  };
+  agent_trace: Array<{
+    stage: string;
+    status: string;
+    rows?: number;
+    profile_name?: string;
+    objects?: Array<{ owner?: string; name?: string; columns?: string[] }>;
+  }>;
+};
+
+type AnalyticsConversationForMessages = {
+  messages: Array<{
+    run_id: string;
+    question: string;
+    created_at?: string;
+    result: AnalyticsChatResult;
+  }>;
+};
+
+export type AnalyticsChatMessage =
+  | { id: string; role: 'user'; content: string; timestamp: Date }
+  | { id: string; role: 'assistant'; content: string; timestamp: Date; result: AnalyticsChatResult; question: string };
+
 export function getAnalyticsErrorMessage(error: unknown): string {
   const maybeError =
     error && typeof error === 'object'
@@ -35,4 +72,45 @@ export function buildDashboardDraftItem<TChartSpec extends object>(
     sql: result.sql,
     chart_spec: result.chart_spec,
   };
+}
+
+export function buildConversationMessages(conversation: AnalyticsConversationForMessages): AnalyticsChatMessage[] {
+  return conversation.messages.flatMap((message) => {
+    const timestamp = message.created_at ? new Date(message.created_at) : new Date();
+    return [
+      {
+        id: `${message.run_id}-user`,
+        role: 'user' as const,
+        content: message.question,
+        timestamp,
+      },
+      {
+        id: `${message.run_id}-assistant`,
+        role: 'assistant' as const,
+        content: message.result.answer,
+        timestamp,
+        result: message.result,
+        question: message.question,
+      },
+    ];
+  });
+}
+
+function findLatestMessage<Role extends AnalyticsChatMessage['role']>(
+  messages: AnalyticsChatMessage[],
+  role: Role
+): Extract<AnalyticsChatMessage, { role: Role }> | undefined {
+  for (let index = messages.length - 1; index >= 0; index -= 1) {
+    const message = messages[index];
+    if (message.role === role) return message as Extract<AnalyticsChatMessage, { role: Role }>;
+  }
+  return undefined;
+}
+
+export function findLatestAssistantMessage(messages: AnalyticsChatMessage[]) {
+  return findLatestMessage(messages, 'assistant');
+}
+
+export function findLatestUserQuestion(messages: AnalyticsChatMessage[]): string {
+  return findLatestMessage(messages, 'user')?.content || '';
 }

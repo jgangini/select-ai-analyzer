@@ -1,6 +1,6 @@
 import api from './httpClient';
 
-export type ChartSpec = {
+type ChartSpec = {
   type: 'bar' | 'line' | 'area' | 'pie' | 'table' | 'metric';
   title?: string;
   x?: string;
@@ -8,7 +8,7 @@ export type ChartSpec = {
   series?: string;
 };
 
-export type DashboardVisualizationPayload = {
+type DashboardVisualizationPayload = {
   run_id?: string;
   title: string;
   question: string;
@@ -19,7 +19,7 @@ export type DashboardVisualizationPayload = {
 
 export type DashboardVisibility = 'private' | 'shared';
 
-export type DashboardSummary = {
+type DashboardSummary = {
   dashboard_id: string;
   dashboard_name: string;
   dashboard_desc: string;
@@ -50,24 +50,24 @@ export type DashboardDetail = DashboardSummary & {
   items: DashboardItem[];
 };
 
-export type CreateDashboardPayload = {
+type CreateDashboardPayload = {
   name: string;
   description?: string;
   visibility?: DashboardVisibility;
   items: DashboardVisualizationPayload[];
 };
 
-export type AddDashboardItemsPayload = {
+type AddDashboardItemsPayload = {
   items: DashboardVisualizationPayload[];
 };
 
-export type UpdateDashboardPayload = {
+type UpdateDashboardPayload = {
   name?: string;
   description?: string;
   visibility?: DashboardVisibility;
 };
 
-export type UpdateDashboardItemPayload = {
+type UpdateDashboardItemPayload = {
   title?: string;
   layout?: Record<string, unknown>;
 };

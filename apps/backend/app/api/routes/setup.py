@@ -15,8 +15,8 @@ from apps.backend.app.api.setup_models import (
     SetupRequest,
     WalletDSNRequest,
 )
+from apps.backend.app.api.upload_validation import extract_zip_safely, safe_upload_name
 from apps.backend.app.core.tracing import trace
-from apps.backend.app.services.bootstrap_service import SetupService
 
 logger = logging.getLogger(__name__)
 router = APIRouter(prefix="/setup", tags=["setup"])
@@ -27,6 +27,8 @@ BACKEND_ROOT = Path(__file__).resolve().parents[3]
 
 
 def get_setup_service():
+    from apps.backend.app.services.bootstrap_service import SetupService
+
     return SetupService(db_manager)
 
 
@@ -55,13 +57,6 @@ def _run_setup_action(action, message: str) -> dict:
     return {"success": True, "message": message}
 
 
-def _safe_upload_name(file_name: str | None, expected_suffix: str, error_message: str) -> str:
-    safe_name = Path(file_name or "").name
-    if Path(safe_name).suffix.lower() != expected_suffix.lower():
-        raise HTTPException(400, error_message)
-    return safe_name
-
-
 @router.get("/check")
 @trace
 async def check_setup_status():
@@ -79,7 +74,7 @@ async def check_setup_status():
 @trace
 async def upload_wallet(file: UploadFile = File(...)):
     logger.debug("Upload wallet started: %s", file.filename)
-    _safe_upload_name(file.filename, ".zip", "File must be a ZIP archive")
+    safe_upload_name(file.filename, ".zip", "File must be a ZIP archive")
     try:
         import time
 
@@ -88,8 +83,7 @@ async def upload_wallet(file: UploadFile = File(...)):
         zip_path = BACKEND_ROOT / "__uploaded_wallet__.zip"
         with open(zip_path, "wb") as buffer:
             shutil.copyfileobj(file.file, buffer)
-        with zipfile.ZipFile(zip_path, "r") as zip_ref:
-            zip_ref.extractall(wallet_dir)
+        extract_zip_safely(zip_path, wallet_dir)
         for attempt in range(3):
             try:
                 time.sleep(0.1)
@@ -232,7 +226,7 @@ async def set_admin_password(request: AdminPasswordRequest):
 @router.post("/upload-key")
 @trace
 async def upload_key_file(file: UploadFile = File(...)):
-    file_name = _safe_upload_name(file.filename, ".pem", "File must be .pem")
+    file_name = safe_upload_name(file.filename, ".pem", "File must be .pem")
     try:
         keys_dir = BACKEND_ROOT / "keys"
         keys_dir.mkdir(parents=True, exist_ok=True)

@@ -1,32 +1,14 @@
 from __future__ import annotations
 
 from scripts.source_seed_synthetic_example_values import (
-    DATA_YEAR,
-    DOC_EXAMPLE_ACCOUNT,
-    DOC_EXAMPLE_MARCH,
-    EXAMPLE_ROW_HEADROOM,
-    MIN_ROWS_PER_TABLE,
-    START_DATE,
     TEST_ACCOUNT,
     TEST_AUDIT_ACCOUNT,
     TEST_AUDIT_TRN,
     TEST_AUDIT_USER,
     TEST_CUSTOMER,
-    TEST_FRAUD_ACCOUNT,
     TEST_INACTIVE_CUSTOMER,
-    TEST_TODAY,
-    YEAR_DAYS,
     _set_if_present,
 )
-from scripts.source_seed_synthetic_operational_examples import (
-    _apply_atm_examples,
-    _apply_clearing_examples,
-    _apply_interest_examples,
-    _apply_operating_date_examples,
-    _apply_teller_examples,
-)
-from scripts.source_seed_synthetic_term_deposit_examples import _apply_term_deposit_examples
-from scripts.source_seed_synthetic_transaction_examples import _apply_transaction_examples
 
 
 def _apply_balance_history_example(table_name: str, row: dict[str, object], row_index: int) -> None:
@@ -144,17 +126,10 @@ def _apply_daily_log_examples(table_name: str, row: dict[str, object], row_index
         _apply_daily_log_row(row, reference=f"TRN_AUDIT_EVT_{row_index}", event=event)
 
 
-def apply_doc_example_overrides(table_name: str, row: dict[str, object], row_index: int) -> dict[str, object]:
+def apply_core_doc_example_overrides(table_name: str, row: dict[str, object], row_index: int) -> dict[str, object]:
     upper_table = table_name.upper()
-    _apply_transaction_examples(upper_table, row, row_index)
     _apply_balance_history_example(upper_table, row, row_index)
     _apply_customer_examples(upper_table, row, row_index)
     _apply_customer_account_examples(upper_table, row, row_index)
     _apply_daily_log_examples(upper_table, row, row_index)
-    _apply_teller_examples(upper_table, row, row_index)
-    _apply_atm_examples(upper_table, row, row_index)
-    _apply_clearing_examples(upper_table, row, row_index)
-    _apply_interest_examples(upper_table, row, row_index)
-    _apply_term_deposit_examples(upper_table, row, row_index)
-    _apply_operating_date_examples(upper_table, row, row_index)
     return row

@@ -18,12 +18,11 @@ from apps.backend.app.core.tracing import TracingMiddleware
 from apps.backend.app.api.routes import (
     analytics,
     auth,
-    config,
     data_sources,
     dashboards,
-    health,
     settings as settings_route,
     setup,
+    status,
     users,
 )
 
@@ -88,8 +87,7 @@ users.db_manager = db_manager
 app.include_router(setup.router, prefix="/api")
 app.include_router(auth.router, prefix="/api")
 app.include_router(users.router, prefix="/api")
-app.include_router(health.router, prefix="/api")
-app.include_router(config.router, prefix="/api")
+app.include_router(status.router, prefix="/api")
 app.include_router(settings_route.router, prefix="/api")
 app.include_router(data_sources.router, prefix="/api")
 app.include_router(dashboards.router, prefix="/api")

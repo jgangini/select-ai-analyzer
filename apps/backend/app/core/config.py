@@ -28,9 +28,6 @@ class Settings(BaseSettings):
 
     # Runtime general
     APP_NAME: str = "Select AI Analytics"
-    API_PREFIX: str = "/api"
-    LOG_LEVEL: str = "INFO"
-    TRACE: bool = False
     # OCI / GenAI / Select AI
     OCI_CONFIG_PATH: str = "keys/config"
 
@@ -76,10 +73,6 @@ class Settings(BaseSettings):
         return self.APP_NAME
 
     @property
-    def api_prefix(self) -> str:
-        return self.API_PREFIX
-
-    @property
     def database_backend(self) -> str:
         return "oracle"
 
@@ -98,10 +91,6 @@ class Settings(BaseSettings):
         return BACKEND_ROOT / runtime_path
 
     @property
-    def root_dir(self) -> Path:
-        return BACKEND_ROOT
-
-    @property
     def keys_dir(self) -> Path:
         return BACKEND_ROOT / "keys"
 
@@ -112,14 +101,6 @@ class Settings(BaseSettings):
     @property
     def data_dir(self) -> Path:
         return BACKEND_ROOT / "data"
-
-    @property
-    def trace_log_path(self) -> Path:
-        return self.logs_dir / "runtime_trace.jsonl"
-
-    @property
-    def oci_profile(self) -> str:
-        return "DEFAULT"
 
     @property
     def oci_config_file(self) -> Path:
@@ -143,28 +124,8 @@ class Settings(BaseSettings):
         return self.data_dir / "users" / self.user_runtime_scope
 
     @property
-    def oci_genai_compartment_id(self) -> str:
-        return ""
-
-    @property
-    def oci_genai_endpoint(self) -> str:
-        return ""
-
-    @property
     def oci_genai_model(self) -> str:
         return "google.gemini-2.5-flash"
-
-    @property
-    def oci_genai_is_configured(self) -> bool:
-        return bool(self.oci_config_file.exists())
-
-    @property
-    def app_agent_tns_alias(self) -> str:
-        return self.ADB_DSN
-
-    @property
-    def app_agent_wallet_password(self) -> str:
-        return self.ADB_WALLET_PASSWORD
 
     def ensure_runtime_directories(self) -> None:
         for path in (

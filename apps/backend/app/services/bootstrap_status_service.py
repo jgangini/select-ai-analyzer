@@ -13,6 +13,24 @@ logger = logging.getLogger(__name__)
 
 
 class BootstrapStatusMixin:
+    def _get_direct_connection(
+        self,
+        *,
+        wallet_path: str | None = None,
+        wallet_password: str | None = None,
+        user: str | None = None,
+        password: str | None = None,
+        dsn: str | None = None,
+    ):
+        return open_runtime_database_connection(
+            self.db_manager,
+            wallet_path=wallet_path,
+            wallet_password=wallet_password,
+            user=user,
+            password=password,
+            dsn=dsn,
+        )
+
     @trace
     def check_setup_status(self) -> bool:
         try:
@@ -57,21 +75,3 @@ class SetupStatusService(BootstrapStatusMixin):
 
     def __init__(self, db_manager: DatabaseManager):
         self.db_manager = db_manager
-
-    def _get_direct_connection(
-        self,
-        *,
-        wallet_path: str | None = None,
-        wallet_password: str | None = None,
-        user: str | None = None,
-        password: str | None = None,
-        dsn: str | None = None,
-    ):
-        return open_runtime_database_connection(
-            self.db_manager,
-            wallet_path=wallet_path,
-            wallet_password=wallet_password,
-            user=user,
-            password=password,
-            dsn=dsn,
-        )

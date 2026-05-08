@@ -7,7 +7,7 @@ on:
   workflow_dispatch:
 
 env:
-  IMAGE_NAME: ai-document-analyzer
+  IMAGE_NAME: select-ai-analyzer
 
 jobs:
   publish:

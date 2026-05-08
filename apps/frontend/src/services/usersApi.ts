@@ -13,12 +13,12 @@ export type UserAccount = {
   user_created?: string | null;
 };
 
-export type UserGroup = {
+type UserGroup = {
   user_group_id: number;
   user_group_name: string;
 };
 
-export type CreateUserPayload = {
+type CreateUserPayload = {
   username: string;
   password: string;
   name: string;
@@ -26,17 +26,17 @@ export type CreateUserPayload = {
   group_id: number;
 };
 
-export type UpdateProfilePayload = {
+type UpdateProfilePayload = {
   name: string;
   last_name: string;
 };
 
-export type ChangePasswordPayload = {
+type ChangePasswordPayload = {
   current_password: string;
   new_password: string;
 };
 
-export type LoginResponse = {
+type LoginResponse = {
   access_token: string;
   user: UserAccount;
 };

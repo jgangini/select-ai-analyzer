@@ -1,2 +1,1 @@
-"""Top-level monorepo Python package."""
-
+"""Top-level package marker for Docker runtime imports."""

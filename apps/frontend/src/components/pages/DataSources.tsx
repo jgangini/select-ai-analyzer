@@ -113,11 +113,13 @@ function DataSourcesOverview({
             value={searchTerm}
             onChange={(event) => onSearchTermChange(event.target.value)}
             placeholder="Search by schema or table..."
+            aria-label="Search data sources"
             className="input-oracle"
           />
           <select
             value={statusFilter}
             onChange={(event) => onStatusFilterChange(event.target.value)}
+            aria-label="Filter data sources by status"
             className="input-oracle"
           >
             <option value="">All statuses</option>

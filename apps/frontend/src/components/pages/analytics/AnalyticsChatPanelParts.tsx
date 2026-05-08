@@ -1,14 +1,7 @@
 import { type FormEvent, type KeyboardEvent, type ReactNode, type RefObject, useEffect, useRef } from 'react';
 
-import { LoadingState } from '../shared/LoadingState';
-
-function TrashIcon({ className = 'h-4 w-4' }: { className?: string }) {
-  return (
-    <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24">
-      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-    </svg>
-  );
-}
+import { LoadingState } from '../../common/LoadingState';
+import { GraphIcon, MoreVerticalIcon, RenameIcon, TrashIcon } from './AnalyticsIcons';
 
 interface AnalyticsChatHeaderProps {
   title: string;
@@ -115,9 +108,7 @@ export function AnalyticsChatHeader({
             title="Chat actions"
             onClick={onToggleHeaderMenu}
           >
-            <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 5.25a.75.75 0 110 1.5.75.75 0 010-1.5zm0 5.25a.75.75 0 110 1.5.75.75 0 010-1.5zm0 5.25a.75.75 0 110 1.5.75.75 0 010-1.5z" />
-            </svg>
+            <MoreVerticalIcon />
           </button>
           {isHeaderMenuOpen && (
             <div
@@ -132,9 +123,7 @@ export function AnalyticsChatHeader({
                 onClick={onStartRename}
                 disabled={!currentConversationId || isRenaming || isDeleting || isInlineRenaming}
               >
-                <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
-                </svg>
+                <RenameIcon />
                 {isRenaming ? 'Renaming...' : 'Rename chat'}
               </button>
               <button
@@ -144,9 +133,7 @@ export function AnalyticsChatHeader({
                 disabled={!hasLatestResult}
                 onClick={onToggleGraphPanel}
               >
-                <svg className="h-4 w-4" fill="currentColor" viewBox="0 0 256 256">
-                  <path d="M200,152a31.84,31.84,0,0,0-19.53,6.68l-23.11-18A31.65,31.65,0,0,0,160,128c0-.74,0-1.48-.08-2.21l13.23-4.41A32,32,0,1,0,168,104c0,.74,0,1.48.08,2.21l-13.23,4.41A32,32,0,0,0,128,96a32.59,32.59,0,0,0-5.27.44L115.89,81A32,32,0,1,0,96,88a32.59,32.59,0,0,0,5.27-.44l6.84,15.4a31.92,31.92,0,0,0-8.57,39.64L73.83,165.44a32.06,32.06,0,1,0,10.63,12l25.71-22.84a31.91,31.91,0,0,0,37.36-1.24l23.11,18A31.65,31.65,0,0,0,168,184a32,32,0,1,0,32-32Zm0-64a16,16,0,1,1-16,16A16,16,0,0,1,200,88ZM80,56A16,16,0,1,1,96,72,16,16,0,0,1,80,56ZM56,208a16,16,0,1,1,16-16A16,16,0,0,1,56,208Zm56-80a16,16,0,1,1,16,16A16,16,0,0,1,112,128Zm88,72a16,16,0,1,1,16-16A16,16,0,0,1,200,200Z" />
-                </svg>
+                <GraphIcon />
                 {isGraphPanelOpen ? 'Hide graph' : 'Graph'}
               </button>
               <button

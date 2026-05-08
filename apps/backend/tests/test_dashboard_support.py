@@ -11,7 +11,7 @@ from apps.backend.app.select_ai.dashboard_schema import (
     _alter_if_missing,
     _create_if_missing,
 )
-from apps.backend.app.select_ai.dashboard_visibility import _normalize_visibility
+from apps.backend.app.select_ai.dashboard_schema import _normalize_visibility
 
 
 class FakeLob:

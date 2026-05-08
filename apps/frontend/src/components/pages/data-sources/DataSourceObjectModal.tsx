@@ -1,7 +1,7 @@
 import type { FormEvent } from 'react';
 
-import { LoadingState } from '../shared/LoadingState';
-import { ConfirmModal, GlassModal } from '../shared/Modal';
+import { LoadingState } from '../../common/LoadingState';
+import { ConfirmModal, GlassModal } from '../../common/Modal';
 import { DataDictionaryEditor } from './DataDictionaryEditor';
 import {
   DEFAULT_DATA_SCHEMA,
@@ -84,7 +84,7 @@ function DataSourceFilePicker({
 }) {
   return (
     <div>
-      <label className="block text-sm font-medium text-oracle-dark-gray">{label}</label>
+      <label htmlFor={id} className="block text-sm font-medium text-oracle-dark-gray">{label}</label>
       <div className="mt-1 flex min-h-11 items-center gap-3 rounded border border-oracle-border bg-white px-3 py-2">
         <label
           htmlFor={id}
@@ -251,8 +251,9 @@ export function DataSourceObjectModal({
       </div>
       <form onSubmit={onSubmit} className="space-y-4 overflow-y-auto bg-white/90 p-5">
         <div>
-          <label className="block text-sm font-medium text-oracle-dark-gray">Object source</label>
+          <label htmlFor="data-source-object-mode" className="block text-sm font-medium text-oracle-dark-gray">Object source</label>
           <select
+            id="data-source-object-mode"
             value={objectMode}
             onChange={(event) => onObjectModeChange(event.target.value as DataSourceObjectMode)}
             className="input-oracle mt-1"
@@ -281,8 +282,9 @@ export function DataSourceObjectModal({
               onFileChange={onMetadataJsonFileChange}
             />
             <div>
-              <label className="block text-sm font-medium text-oracle-dark-gray">Target schema</label>
+              <label htmlFor="data-source-csv-schema" className="block text-sm font-medium text-oracle-dark-gray">Target schema</label>
               <input
+                id="data-source-csv-schema"
                 value={csvSchemaName}
                 onChange={(event) => onCsvSchemaNameChange(normalizeIdentifier(event.target.value))}
                 className="input-oracle mt-1 font-mono uppercase"
@@ -305,8 +307,9 @@ export function DataSourceObjectModal({
               )}
             </div>
             <div>
-              <label className="block text-sm font-medium text-oracle-dark-gray">Optional table name</label>
+              <label htmlFor="data-source-csv-table-name" className="block text-sm font-medium text-oracle-dark-gray">Optional table name</label>
               <input
+                id="data-source-csv-table-name"
                 value={csvTableName}
                 onChange={(event) => onCsvTableNameChange(event.target.value)}
                 className="input-oracle mt-1 font-mono uppercase"
@@ -319,8 +322,9 @@ export function DataSourceObjectModal({
             <p className="text-sm text-oracle-medium-gray">Register a table that APP_AGENT can read.</p>
             <div className="grid gap-4 sm:grid-cols-2">
               <div>
-                <label className="block text-sm font-medium text-oracle-dark-gray">Owner</label>
+                <label htmlFor="data-source-table-owner" className="block text-sm font-medium text-oracle-dark-gray">Owner</label>
                 <select
+                  id="data-source-table-owner"
                   value={tableOwner}
                   onChange={(event) => onTableOwnerChange(event.target.value)}
                   className="input-oracle mt-1 font-mono uppercase"
@@ -335,8 +339,9 @@ export function DataSourceObjectModal({
                 </select>
               </div>
               <div>
-                <label className="block text-sm font-medium text-oracle-dark-gray">Table</label>
+                <label htmlFor="data-source-table-name" className="block text-sm font-medium text-oracle-dark-gray">Table</label>
                 <select
+                  id="data-source-table-name"
                   value={tableName}
                   onChange={(event) => onTableNameChange(event.target.value)}
                   className="input-oracle mt-1 font-mono uppercase"
@@ -354,8 +359,9 @@ export function DataSourceObjectModal({
               </div>
             </div>
             <div>
-              <label className="block text-sm font-medium text-oracle-dark-gray">Optional display name</label>
+              <label htmlFor="data-source-display-name" className="block text-sm font-medium text-oracle-dark-gray">Optional display name</label>
               <input
+                id="data-source-display-name"
                 value={displayName}
                 onChange={(event) => onDisplayNameChange(event.target.value)}
                 className="input-oracle mt-1"

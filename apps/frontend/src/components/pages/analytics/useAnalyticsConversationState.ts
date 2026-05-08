@@ -10,7 +10,14 @@ import {
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 
 import { useAnalyticsChat } from '../../../context/AnalyticsChatContext';
-import { getAnalyticsErrorMessage } from './analyticsChatPanelUtils';
+import {
+  buildConversationMessages,
+  findLatestAssistantMessage,
+  findLatestUserQuestion,
+  getAnalyticsErrorMessage,
+  type AnalyticsChatMessage,
+  type AnalyticsChatResult,
+} from './analyticsChatPanelUtils';
 
 type ShowToast = (message: string, type?: 'success' | 'error' | 'info' | 'warning') => void;
 type ApiResponse<T> = Promise<{ data: T }>;
@@ -19,29 +26,7 @@ type AnalyticsAskRequest = {
   max_rows?: number;
   conversation_id?: string;
 };
-type AnalyticsAskResponse = {
-  run_id: string;
-  conversation_id: string;
-  answer: string;
-  sql: string;
-  columns: string[];
-  rows: Array<Record<string, unknown>>;
-  row_count: number;
-  chart_spec: {
-    type: 'bar' | 'line' | 'area' | 'pie' | 'table' | 'metric';
-    title?: string;
-    x?: string;
-    y?: string;
-    series?: string;
-  };
-  agent_trace: Array<{
-    stage: string;
-    status: string;
-    rows?: number;
-    profile_name?: string;
-    objects?: Array<{ owner?: string; name?: string; columns?: string[] }>;
-  }>;
-};
+type AnalyticsAskResponse = AnalyticsChatResult;
 type AnalyticsConversationSummary = {
   conversation_id: string;
   title: string;
@@ -69,10 +54,6 @@ type DataSourceSummary = {
   source_type?: string;
 };
 
-export type AnalyticsChatMessage =
-  | { id: string; role: 'user'; content: string; timestamp: Date }
-  | { id: string; role: 'assistant'; content: string; timestamp: Date; result: AnalyticsAskResponse; question: string };
-
 type AnalyticsConversationClient = {
   ask: (payload: AnalyticsAskRequest) => ApiResponse<AnalyticsAskResponse>;
   getConversation: (conversationId: string, maxRows?: number) => ApiResponse<AnalyticsConversationDetail>;
@@ -87,47 +68,6 @@ type DataSourcesClient = {
 const analyticsConversationQueryKey = (conversationId: string | null) =>
   ['analytics', 'conversation', conversationId] as const;
 const dataSourcesListQueryKey = ['data-sources', 'list'] as const;
-
-function buildConversationMessages(conversation: AnalyticsConversationDetail): AnalyticsChatMessage[] {
-  return conversation.messages.flatMap((message) => {
-    const timestamp = message.created_at ? new Date(message.created_at) : new Date();
-    return [
-      {
-        id: `${message.run_id}-user`,
-        role: 'user' as const,
-        content: message.question,
-        timestamp,
-      },
-      {
-        id: `${message.run_id}-assistant`,
-        role: 'assistant' as const,
-        content: message.result.answer,
-        timestamp,
-        result: message.result,
-        question: message.question,
-      },
-    ];
-  });
-}
-
-function findLatestMessage<Role extends AnalyticsChatMessage['role']>(
-  messages: AnalyticsChatMessage[],
-  role: Role
-): Extract<AnalyticsChatMessage, { role: Role }> | undefined {
-  for (let index = messages.length - 1; index >= 0; index -= 1) {
-    const message = messages[index];
-    if (message.role === role) return message as Extract<AnalyticsChatMessage, { role: Role }>;
-  }
-  return undefined;
-}
-
-function findLatestAssistantMessage(messages: AnalyticsChatMessage[]) {
-  return findLatestMessage(messages, 'assistant');
-}
-
-function findLatestUserQuestion(messages: AnalyticsChatMessage[]): string {
-  return findLatestMessage(messages, 'user')?.content || '';
-}
 
 function useConversationMessages(activeConversationId: string | null, analyticsClient: AnalyticsConversationClient) {
   const listRef = useRef<HTMLDivElement>(null);
@@ -455,7 +395,6 @@ export function useAnalyticsConversationState({
     handleRenameBlur: rename.handleRenameBlur,
     handleRenameKeyDown: rename.handleRenameKeyDown,
     headerMenuRef,
-    isAskPending: ask.isAskPending,
     isDeleteConfirmOpen: deletion.isDeleteConfirmOpen,
     isGraphPanelOpen,
     isHeaderMenuOpen,

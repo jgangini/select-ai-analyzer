@@ -18,6 +18,13 @@ def _alter_if_missing(cursor, ddl: str) -> None:
             raise
 
 
+def _normalize_visibility(value: str | None) -> str:
+    visibility = str(value or "private").strip().lower()
+    if visibility not in {"private", "shared"}:
+        raise ValueError("Dashboard visibility must be private or shared.")
+    return visibility
+
+
 class DashboardSchemaMixin:
     def ensure_tables(self) -> None:
         conn = self._connection()

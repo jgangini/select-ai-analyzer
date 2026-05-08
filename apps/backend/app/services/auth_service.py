@@ -5,6 +5,7 @@ from apps.backend.app.core.config import Settings
 from apps.backend.app.core.security import create_access_token, verify_password
 from apps.backend.app.core.tracing import trace
 from apps.backend.app.services.runtime_config_service import ConfigService
+from apps.backend.app.services.user_service import fetch_user_info
 
 if TYPE_CHECKING:
     from apps.backend.app.core.database import DatabaseManager
@@ -84,31 +85,4 @@ class AuthService:
         return {"access_token": access_token, "token_type": "bearer", "user": user}
 
     def get_current_user_info(self, user_id: int) -> dict | None:
-        conn = self.db_manager.get_connection()
-        cursor = conn.cursor()
-        try:
-            cursor.execute(
-                """
-                SELECT u.user_id, u.user_username, u.user_name, u.user_last_name,
-                       u.user_group_id, ug.user_group_name
-                FROM users u
-                JOIN user_group ug ON u.user_group_id = ug.user_group_id
-                WHERE u.user_id = :1 AND u.user_state = 1
-                """,
-                [user_id],
-            )
-            row = cursor.fetchone()
-            if not row:
-                return None
-            return {
-                "user_id": row[0],
-                "username": row[1],
-                "name": row[2],
-                "last_name": row[3],
-                "email": row[1],
-                "group_id": row[4],
-                "group_name": row[5],
-            }
-        finally:
-            cursor.close()
-            conn.close()
+        return fetch_user_info(self.db_manager, user_id)

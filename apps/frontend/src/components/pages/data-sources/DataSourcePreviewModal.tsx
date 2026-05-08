@@ -1,7 +1,7 @@
 import { useMemo, type Dispatch, type SetStateAction } from 'react';
 
-import { GlassModal } from '../shared/Modal';
-import { LoadingState } from '../shared/LoadingState';
+import { LoadingState } from '../../common/LoadingState';
+import { GlassModal } from '../../common/Modal';
 import {
   buildPreviewColumnDetails,
   formatCellValue,

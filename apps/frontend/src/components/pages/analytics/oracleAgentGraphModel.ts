@@ -1,6 +1,6 @@
 import dagre from '@dagrejs/dagre';
 
-export type OracleGraphTraceItem = {
+type OracleGraphTraceItem = {
   stage: string;
   status: string;
   rows?: number;
@@ -35,9 +35,9 @@ export type GraphTableRef = {
   sourceType?: string;
 };
 
-export type OracleGraphNodeStatus = 'idle' | 'completed' | 'failed';
+type OracleGraphNodeStatus = 'idle' | 'completed' | 'failed';
 
-export type OracleGraphNode = {
+type OracleGraphNode = {
   key: string;
   label: string;
   detail: string;
@@ -45,7 +45,7 @@ export type OracleGraphNode = {
   status: OracleGraphNodeStatus;
 };
 
-export type OracleGraphEdge = {
+type OracleGraphEdge = {
   source: string;
   target: string;
   label?: string;
@@ -64,7 +64,7 @@ export type OracleGraphEdgePath = OracleGraphEdge & {
 
 export type GraphBounds = { x: number; y: number; width: number; height: number };
 
-export type OracleNodeInspection = {
+type OracleNodeInspection = {
   title: string;
   subtitle: string;
   status: OracleGraphNodeStatus;

@@ -1,8 +1,6 @@
 import api from './httpClient';
 
-export type DataSourceObjectMode = 'csv' | 'existing_table';
-
-export type DataSourceSummary = {
+type DataSourceSummary = {
   data_source_id: string;
   source_name: string;
   source_type: 'csv' | 'existing_table';
@@ -15,14 +13,14 @@ export type DataSourceSummary = {
   created_at: string;
 };
 
-export type DataSourceSchema = {
+type DataSourceSchema = {
   schema_name: string;
   exists: boolean;
   is_app_schema: boolean;
   source_count: number;
 };
 
-export type DataSourceColumnMetadata = {
+type DataSourceColumnMetadata = {
   column_name: string;
   data_type?: string;
   data_length?: number;
@@ -34,7 +32,7 @@ export type DataSourceColumnMetadata = {
   primary_key?: boolean;
 };
 
-export type DataSourceRowsResponse = {
+type DataSourceRowsResponse = {
   data_source: DataSourceSummary;
   columns: string[];
   column_details: DataSourceColumnMetadata[];
@@ -44,12 +42,12 @@ export type DataSourceRowsResponse = {
   offset: number;
 };
 
-export type DataSourceCatalogOwner = {
+type DataSourceCatalogOwner = {
   owner_name: string;
   table_count: number;
 };
 
-export type DataSourceCatalogTable = {
+type DataSourceCatalogTable = {
   owner_name: string;
   table_name: string;
   row_count: number;
@@ -57,14 +55,14 @@ export type DataSourceCatalogTable = {
   table_comment?: string;
 };
 
-export type DataSourceCatalogTableDetail = {
+type DataSourceCatalogTableDetail = {
   owner_name: string;
   table_name: string;
   table_comment: string;
   columns: DataSourceColumnMetadata[];
 };
 
-export type RegisterTablePayload = {
+type RegisterTablePayload = {
   owner: string;
   table_name: string;
   display_name?: string;
@@ -73,7 +71,7 @@ export type RegisterTablePayload = {
   access_scope?: 'all' | 'private';
 };
 
-export type DataSourceMutationResponse = {
+type DataSourceMutationResponse = {
   data_source_id: string;
   owner_name: string;
   table_name: string;

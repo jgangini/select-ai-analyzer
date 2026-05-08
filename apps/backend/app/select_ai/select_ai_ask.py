@@ -5,7 +5,7 @@ from typing import Any
 from apps.backend.app.select_ai.charting import infer_chart_spec, validate_chart_spec
 from apps.backend.app.select_ai.conversations import normalize_conversation_id
 from apps.backend.app.select_ai.query_execution import execute_read_only_select
-from apps.backend.app.select_ai.source_sql_guidance import _fallback_sql_for_question
+from apps.backend.app.select_ai.source_intents import _fallback_sql_for_question
 from apps.backend.app.select_ai.sql_validation import validate_read_only_select
 
 

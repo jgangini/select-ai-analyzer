@@ -1,7 +1,10 @@
 import { describe, expect, it } from 'vitest';
 
 import {
+  buildConversationMessages,
   buildDashboardDraftItem,
+  findLatestAssistantMessage,
+  findLatestUserQuestion,
   getAnalyticsErrorMessage,
   getDefaultDashboardName,
   getUserInitials,
@@ -72,5 +75,80 @@ describe('analytics chat panel utilities', () => {
     };
 
     expect(buildDashboardDraftItem(result, question).title).toBe('x'.repeat(120));
+  });
+
+  it('builds paired user and assistant messages from stored conversations', () => {
+    const conversation = {
+      conversation_id: 'chat-1',
+      title: 'Balances',
+      created_at: '2026-05-08T10:00:00Z',
+      updated_at: '2026-05-08T10:01:00Z',
+      messages: [
+        {
+          run_id: 'run-1',
+          question: 'Saldo por producto',
+          created_at: '2026-05-08T10:01:00Z',
+          result: {
+            run_id: 'run-1',
+            conversation_id: 'chat-1',
+            answer: 'El saldo total es 1200.',
+            sql: 'select 1200 as balance from dual',
+            columns: ['BALANCE'],
+            rows: [{ BALANCE: 1200 }],
+            row_count: 1,
+            chart_spec: { type: 'metric' as const, title: 'Saldo' },
+            agent_trace: [],
+          },
+        },
+      ],
+    };
+
+    expect(buildConversationMessages(conversation)).toMatchObject([
+      { id: 'run-1-user', role: 'user', content: 'Saldo por producto' },
+      {
+        id: 'run-1-assistant',
+        role: 'assistant',
+        content: 'El saldo total es 1200.',
+        question: 'Saldo por producto',
+      },
+    ]);
+  });
+
+  it('finds latest assistant result and latest user question', () => {
+    const olderResult = {
+      run_id: 'run-1',
+      conversation_id: 'chat-1',
+      answer: 'Old answer',
+      sql: 'select 1 from dual',
+      columns: ['VALUE'],
+      rows: [{ VALUE: 1 }],
+      row_count: 1,
+      chart_spec: { type: 'metric' as const },
+      agent_trace: [],
+    };
+    const latestResult = { ...olderResult, run_id: 'run-2', answer: 'Latest answer' };
+    const messages = [
+      { id: 'u1', role: 'user' as const, content: 'Old question', timestamp: new Date('2026-05-08T10:00:00Z') },
+      {
+        id: 'a1',
+        role: 'assistant' as const,
+        content: olderResult.answer,
+        timestamp: new Date('2026-05-08T10:00:01Z'),
+        result: olderResult,
+        question: 'Old question',
+      },
+      { id: 'u2', role: 'user' as const, content: 'Latest question', timestamp: new Date('2026-05-08T10:01:00Z') },
+      {
+        id: 'a2',
+        role: 'assistant' as const,
+        content: latestResult.answer,
+        timestamp: new Date('2026-05-08T10:01:01Z'),
+        result: latestResult,
+        question: 'Latest question',
+      },
+    ];
+
+    expect(findLatestAssistantMessage(messages)?.result).toBe(latestResult);
+    expect(findLatestUserQuestion(messages)).toBe('Latest question');
   });
 });

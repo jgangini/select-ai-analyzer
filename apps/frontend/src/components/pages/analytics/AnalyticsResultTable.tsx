@@ -1,79 +1,13 @@
 import { useEffect, useMemo, useState } from 'react';
 
-const PAGE_SIZE = 10;
-
-type TableSortMode = 'original' | 'column-asc' | 'column-desc';
-
-function formatCellValue(value: unknown): string {
-  if (value === null || value === undefined) return '';
-  if (typeof value === 'number') {
-    return new Intl.NumberFormat('en-US', { maximumFractionDigits: 2 }).format(value);
-  }
-  return String(value);
-}
-
-function normalizeChartSearch(value: string): string {
-  return String(value || '')
-    .trim()
-    .toLocaleLowerCase();
-}
-
-function valueAsNumber(value: unknown): number | null {
-  if (typeof value === 'number' && Number.isFinite(value)) return value;
-  if (typeof value === 'string') {
-    const parsed = Number(value.replace(/,/g, ''));
-    return Number.isFinite(parsed) ? parsed : null;
-  }
-  return null;
-}
-
-function compareTableCellValues(leftValue: unknown, rightValue: unknown): number {
-  const leftNumber = valueAsNumber(leftValue);
-  const rightNumber = valueAsNumber(rightValue);
-  if (leftNumber !== null && rightNumber !== null) {
-    return leftNumber - rightNumber;
-  }
-  return formatCellValue(leftValue).localeCompare(formatCellValue(rightValue), undefined, {
-    numeric: true,
-    sensitivity: 'base',
-  });
-}
-
-function AddVisualizationButton({
-  visibleCount,
-  totalCount,
-  isVisualizationAdded,
-  onAddVisualization,
-}: {
-  visibleCount: number;
-  totalCount: number;
-  isVisualizationAdded?: boolean;
-  onAddVisualization: () => void;
-}) {
-  return (
-    <button
-      type="button"
-      className={`inline-flex h-9 w-9 flex-shrink-0 items-center justify-center rounded border text-lg font-semibold transition-colors ${
-        isVisualizationAdded
-          ? 'border-gray-300 bg-gray-50 text-oracle-medium-gray'
-          : 'border-gray-300 bg-white text-oracle-medium-gray hover:border-gray-400 hover:bg-gray-50 hover:text-oracle-dark-gray'
-      }`}
-      onClick={onAddVisualization}
-      disabled={isVisualizationAdded}
-      title={isVisualizationAdded ? 'Visualization already added' : `${visibleCount} of ${totalCount} values. Add visualization`}
-      aria-label={isVisualizationAdded ? 'Visualization already added' : 'Add visualization'}
-      data-testid="add-visualization-button"
-    >
-      {isVisualizationAdded ? (
-        <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-        </svg>
-      ) : (
-        <span aria-hidden="true">+</span>
-      )}
-    </button>
-  );
-}
+import { AddVisualizationButton } from './AnalyticsChartChrome';
+import {
+  compareTableCellValues,
+  formatCellValue,
+  normalizeChartSearch,
+  PAGE_SIZE,
+  type TableSortMode,
+} from './analyticsChartUtils';
 
 function ResultTableControls({
   search,

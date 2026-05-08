@@ -6,7 +6,7 @@ export type HomeStatsSource = {
   status: string;
 };
 
-export type HomeStatCard = {
+type HomeStatCard = {
   label: string;
   value: number;
   kind: StatKind;

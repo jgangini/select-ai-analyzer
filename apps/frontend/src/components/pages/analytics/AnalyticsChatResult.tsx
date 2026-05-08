@@ -1,6 +1,6 @@
 import { useEffect, useState, type ReactNode } from 'react';
 
-import { GlassModal } from '../shared/Modal';
+import { GlassModal } from '../../common/Modal';
 
 type AssistantChartSpec = {
   type: 'bar' | 'line' | 'area' | 'pie' | 'table' | 'metric';

@@ -2,9 +2,10 @@ import { analyticsApi } from '../../../services/analyticsApi';
 import { dashboardsApi } from '../../../services/dashboardsApi';
 import { dataSourcesApi } from '../../../services/dataSourcesApi';
 import { OracleAgentGraphPanel } from './OracleAgentGraphPanel';
-import { ChartPreview, ResultTable } from './AnalyticsChartPreview';
+import { ChartPreview } from './AnalyticsChartPreview';
 import { AnalyticsChatComposer, AnalyticsChatHeader, AnalyticsChatMessageList } from './AnalyticsChatPanelParts';
 import { AssistantResult } from './AnalyticsChatResult';
+import { ResultTable } from './AnalyticsResultTable';
 import { useAnalyticsConversationState } from './useAnalyticsConversationState';
 import { useAnalyticsDashboardDraft } from './useAnalyticsDashboardDraft';
 import { AnalyticsAddVisualizationModal, AnalyticsDashboardTray, AnalyticsDeleteChatModal } from './AnalyticsChatOverlays';
@@ -102,6 +103,7 @@ export function AnalyticsChatPanel({
                     spec={result.chart_spec}
                     columns={result.columns}
                     rows={result.rows}
+                    renderTable={(tableProps) => <ResultTable {...tableProps} />}
                     isVisualizationAdded={isVisualizationAdded}
                     onAddVisualization={() => onAddVisualization(buildDashboardDraftItem(result, question))}
                   />

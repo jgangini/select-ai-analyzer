@@ -49,11 +49,12 @@ def _connect(config: dict[str, str]):
         "password": config["password"],
         "dsn": config["dsn"],
     }
-    if config.get("wallet_path"):
-        kwargs["config_dir"] = config["wallet_path"]
-        kwargs["wallet_location"] = config["wallet_path"]
-    if config.get("wallet_password"):
-        kwargs["wallet_password"] = config["wallet_password"]
+    wallet_path = config.get("wallet_path")
+    wallet_password = config.get("wallet_password")
+    if wallet_path:
+        kwargs.update(config_dir=wallet_path, wallet_location=wallet_path)
+    if wallet_password:
+        kwargs["wallet_password"] = wallet_password
     return oracledb.connect(**kwargs)
 
 

@@ -1,12 +1,22 @@
 from __future__ import annotations
 
+from contextlib import contextmanager
+import json
 from typing import Any
+import uuid
 
-from apps.backend.app.select_ai.conversation_mutations import SelectAIConversationMutationMixin
-from apps.backend.app.select_ai.conversations import normalize_conversation_id
+from apps.backend.app.select_ai.conversations import ensure_conversation, normalize_conversation_id
 from apps.backend.app.select_ai.conversation_store import (
+    _analytics_conversation_exists,
+    _delete_analytics_conversation,
+    _delete_question_runs,
+    _insert_question_run,
+    _insert_question_run_snapshot,
+    _rename_analytics_conversation,
     _select_conversation_header,
     _select_conversation_list,
+    _select_conversation_owner,
+    _select_conversation_summary,
     _select_question_runs,
 )
 from apps.backend.app.select_ai.charting import validate_chart_spec
@@ -45,6 +55,174 @@ def _materialize_stored_result(
     }
 
 
+def _json_dump(value: Any) -> str:
+    return json.dumps(value, ensure_ascii=False, default=str)
+
+
+def _assert_conversation_writable(cursor, *, conversation_id: str, user_id: int) -> str | None:
+    _select_conversation_owner(cursor, conversation_id=conversation_id)
+    row = cursor.fetchone()
+    if not row or int(user_id or 0) == 0:
+        return str(row[1] or conversation_id) if row else None
+    if int(row[0] or 0) not in {0, int(user_id or 0)}:
+        raise ValueError("Conversation was not found.")
+    return str(row[1] or conversation_id)
+
+
+@contextmanager
+def _open_cursor(service):
+    conn = service._connection()
+    cursor = conn.cursor()
+    try:
+        yield conn, cursor
+    finally:
+        cursor.close()
+        conn.close()
+
+
+@contextmanager
+def _transaction_cursor(service):
+    with _open_cursor(service) as (conn, cursor):
+        try:
+            yield conn, cursor
+        except Exception:
+            conn.rollback()
+            raise
+
+
+class SelectAIConversationMutationMixin:
+    def delete_conversation(
+        self,
+        *,
+        conversation_id: str,
+        user_id: int = 0,
+    ) -> dict[str, Any]:
+        resolved_conversation_id = normalize_conversation_id(conversation_id)
+        with _transaction_cursor(self) as (conn, cursor):
+            if not _analytics_conversation_exists(
+                cursor,
+                conversation_id=resolved_conversation_id,
+                user_id=int(user_id or 0),
+            ):
+                raise ValueError("Conversation was not found.")
+            deleted_runs = _delete_question_runs(cursor, conversation_id=resolved_conversation_id)
+            deleted_conversations = _delete_analytics_conversation(cursor, conversation_id=resolved_conversation_id)
+            if deleted_conversations != 1:
+                raise ValueError("Conversation was not deleted.")
+            conn.commit()
+            return {
+                "conversation_id": resolved_conversation_id,
+                "deleted": True,
+                "deleted_runs": deleted_runs,
+            }
+
+    def rename_conversation(
+        self,
+        *,
+        conversation_id: str,
+        title: str,
+        user_id: int = 0,
+    ) -> dict[str, Any]:
+        resolved_conversation_id = normalize_conversation_id(conversation_id)
+        normalized_title = str(title or "").strip()[:500]
+        if not normalized_title:
+            raise ValueError("Conversation title is required.")
+        with _transaction_cursor(self) as (conn, cursor):
+            updated_count = _rename_analytics_conversation(
+                cursor,
+                conversation_id=resolved_conversation_id,
+                user_id=int(user_id or 0),
+                title=normalized_title,
+            )
+            if updated_count != 1:
+                raise ValueError("Conversation was not found.")
+            _select_conversation_summary(cursor, conversation_id=resolved_conversation_id)
+            row = cursor.fetchone()
+            if not row:
+                raise ValueError("Conversation was not found.")
+            conn.commit()
+            return {
+                "conversation_id": str(row[0] or resolved_conversation_id),
+                "title": str(row[1] or normalized_title),
+                "created_at": _json_safe(row[2]),
+                "updated_at": _json_safe(row[3]),
+                "turns": int(row[4] or 0),
+                "last_message_preview": str(row[5] or ""),
+            }
+
+    def record_question_run(
+        self,
+        *,
+        question: str,
+        sql: str,
+        answer: str,
+        row_count: int,
+        chart_spec: dict[str, Any],
+        conversation_id: str,
+        columns: list[str],
+        rows: list[dict[str, Any]],
+        max_rows: int = 500,
+        oracle_conversation_id: str | None = None,
+        user_id: int = 0,
+        profile_name: str | None = None,
+    ) -> str:
+        run_id = uuid.uuid4().hex
+        resolved_conversation_id = normalize_conversation_id(conversation_id)
+        with _transaction_cursor(self) as (conn, cursor):
+            _assert_conversation_writable(
+                cursor,
+                conversation_id=resolved_conversation_id,
+                user_id=int(user_id or 0),
+            )
+            ensure_conversation(
+                cursor,
+                conversation_id=resolved_conversation_id,
+                oracle_conversation_id=oracle_conversation_id or resolved_conversation_id,
+                conversation_type="analytics",
+                title=question,
+                user_id=user_id,
+            )
+            # ADB can raise ORA-12860 when the parent conversation MERGE and child
+            # question_runs insert are kept in the same transaction under FK checks.
+            conn.commit()
+            _insert_question_run(
+                cursor,
+                run_id=run_id,
+                conversation_id=resolved_conversation_id,
+                profile_name=profile_name or self._profile_name(),
+                question=question,
+                sql=sql,
+                answer=answer,
+                row_count=row_count,
+                chart_spec=json.dumps(chart_spec),
+            )
+            _insert_question_run_snapshot(
+                cursor,
+                run_id=run_id,
+                columns_json=_json_dump(columns),
+                rows_json=_json_dump(rows),
+                row_count=int(row_count or 0),
+                max_rows=int(max_rows or 0),
+                truncated_flag="Y" if int(row_count or 0) >= int(max_rows or 0) else "N",
+            )
+            conn.commit()
+            return run_id
+
+    def resolve_oracle_conversation_id(
+        self,
+        *,
+        conversation_id: str,
+        user_id: int = 0,
+    ) -> str:
+        resolved_conversation_id = normalize_conversation_id(conversation_id)
+        with _open_cursor(self) as (_conn, cursor):
+            return _assert_conversation_writable(
+                cursor,
+                conversation_id=resolved_conversation_id,
+                user_id=int(user_id or 0),
+            ) or resolved_conversation_id
+
+
 class SelectAIConversationMixin(SelectAIConversationMutationMixin):
     def list_conversations(
         self,
@@ -56,9 +234,7 @@ class SelectAIConversationMixin(SelectAIConversationMutationMixin):
         normalized_search = str(search or "").strip().lower()
         search_filter = f"%{normalized_search}%" if normalized_search else None
         safe_limit = max(1, min(int(limit or 50), 100))
-        conn = self._connection()
-        cursor = conn.cursor()
-        try:
+        with _open_cursor(self) as (_conn, cursor):
             _select_conversation_list(
                 cursor,
                 user_id=int(user_id or 0),
@@ -66,9 +242,6 @@ class SelectAIConversationMixin(SelectAIConversationMutationMixin):
                 limit_value=safe_limit,
             )
             return _rows_as_dicts(cursor)
-        finally:
-            cursor.close()
-            conn.close()
 
     def get_conversation(
         self,
@@ -78,9 +251,7 @@ class SelectAIConversationMixin(SelectAIConversationMutationMixin):
         max_rows: int = 500,
     ) -> dict[str, Any]:
         resolved_conversation_id = normalize_conversation_id(conversation_id)
-        conn = self._connection()
-        cursor = conn.cursor()
-        try:
+        with _open_cursor(self) as (_conn, cursor):
             _select_conversation_header(
                 cursor,
                 conversation_id=resolved_conversation_id,
@@ -92,9 +263,6 @@ class SelectAIConversationMixin(SelectAIConversationMutationMixin):
 
             _select_question_runs(cursor, conversation_id=resolved_conversation_id)
             runs = _rows_as_dicts(cursor)
-        finally:
-            cursor.close()
-            conn.close()
 
         messages: list[dict[str, Any]] = []
         for run in runs:

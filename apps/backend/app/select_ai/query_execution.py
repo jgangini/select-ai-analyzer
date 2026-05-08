@@ -3,8 +3,8 @@ from __future__ import annotations
 from collections.abc import Callable
 from typing import Any
 
-from apps.backend.app.select_ai.value_serialization import _json_safe
 from apps.backend.app.select_ai.sql_validation import validate_read_only_select
+from apps.backend.app.select_ai.value_serialization import _json_safe
 
 
 ConnectionFactory = Callable[[], Any]

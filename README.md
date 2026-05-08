@@ -8,16 +8,20 @@ El contenedor sirve frontend estatico por `nginx`, backend FastAPI por `uvicorn`
 
 ```bash
 docker run -d \
-  --name app-agent-select-ai \
+  --name select-ai-analyzer \
   -p 8080:80 \
-  -v app_agent_select_ai_data:/app/apps/backend/data \
-  -v app_agent_select_ai_wallet:/app/apps/backend/wallet \
-  -v app_agent_select_ai_keys:/app/apps/backend/keys \
-  -v app_agent_select_ai_logs:/app/apps/backend/logs \
-  ghcr.io/<owner>/app-agent-select-ai:v0.1.0
+  -v select_ai_analyzer_data:/app/apps/backend/data \
+  -v select_ai_analyzer_wallet:/app/apps/backend/wallet \
+  -v select_ai_analyzer_keys:/app/apps/backend/keys \
+  -v select_ai_analyzer_logs:/app/apps/backend/logs \
+  ghcr.io/<owner>/select-ai-analyzer:v0.1.0
 ```
 
 Luego abre `http://localhost:8080`.
+
+## CloudTechNext
+
+El repo mantiene la misma forma de despliegue que `doc_agent`: `Dockerfile` en la raiz, frontend en `apps/frontend`, backend en `apps/backend`, configuracion nginx en `docker/` y healthcheck en `/api/health`. CloudTechNext puede clonar `https://github.com/jgangini/select-ai-analyzer.git`, construir la imagen desde la raiz y montar los volumenes persistentes de `data`, `wallet`, `keys` y `logs`.
 
 ## Wizard
 

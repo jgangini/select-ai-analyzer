@@ -1,6 +1,6 @@
 import api from './httpClient';
 
-export type ChartSpec = {
+type ChartSpec = {
   type: 'bar' | 'line' | 'area' | 'pie' | 'table' | 'metric';
   title?: string;
   x?: string;
@@ -8,13 +8,13 @@ export type ChartSpec = {
   series?: string;
 };
 
-export type AnalyticsAskRequest = {
+type AnalyticsAskRequest = {
   question: string;
   max_rows?: number;
   conversation_id?: string;
 };
 
-export type AgentTraceItem = {
+type AgentTraceItem = {
   stage: string;
   status: string;
   rows?: number;
@@ -22,7 +22,7 @@ export type AgentTraceItem = {
   objects?: Array<{ owner?: string; name?: string; columns?: string[] }>;
 };
 
-export type AnalyticsAskResponse = {
+type AnalyticsAskResponse = {
   run_id: string;
   conversation_id: string;
   answer: string;
@@ -34,7 +34,7 @@ export type AnalyticsAskResponse = {
   agent_trace: AgentTraceItem[];
 };
 
-export type AnalyticsConversationSummary = {
+type AnalyticsConversationSummary = {
   conversation_id: string;
   title: string;
   turns: number;
@@ -43,14 +43,14 @@ export type AnalyticsConversationSummary = {
   updated_at: string;
 };
 
-export type AnalyticsConversationMessage = {
+type AnalyticsConversationMessage = {
   run_id: string;
   question: string;
   created_at: string;
   result: AnalyticsAskResponse;
 };
 
-export type AnalyticsConversationDetail = {
+type AnalyticsConversationDetail = {
   conversation_id: string;
   title: string;
   created_at: string;

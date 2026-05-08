@@ -1,9 +1,10 @@
 from pathlib import Path
+import zipfile
 
 import pytest
 from fastapi import HTTPException
 
-from apps.backend.app.api.routes.setup import _safe_upload_name
+from apps.backend.app.api.upload_validation import extract_zip_safely, safe_upload_name
 from apps.backend.app.core.config import BACKEND_ROOT, Settings
 
 
@@ -43,10 +44,35 @@ def test_settings_defaults_are_safe_without_env_file() -> None:
 
 
 def test_setup_upload_name_strips_client_path_and_requires_suffix() -> None:
-    assert _safe_upload_name("..\\secrets\\api.pem", ".pem", "File must be .pem") == "api.pem"
+    assert safe_upload_name("..\\secrets\\api.pem", ".pem", "File must be .pem") == "api.pem"
 
     with pytest.raises(HTTPException) as exc_info:
-        _safe_upload_name(None, ".pem", "File must be .pem")
+        safe_upload_name(None, ".pem", "File must be .pem")
 
     assert exc_info.value.status_code == 400
     assert exc_info.value.detail == "File must be .pem"
+
+
+def test_extract_zip_safely_rejects_paths_outside_destination(tmp_path: Path) -> None:
+    archive = tmp_path / "wallet.zip"
+    with zipfile.ZipFile(archive, "w") as zip_ref:
+        zip_ref.writestr("../escape.txt", "nope")
+
+    with pytest.raises(HTTPException) as exc_info:
+        extract_zip_safely(archive, tmp_path / "wallet")
+
+    assert exc_info.value.status_code == 400
+    assert not (tmp_path / "escape.txt").exists()
+
+
+def test_extract_zip_safely_extracts_normal_wallet_members(tmp_path: Path) -> None:
+    archive = tmp_path / "wallet.zip"
+    destination = tmp_path / "wallet"
+    with zipfile.ZipFile(archive, "w") as zip_ref:
+        zip_ref.writestr("tnsnames.ora", "appagent_medium = demo")
+        zip_ref.writestr("nested/sqlnet.ora", "wallet_location = demo")
+
+    extract_zip_safely(archive, destination)
+
+    assert (destination / "tnsnames.ora").read_text(encoding="utf-8") == "appagent_medium = demo"
+    assert (destination / "nested" / "sqlnet.ora").read_text(encoding="utf-8") == "wallet_location = demo"

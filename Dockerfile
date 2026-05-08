@@ -46,7 +46,7 @@ COPY --from=backend-builder /install /usr/local
 COPY apps/backend /app/apps/backend
 COPY apps/__init__.py /app/apps/__init__.py
 COPY --from=frontend-builder /build/frontend/dist /usr/share/nginx/html
-COPY docker/nginx.conf /etc/nginx/conf.d/app-agent-select-ai.conf
+COPY docker/nginx.conf /etc/nginx/conf.d/select-ai-analyzer.conf
 COPY docker/start.sh /app/docker/start.sh
 
 RUN chmod +x /app/docker/start.sh \

@@ -19,7 +19,13 @@ import {
   PieChart,
   type ChartRendererTools,
 } from './AnalyticsChartRenderers';
-import { ResultTable } from './AnalyticsResultTable';
+
+type ResultTableRenderer = (props: {
+  columns: string[];
+  rows: Array<Record<string, unknown>>;
+  onAddVisualization?: () => void;
+  isVisualizationAdded?: boolean;
+}) => JSX.Element;
 
 const chartRendererTools: ChartRendererTools = {
   AddVisualizationButton,
@@ -36,12 +42,14 @@ export function ChartPreview({
   spec,
   columns,
   rows,
+  renderTable,
   onAddVisualization,
   isVisualizationAdded = false,
 }: {
   spec: AnalyticsChartSpec;
   columns: string[];
   rows: Array<Record<string, unknown>>;
+  renderTable: ResultTableRenderer;
   onAddVisualization?: () => void;
   isVisualizationAdded?: boolean;
 }) {
@@ -61,14 +69,7 @@ export function ChartPreview({
   const { allPoints, maxValue, points, renderer, y } = chartModel;
 
   if (renderer === 'table') {
-    return (
-      <ResultTable
-        columns={columns}
-        rows={rows}
-        isVisualizationAdded={isVisualizationAdded}
-        onAddVisualization={onAddVisualization}
-      />
-    );
+    return renderTable({ columns, rows, isVisualizationAdded, onAddVisualization });
   }
 
   if (renderer === 'metric') {
@@ -105,5 +106,3 @@ export function ChartPreview({
   if (renderer === 'pie') return <PieChart {...rendererProps} />;
   return <BarChart {...rendererProps} />;
 }
-
-export { ResultTable } from './AnalyticsResultTable';

@@ -1,8 +1,8 @@
 import { lazy, Suspense, type ReactNode } from 'react';
 import { Navigate, Route, Routes } from 'react-router-dom';
 
+import { LoadingState } from '../components/common/LoadingState';
 import { Layout } from '../components/shell/Layout';
-import { LoadingState } from '../components/pages/shared/LoadingState';
 
 const LoginForm = lazy(() => import('../components/auth/LoginForm').then((module) => ({ default: module.LoginForm })));
 const Analytics = lazy(() => import('../components/pages/Analytics').then((module) => ({ default: module.Analytics })));
@@ -136,8 +136,6 @@ function authenticatedRoutes(
       />
       <Route path="/dashboards" element={<Navigate to="/analytics" replace />} />
       <Route path="/metadata" element={<Navigate to="/data-sources" replace />} />
-      <Route path="/observability" element={<Navigate to="/chat" replace />} />
-      <Route path="/improvement" element={<Navigate to="/chat" replace />} />
       <Route path="/profile" element={protectedPage(isAuthenticated, user, onLogout, appName, sidebarChats, <Profile />, 'max-w-none px-0 py-0')} />
       <Route path="/users" element={protectedPage(isAuthenticated, user, onLogout, appName, sidebarChats, <Users authUser={user} />, 'max-w-none px-0 py-0')} />
       <Route path="/settings" element={protectedPage(isAuthenticated, user, onLogout, appName, sidebarChats, <Settings showToast={showToast} />)} />

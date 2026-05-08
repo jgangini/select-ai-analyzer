@@ -17,15 +17,15 @@ export type ChartPoint = {
   index: number;
 };
 
-export type ChartScrollbarState = {
+type ChartScrollbarState = {
   show: boolean;
   width: number;
   left: number;
 };
 
-export type ChartPreviewRenderer = 'table' | 'metric' | 'empty' | 'line-area' | 'pie' | 'bar';
+type ChartPreviewRenderer = 'table' | 'metric' | 'empty' | 'line-area' | 'pie' | 'bar';
 
-export type ChartPreviewModel = {
+type ChartPreviewModel = {
   numericColumns: string[];
   singleRowNumericComparison: boolean;
   x: string;
@@ -36,7 +36,7 @@ export type ChartPreviewModel = {
   renderer: ChartPreviewRenderer;
 };
 
-export function valueAsNumber(value: unknown): number | null {
+function valueAsNumber(value: unknown): number | null {
   if (typeof value === 'number' && Number.isFinite(value)) return value;
   if (typeof value === 'string') {
     const parsed = Number(value.replace(/,/g, ''));
@@ -72,7 +72,7 @@ export function measureChartScrollbar(
   return { show: true, width: thumbWidth, left: thumbLeft };
 }
 
-export function isNumericLabel(value: unknown): boolean {
+function isNumericLabel(value: unknown): boolean {
   const text = String(value ?? '').replace(/,/g, '').trim();
   return text.length > 0 && Number.isFinite(Number(text));
 }
@@ -86,7 +86,7 @@ export function formatMetricLabel(candidates: Array<unknown>, fallback = 'Value'
   return text || fallback;
 }
 
-export function pointOnCircle(cx: number, cy: number, radius: number, angle: number) {
+function pointOnCircle(cx: number, cy: number, radius: number, angle: number) {
   return {
     x: cx + radius * Math.cos(angle),
     y: cy + radius * Math.sin(angle),
@@ -132,11 +132,11 @@ export function buildYAxisTicks(maxValue: number): number[] {
   return [safeMax, safeMax * 0.75, safeMax * 0.5, safeMax * 0.25, 0];
 }
 
-export function findNumericColumns(columns: string[], rows: Array<Record<string, unknown>>): string[] {
+function findNumericColumns(columns: string[], rows: Array<Record<string, unknown>>): string[] {
   return columns.filter((column) => rows.some((row) => valueAsNumber(row[column]) !== null));
 }
 
-export function resolveChartFields(spec: AnalyticsChartSpec, columns: string[], rows: Array<Record<string, unknown>>) {
+function resolveChartFields(spec: AnalyticsChartSpec, columns: string[], rows: Array<Record<string, unknown>>) {
   const numericColumns = findNumericColumns(columns, rows);
   const dimensionColumns = columns.filter((column) => !numericColumns.includes(column));
   return {
@@ -145,7 +145,7 @@ export function resolveChartFields(spec: AnalyticsChartSpec, columns: string[], 
   };
 }
 
-export function buildChartPoints({
+function buildChartPoints({
   numericColumns,
   rows,
   singleRowNumericComparison,

@@ -1,8 +1,8 @@
-import { ConfirmModal, GlassModal } from '../shared/Modal';
+import { ConfirmDeleteModal, GlassModal } from '../../common/Modal';
+import { DashboardVisibilityIcon, TrashIcon, type DashboardVisibility } from './AnalyticsIcons';
 
 type DashboardTargetMode = 'new' | 'existing';
 type AddDashboardStep = 'target' | 'details';
-type DashboardVisibility = 'private' | 'shared';
 type DashboardChartSpec = {
   type: 'bar' | 'line' | 'area' | 'pie' | 'table' | 'metric';
   title?: string;
@@ -24,27 +24,6 @@ type DashboardDraftItem = {
   chart_spec: DashboardChartSpec;
   layout?: Record<string, unknown>;
 };
-
-function VisibilityIcon({
-  visibility,
-  className = 'h-4 w-4',
-}: {
-  visibility: DashboardVisibility;
-  className?: string;
-}) {
-  if (visibility === 'shared') {
-    return (
-      <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24">
-        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a4 4 0 00-3-3.87M9 20H2v-2a4 4 0 013-3.87m9-6.13a4 4 0 11-8 0 4 4 0 018 0zm7 0a3 3 0 11-6 0 3 3 0 016 0z" />
-      </svg>
-    );
-  }
-  return (
-    <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24">
-      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15.25a1.25 1.25 0 100-2.5 1.25 1.25 0 000 2.5zM6.75 10.5V8a5.25 5.25 0 0110.5 0v2.5m-11.5 0h12.5a1 1 0 011 1v8a1 1 0 01-1 1H5.75a1 1 0 01-1-1v-8a1 1 0 011-1z" />
-    </svg>
-  );
-}
 
 function DashboardVisibilityControl({
   value,
@@ -76,7 +55,7 @@ function DashboardVisibilityControl({
             onClick={() => onChange(option.value)}
           >
             <span className="flex items-center gap-2 text-sm font-semibold">
-              <VisibilityIcon visibility={option.value} />
+              <DashboardVisibilityIcon visibility={option.value} />
               {option.label}
             </span>
             <span className="mt-1 block text-xs text-oracle-medium-gray">{option.description}</span>
@@ -103,14 +82,7 @@ export function AnalyticsDeleteChatModal({
   if (!open) return null;
 
   return (
-    <ConfirmModal
-      icon={
-        <svg className="h-10 w-10 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-        </svg>
-      }
-      iconBg="bg-red-100"
-      iconRing="ring-red-50"
+    <ConfirmDeleteModal
       title="Delete chat"
       message={
         <span>
@@ -118,12 +90,9 @@ export function AnalyticsDeleteChatModal({
         </span>
       }
       detail="The analytical conversation and its question runs will be removed."
-      confirmText="Delete"
-      confirmClass="bg-oracle-red text-white hover:bg-red-700"
       onConfirm={onConfirm}
       onCancel={onCancel}
       loading={isDeleting}
-      loadingText="Deleting..."
     />
   );
 }
@@ -206,9 +175,7 @@ export function AnalyticsDashboardTray({
                     title="Delete"
                     aria-label="Delete visualization"
                   >
-                    <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                    </svg>
+                    <TrashIcon />
                   </button>
                 </div>
               </div>

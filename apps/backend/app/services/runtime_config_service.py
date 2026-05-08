@@ -53,9 +53,6 @@ class ConfigService:
     def get_oci_compartment_id(self) -> str:
         return self.get_value("oci.compartment_id", "").strip()
 
-    def get_genai_inference_url(self) -> str:
-        return self.get_value("genai.inference_url", "").strip()
-
     def get_genai_model(self, default: str | None = None) -> str:
         resolved_default = (default or self.DEFAULT_GENAI_MODEL).strip()
         value = self.get_value("genai.model", resolved_default).strip()
@@ -180,12 +177,3 @@ class ConfigService:
         finally:
             cursor.close()
             connection.close()
-
-    def get_install_state(self) -> dict[str, bool]:
-        return {
-            "wizard_completed": self.get_value("wizard.completed", "false") == "true",
-            "db_validated": self.get_value("install.db.validated", "false") == "true",
-            "bucket_validated": self.get_value("install.bucket.validated", "false") == "true",
-            "genai_validated": self.get_value("install.genai.validated", "false") == "true",
-            "app_ready": self.get_value("app.ready", "false") == "true",
-        }

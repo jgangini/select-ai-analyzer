@@ -85,31 +85,14 @@ export type DataSourceCatalogTableDetail = {
   columns: DataSourceColumnMetadata[];
 };
 
-export type RegisterTablePayload = {
-  owner: string;
-  table_name: string;
-  display_name?: string;
-  table_comment?: string;
-  columns?: DataSourceColumnMetadata[];
-  access_scope?: 'all' | 'private';
-};
-
-export type DataSourceMutationResponse = {
-  data_source_id: string;
-  owner_name: string;
-  table_name: string;
-  row_count?: number;
-  metadata_warnings?: string[];
-};
-
-export type PaginationWindow = {
+type PaginationWindow = {
   totalPages: number;
   safePage: number;
   start: number;
   end: number;
 };
 
-export type ObjectSubmitState = {
+type ObjectSubmitState = {
   disabled: boolean;
   label: string;
 };

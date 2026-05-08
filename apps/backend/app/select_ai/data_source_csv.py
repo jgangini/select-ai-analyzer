@@ -1,26 +1,135 @@
 from __future__ import annotations
 
+import csv
 import json
+from dataclasses import dataclass
 from pathlib import Path
+import shutil
 from typing import Any
 import uuid
 
+from apps.backend.app.core.config import get_settings
 from apps.backend.app.select_ai.constants import APP_SCHEMA, DEFAULT_DATA_SCHEMA
-from apps.backend.app.select_ai.csv_upload import (
-    _create_csv_table,
-    _insert_csv_rows,
-    _read_csv_upload,
-    save_csv_upload as _save_csv_upload,
-)
-from apps.backend.app.select_ai.data_source_csv_jobs import (
-    _assert_csv_table_selectable,
-    _complete_load_job,
-    _insert_load_job,
-    _mark_load_job_failed,
-    _register_csv_data_source,
-)
 from apps.backend.app.select_ai.metadata_payload import parse_metadata_payload
 from apps.backend.app.select_ai.sql_names import _qualified_name, _safe_identifier
+
+
+@dataclass(frozen=True, slots=True)
+class CsvUploadRows:
+    fieldnames: list[str]
+    rows: list[dict[str, Any]]
+
+
+def _read_csv_upload(csv_path: Path) -> CsvUploadRows:
+    with csv_path.open("r", encoding="utf-8-sig", newline="") as handle:
+        reader = csv.DictReader(handle)
+        fieldnames = [_safe_identifier(field or "") for field in (reader.fieldnames or [])]
+        if not fieldnames:
+            raise ValueError("CSV must include a header row.")
+        rows = [{fieldnames[index]: value for index, value in enumerate(raw.values())} for raw in reader]
+    if not rows:
+        raise ValueError("CSV must include at least one data row.")
+    return CsvUploadRows(fieldnames=fieldnames, rows=rows)
+
+
+def _create_csv_table(cursor, table_ref: str, fieldnames: list[str]) -> None:
+    ddl_columns = ", ".join(f"{column} VARCHAR2(4000)" for column in fieldnames)
+    cursor.execute(f"CREATE TABLE {table_ref} ({ddl_columns})")
+
+
+def _insert_csv_rows(cursor, table_ref: str, fieldnames: list[str], rows: list[dict[str, Any]]) -> None:
+    bind_columns = ", ".join(fieldnames)
+    bind_values = ", ".join(f":{column}" for column in fieldnames)
+    cursor.executemany(f"INSERT INTO {table_ref} ({bind_columns}) VALUES ({bind_values})", rows)
+
+
+def save_csv_upload(original_filename: str, source_stream) -> Path:
+    upload_dir = get_settings().upload_path / "csv"
+    upload_dir.mkdir(parents=True, exist_ok=True)
+    safe_name = Path(original_filename or "upload.csv").name
+    upload_path = upload_dir / f"{uuid.uuid4().hex}_{safe_name}"
+    with upload_path.open("wb") as handle:
+        shutil.copyfileobj(source_stream, handle)
+    return upload_path
+
+
+def _insert_load_job(cursor, load_job_id: str, original_filename: str, qualified_table: str) -> None:
+    cursor.execute(
+        """
+        INSERT INTO load_jobs (load_job_id, source_file_name, target_table_name, status)
+        VALUES (:id, :source_file_name, :target_table_name, 'running')
+        """,
+        id=load_job_id,
+        source_file_name=original_filename,
+        target_table_name=qualified_table,
+    )
+
+
+def _assert_csv_table_selectable(cursor, qualified_table: str) -> None:
+    try:
+        cursor.execute(f"SELECT * FROM {qualified_table} WHERE 1 = 0")
+    except Exception as exc:
+        raise ValueError(
+            f"APP_AGENT cannot SELECT from {qualified_table}. Grant SELECT on this table before registering it."
+        ) from exc
+
+
+def _complete_load_job(cursor, load_job_id: str, row_count: int) -> None:
+    cursor.execute(
+        "UPDATE load_jobs SET status = 'completed', row_count = :row_count WHERE load_job_id = :id",
+        row_count=row_count,
+        id=load_job_id,
+    )
+
+
+def _mark_load_job_failed(conn, cursor, load_job_id: str, exc: Exception) -> None:
+    conn.rollback()
+    try:
+        cursor.execute(
+            "UPDATE load_jobs SET status = 'failed', error_message = :message WHERE load_job_id = :id",
+            message=str(exc)[:4000],
+            id=load_job_id,
+        )
+        conn.commit()
+    except Exception:
+        conn.rollback()
+
+
+def _register_csv_data_source(
+    cursor,
+    *,
+    data_source_id: str,
+    original_filename: str,
+    owner_name: str,
+    table_name: str,
+    access_scope: str,
+    row_count: int,
+    user_id: int,
+) -> None:
+    cursor.execute(
+        "DELETE FROM data_sources WHERE owner_name = :owner_name AND table_name = :table_name",
+        owner_name=owner_name,
+        table_name=table_name,
+    )
+    cursor.execute(
+        """
+        INSERT INTO data_sources (
+            data_source_id, source_name, source_type, owner_name, table_name,
+            source_file_name, access_scope, row_count, status, created_by_user_id
+        ) VALUES (
+            :id, :name, 'csv', :owner_name, :table_name,
+            :source_file_name, :scope, :row_count, 'active', :user_id
+        )
+        """,
+        id=data_source_id,
+        name=Path(original_filename).stem,
+        owner_name=owner_name,
+        table_name=table_name,
+        source_file_name=original_filename,
+        scope=access_scope,
+        row_count=row_count,
+        user_id=user_id,
+    )
 
 
 class SelectAIDataSourceCsvMixin:
@@ -56,7 +165,7 @@ class SelectAIDataSourceCsvMixin:
 
     @staticmethod
     def save_csv_upload(original_filename: str, source_stream) -> Path:
-        return _save_csv_upload(original_filename, source_stream)
+        return save_csv_upload(original_filename, source_stream)
 
     @staticmethod
     def resolve_csv_metadata(

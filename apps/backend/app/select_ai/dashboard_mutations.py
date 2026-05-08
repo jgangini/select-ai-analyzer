@@ -9,7 +9,7 @@ from apps.backend.app.select_ai.dashboard_mutation_store import (
     _insert_dashboard,
     _update_dashboard,
 )
-from apps.backend.app.select_ai.dashboard_visibility import _normalize_visibility
+from apps.backend.app.select_ai.dashboard_schema import _normalize_visibility
 
 
 class DashboardMutationMixin:

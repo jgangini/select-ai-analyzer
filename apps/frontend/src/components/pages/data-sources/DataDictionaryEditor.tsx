@@ -32,8 +32,9 @@ export function DataDictionaryEditor({
       </div>
       <div className="space-y-3 p-4">
         <div>
-          <label className="block text-sm font-medium text-oracle-dark-gray">Table comment</label>
+          <label htmlFor="data-dictionary-table-comment" className="block text-sm font-medium text-oracle-dark-gray">Table comment</label>
           <textarea
+            id="data-dictionary-table-comment"
             value={tableComment}
             onChange={(event) => onTableCommentChange(event.target.value)}
             className="input-oracle mt-1 min-h-20 resize-y"
@@ -84,6 +85,7 @@ export function DataDictionaryEditor({
                         onChange={(event) => onColumnChange(index, { comment: event.target.value })}
                         className="input-oracle h-8 text-xs"
                         placeholder="Column meaning"
+                        aria-label={`Comment for ${column.column_name}`}
                       />
                     </td>
                     <td className="px-3 py-2 align-top">
@@ -92,6 +94,7 @@ export function DataDictionaryEditor({
                         onChange={(event) => onColumnChange(index, { ui_display: event.target.value })}
                         className="input-oracle h-8 text-xs"
                         placeholder="Display label"
+                        aria-label={`Display label for ${column.column_name}`}
                       />
                     </td>
                     <td className="px-3 py-2 align-top">
@@ -100,6 +103,7 @@ export function DataDictionaryEditor({
                         onChange={(event) => onColumnChange(index, { classification: event.target.value })}
                         className="input-oracle h-8 text-xs"
                         placeholder="PII, amount, date"
+                        aria-label={`Classification for ${column.column_name}`}
                       />
                     </td>
                     <td className="px-3 py-2 text-center align-top">

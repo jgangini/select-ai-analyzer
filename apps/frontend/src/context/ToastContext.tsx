@@ -1,7 +1,7 @@
 import { createContext, useContext, useState, useCallback, useRef, useEffect, type ReactNode } from 'react';
 import { createPortal } from 'react-dom';
 
-export interface ToastItem {
+interface ToastItem {
   id: number;
   message: string;
 }

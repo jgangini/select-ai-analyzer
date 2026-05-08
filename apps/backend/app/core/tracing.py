@@ -80,45 +80,60 @@ def checkpoint(name: str, tags: Optional[dict] = None) -> None:
     _write_line(record)
 
 
+def _write_trace_event(name: str, event: str, depth: int, extra: Optional[dict[str, Any]] = None) -> None:
+    record = {
+        "ts": _ts(),
+        "event": event,
+        "name": name,
+        "depth": depth,
+        "trace_id": get_trace_id(),
+        "run_id": _run_id,
+    }
+    if extra:
+        record.update(extra)
+    _write_line(record)
+
+
+def _enter_trace(name: str) -> int:
+    depth = _depth_ctx.get(0)
+    _depth_ctx.set(depth + 1)
+    _write_trace_event(name, "enter", depth + 1)
+    return depth
+
+
+def _duration_ms(start: float) -> float:
+    return round((time.perf_counter() - start) * 1000, 2)
+
+
+def _exit_trace(name: str, depth: int, start: float) -> None:
+    _write_trace_event(name, "exit", depth + 1, {"duration_ms": _duration_ms(start)})
+
+
+def _exception_trace(name: str, depth: int, start: float, exc: Exception) -> None:
+    _write_trace_event(
+        name,
+        "exception",
+        depth + 1,
+        {
+            "duration_ms": _duration_ms(start),
+            "error": f"{type(exc).__name__}: {str(exc)}",
+        },
+    )
+
+
 def _trace_impl_sync(f: Callable, name: str):
     @functools.wraps(f)
     def wrapper(*args, **kwargs):
         if not _TRACE_ENABLED:
             return f(*args, **kwargs)
-        depth = _depth_ctx.get(0)
-        _depth_ctx.set(depth + 1)
-        _write_line({
-            "ts": _ts(),
-            "event": "enter",
-            "name": name,
-            "depth": depth + 1,
-            "trace_id": get_trace_id(),
-            "run_id": _run_id,
-        })
+        depth = _enter_trace(name)
         start = time.perf_counter()
         try:
             out = f(*args, **kwargs)
-            _write_line({
-                "ts": _ts(),
-                "event": "exit",
-                "name": name,
-                "depth": depth + 1,
-                "duration_ms": round((time.perf_counter() - start) * 1000, 2),
-                "trace_id": get_trace_id(),
-                "run_id": _run_id,
-            })
+            _exit_trace(name, depth, start)
             return out
         except Exception as e:
-            _write_line({
-                "ts": _ts(),
-                "event": "exception",
-                "name": name,
-                "depth": depth + 1,
-                "duration_ms": round((time.perf_counter() - start) * 1000, 2),
-                "error": f"{type(e).__name__}: {str(e)}",
-                "trace_id": get_trace_id(),
-                "run_id": _run_id,
-            })
+            _exception_trace(name, depth, start, e)
             raise
         finally:
             _depth_ctx.set(depth)
@@ -130,40 +145,14 @@ def _trace_impl_async(f: Callable, name: str):
     async def wrapper(*args, **kwargs):
         if not _TRACE_ENABLED:
             return await f(*args, **kwargs)
-        depth = _depth_ctx.get(0)
-        _depth_ctx.set(depth + 1)
-        _write_line({
-            "ts": _ts(),
-            "event": "enter",
-            "name": name,
-            "depth": depth + 1,
-            "trace_id": get_trace_id(),
-            "run_id": _run_id,
-        })
+        depth = _enter_trace(name)
         start = time.perf_counter()
         try:
             out = await f(*args, **kwargs)
-            _write_line({
-                "ts": _ts(),
-                "event": "exit",
-                "name": name,
-                "depth": depth + 1,
-                "duration_ms": round((time.perf_counter() - start) * 1000, 2),
-                "trace_id": get_trace_id(),
-                "run_id": _run_id,
-            })
+            _exit_trace(name, depth, start)
             return out
         except Exception as e:
-            _write_line({
-                "ts": _ts(),
-                "event": "exception",
-                "name": name,
-                "depth": depth + 1,
-                "duration_ms": round((time.perf_counter() - start) * 1000, 2),
-                "error": f"{type(e).__name__}: {str(e)}",
-                "trace_id": get_trace_id(),
-                "run_id": _run_id,
-            })
+            _exception_trace(name, depth, start, e)
             raise
         finally:
             _depth_ctx.set(depth)

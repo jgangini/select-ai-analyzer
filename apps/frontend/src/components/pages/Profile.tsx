@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 
-import { LoadingState } from './shared/LoadingState';
+import { LoadingState } from '../common/LoadingState';
 import { usersApi, type UserAccount } from '../../services/usersApi';
 
 type ProfileFormData = {

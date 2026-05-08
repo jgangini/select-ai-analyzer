@@ -1,6 +1,6 @@
 import type { ReactNode } from 'react';
 
-import { LoadingState } from '../shared/LoadingState';
+import { LoadingState } from '../../common/LoadingState';
 
 const dashboardSectionClassName =
   'app-light-surface flex h-full flex-col overflow-hidden border border-oracle-border bg-white shadow-md';

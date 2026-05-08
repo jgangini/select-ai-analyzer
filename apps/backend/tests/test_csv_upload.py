@@ -2,7 +2,7 @@ import io
 
 import pytest
 
-from apps.backend.app.select_ai.csv_upload import _read_csv_upload
+from apps.backend.app.select_ai.data_source_csv import _read_csv_upload
 from apps.backend.app.select_ai.data_source_operations import SelectAIDataSourceService
 
 
@@ -97,7 +97,7 @@ def test_save_csv_upload_uses_configured_upload_directory(tmp_path, monkeypatch)
 
     service = SelectAIDataSourceService(RecordingDbManager(RecordingConnection(RecordingCursor())))
     monkeypatch.setattr(
-        "apps.backend.app.select_ai.csv_upload.get_settings",
+        "apps.backend.app.select_ai.data_source_csv.get_settings",
         lambda: Settings(),
     )
 

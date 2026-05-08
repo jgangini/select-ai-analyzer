@@ -1,5 +1,5 @@
-import { LoadingState } from '../shared/LoadingState';
-import { ConfirmDeleteModal } from '../shared/Modal';
+import { LoadingState } from '../../common/LoadingState';
+import { ConfirmDeleteModal } from '../../common/Modal';
 import { formatUserTimestamp, type CreateUserForm, type UserAccountRecord, type UserGroupOption } from './usersUtils';
 
 function highlightMatch(text: string, search: string) {

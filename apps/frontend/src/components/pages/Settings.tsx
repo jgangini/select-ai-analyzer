@@ -1,8 +1,8 @@
 import { useEffect, useMemo, useState } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 
-import { ConfirmQuestionModal } from './shared/Modal';
-import { LoadingState } from './shared/LoadingState';
+import { LoadingState } from '../common/LoadingState';
+import { ConfirmQuestionModal } from '../common/Modal';
 import { settingsApi, settingsQueryKeys } from '../../services/settingsApi';
 import { DEFAULT_AGENT_DISPLAY_NAME, DEFAULT_APP_DISPLAY_NAME } from '../../config/branding';
 

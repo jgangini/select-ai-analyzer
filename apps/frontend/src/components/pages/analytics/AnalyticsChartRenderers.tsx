@@ -78,7 +78,7 @@ type ChartRendererProps = ChartInteractionProps & {
   tools: ChartRendererTools;
 };
 
-export type PieSlice = {
+type PieSlice = {
   label: string;
   value: number;
   share: number;
@@ -87,7 +87,7 @@ export type PieSlice = {
   path: string;
 };
 
-export function chartControlProps({
+function chartControlProps({
   search,
   sortMode,
   points,

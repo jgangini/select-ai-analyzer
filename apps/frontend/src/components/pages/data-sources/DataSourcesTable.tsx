@@ -1,6 +1,6 @@
 import type { Ref } from 'react';
 
-import { LoadingState } from '../shared/LoadingState';
+import { LoadingState } from '../../common/LoadingState';
 import {
   PAGE_SIZE,
   formatDateTime,

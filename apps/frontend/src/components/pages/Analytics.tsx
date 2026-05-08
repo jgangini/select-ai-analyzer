@@ -1,4 +1,4 @@
-import { type MouseEvent as ReactMouseEvent, useEffect, useMemo, useRef, useState } from 'react';
+import { type MouseEvent as ReactMouseEvent, type RefObject, useEffect, useMemo, useRef, useState } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useSearchParams } from 'react-router-dom';
 
@@ -18,6 +18,7 @@ import {
   isDragBlockedTarget,
   type DashboardItemMoveUpdate,
   type DropPosition,
+  type VisualizationWidth,
 } from './analytics/dashboardDropPosition';
 import { ChartPreview } from './analytics/AnalyticsChartPreview';
 import {
@@ -29,16 +30,13 @@ import {
 } from './analytics/AnalyticsDashboardModals';
 import { AnalyticsDashboardHeader, AnalyticsDashboardTabs } from './analytics/AnalyticsDashboardHeader';
 import { AnalyticsDashboardSurface } from './analytics/AnalyticsDashboardSurface';
+import { ResultTable } from './analytics/AnalyticsResultTable';
 import { AnalyticsVisualizationCard } from './analytics/AnalyticsVisualizationCard';
 
 function applyDashboardCache(queryClient: ReturnType<typeof useQueryClient>, dashboard: DashboardDetail) {
   queryClient.setQueryData(dashboardsQueryKeys.detail(dashboard.dashboard_id), dashboard);
   queryClient.invalidateQueries({ queryKey: dashboardsQueryKeys.list });
   queryClient.invalidateQueries({ queryKey: dashboardsQueryKeys.ownerList });
-}
-
-function renderDashboardChartPreview(item: DashboardItem) {
-  return <ChartPreview spec={item.chart_spec} columns={item.columns} rows={item.rows} />;
 }
 
 type DragSession = {
@@ -50,6 +48,85 @@ type DragSession = {
 };
 
 type ShowToast = (message: string, type?: 'success' | 'error' | 'info' | 'warning') => void;
+
+function DashboardItemsGrid({
+  dashboardItems,
+  draggedItemIndex,
+  draggedItemWidth,
+  canManageDashboard,
+  isVisualizationMutating,
+  isUpdatePending,
+  isDeletePending,
+  draggedItemId,
+  dragOverItemId,
+  dragIndicator,
+  openItemMenuId,
+  itemMenuRef,
+  onCardMouseDown,
+  onToggleMenu,
+  onViewSql,
+  onRename,
+  onDelete,
+}: {
+  dashboardItems: DashboardItem[];
+  draggedItemIndex: number;
+  draggedItemWidth: VisualizationWidth | null;
+  canManageDashboard: boolean;
+  isVisualizationMutating: boolean;
+  isUpdatePending: boolean;
+  isDeletePending: boolean;
+  draggedItemId: string | null;
+  dragOverItemId: string | null;
+  dragIndicator: DropPosition | null;
+  openItemMenuId: string | null;
+  itemMenuRef: RefObject<HTMLDivElement>;
+  onCardMouseDown: (event: ReactMouseEvent<HTMLElement>, itemId: string, disabled: boolean) => void;
+  onToggleMenu: (itemId: string) => void;
+  onViewSql: (item: DashboardItem) => void;
+  onRename: (item: DashboardItem) => void;
+  onDelete: (item: DashboardItem) => void;
+}) {
+  return (
+    <div className="grid min-w-0 gap-4 md:grid-cols-2" data-dashboard-grid="true">
+      {dashboardItems.map((item, itemIndex) => (
+        <AnalyticsVisualizationCard
+          key={item.dashboard_item_id}
+          item={item}
+          itemIndex={itemIndex}
+          visualizationWidth={getVisualizationWidth(item)}
+          visualizationColumn={getDashboardItemColumn(dashboardItems, itemIndex)}
+          nextVisualizationWidth={
+            dashboardItems[itemIndex + 1] ? getVisualizationWidth(dashboardItems[itemIndex + 1]) : null
+          }
+          draggedItemIndex={draggedItemIndex}
+          draggedItemWidth={draggedItemWidth}
+          canManageDashboard={canManageDashboard}
+          isMutating={isVisualizationMutating}
+          isUpdatePending={isUpdatePending}
+          isDeletePending={isDeletePending}
+          draggedItemId={draggedItemId}
+          dragOverItemId={dragOverItemId}
+          dragIndicator={dragIndicator}
+          openItemMenuId={openItemMenuId}
+          itemMenuRef={itemMenuRef}
+          onCardMouseDown={onCardMouseDown}
+          onToggleMenu={onToggleMenu}
+          onViewSql={onViewSql}
+          onRename={onRename}
+          onDelete={onDelete}
+          renderChartPreview={(item) => (
+            <ChartPreview
+              spec={item.chart_spec}
+              columns={item.columns}
+              rows={item.rows}
+              renderTable={(props) => <ResultTable {...props} />}
+            />
+          )}
+        />
+      ))}
+    </div>
+  );
+}
 
 export function Analytics({
   currentUserId = 0,
@@ -354,48 +431,34 @@ export function Analytics({
   );
 
   const dashboardItemsContent = (
-    <div className="grid min-w-0 gap-4 md:grid-cols-2" data-dashboard-grid="true">
-      {dashboardItems.map((item, itemIndex) => (
-        <AnalyticsVisualizationCard
-          key={item.dashboard_item_id}
-          item={item}
-          itemIndex={itemIndex}
-          visualizationWidth={getVisualizationWidth(item)}
-          visualizationColumn={getDashboardItemColumn(dashboardItems, itemIndex)}
-          nextVisualizationWidth={
-            dashboardItems[itemIndex + 1] ? getVisualizationWidth(dashboardItems[itemIndex + 1]) : null
-          }
-          draggedItemIndex={draggedItemIndex}
-          draggedItemWidth={draggedItemWidth}
-          canManageDashboard={canManageDashboard}
-          isMutating={isVisualizationMutating}
-          isUpdatePending={updateItemMutation.isPending}
-          isDeletePending={deleteItemMutation.isPending}
-          draggedItemId={draggedItemId}
-          dragOverItemId={dragOverItemId}
-          dragIndicator={dragIndicator}
-          openItemMenuId={openItemMenuId}
-          itemMenuRef={itemMenuRef}
-          onCardMouseDown={handleCardMouseDown}
-          onToggleMenu={(itemId) =>
-            setOpenItemMenuId((current) => (current === itemId ? null : itemId))
-          }
-          onViewSql={(selectedItem) => {
-            setSqlItem(selectedItem);
-            closeItemMenu();
-          }}
-          onRename={(selectedItem) => {
-            setRenameItem(selectedItem);
-            closeItemMenu();
-          }}
-          onDelete={(selectedItem) => {
-            setDeleteItem(selectedItem);
-            closeItemMenu();
-          }}
-          renderChartPreview={renderDashboardChartPreview}
-        />
-      ))}
-    </div>
+    <DashboardItemsGrid
+      dashboardItems={dashboardItems}
+      draggedItemIndex={draggedItemIndex}
+      draggedItemWidth={draggedItemWidth}
+      canManageDashboard={canManageDashboard}
+      isVisualizationMutating={isVisualizationMutating}
+      isUpdatePending={updateItemMutation.isPending}
+      isDeletePending={deleteItemMutation.isPending}
+      draggedItemId={draggedItemId}
+      dragOverItemId={dragOverItemId}
+      dragIndicator={dragIndicator}
+      openItemMenuId={openItemMenuId}
+      itemMenuRef={itemMenuRef}
+      onCardMouseDown={handleCardMouseDown}
+      onToggleMenu={(itemId) => setOpenItemMenuId((current) => (current === itemId ? null : itemId))}
+      onViewSql={(selectedItem) => {
+        setSqlItem(selectedItem);
+        closeItemMenu();
+      }}
+      onRename={(selectedItem) => {
+        setRenameItem(selectedItem);
+        closeItemMenu();
+      }}
+      onDelete={(selectedItem) => {
+        setDeleteItem(selectedItem);
+        closeItemMenu();
+      }}
+    />
   );
 
   return (

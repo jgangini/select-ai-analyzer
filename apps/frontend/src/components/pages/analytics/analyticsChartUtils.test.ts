@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 
 import {
   buildYAxisTicks,
+  compareTableCellValues,
   donutSlicePath,
   formatAxisValue,
   formatMetricLabel,
@@ -101,5 +102,10 @@ describe('analytics chart model', () => {
     expect(donutSlicePath(50, 50, 40, 20, 0, Math.PI / 2)).toBe(
       'M 90 50 A 40 40 0 0 1 50 90 L 50 70 A 20 20 0 0 0 70 50 Z'
     );
+  });
+
+  it('compares table cells numerically before falling back to natural text order', () => {
+    expect(compareTableCellValues('1,200', 950)).toBe(250);
+    expect(compareTableCellValues('Branch 2', 'Branch 10')).toBeLessThan(0);
   });
 });

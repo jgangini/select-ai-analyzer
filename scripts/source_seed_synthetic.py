@@ -10,15 +10,24 @@ import re
 
 from scripts.source_seed_parser import SourceColumn, SourceTable, parse_source_tables
 from scripts.source_seed_sidecar import write_metadata_sidecar
-from scripts.source_seed_synthetic_examples import (
+from scripts.source_seed_synthetic_example_values import (
     DATA_YEAR,
     DOC_EXAMPLE_ACCOUNT,
     MIN_ROWS_PER_TABLE,
     START_DATE,
     TEST_TODAY,
     YEAR_DAYS,
-    apply_doc_example_overrides,
 )
+from scripts.source_seed_synthetic_examples import apply_core_doc_example_overrides
+from scripts.source_seed_synthetic_operational_examples import (
+    _apply_atm_examples,
+    _apply_clearing_examples,
+    _apply_interest_examples,
+    _apply_operating_date_examples,
+    _apply_teller_examples,
+)
+from scripts.source_seed_synthetic_term_deposit_examples import _apply_term_deposit_examples
+from scripts.source_seed_synthetic_transaction_examples import _apply_transaction_examples
 from scripts.source_seed_synthetic_value_rules import CURRENCIES, text_value_for_column
 
 
@@ -123,6 +132,19 @@ def value_for_column(column: SourceColumn, row_index: int, rng: random.Random) -
     return text_value_for_column(name, row_index)
 
 
+def apply_doc_example_overrides(table_name: str, row: dict[str, object], row_index: int) -> dict[str, object]:
+    upper_table = table_name.upper()
+    _apply_transaction_examples(upper_table, row, row_index)
+    apply_core_doc_example_overrides(upper_table, row, row_index)
+    _apply_teller_examples(upper_table, row, row_index)
+    _apply_atm_examples(upper_table, row, row_index)
+    _apply_clearing_examples(upper_table, row, row_index)
+    _apply_interest_examples(upper_table, row, row_index)
+    _apply_term_deposit_examples(upper_table, row, row_index)
+    _apply_operating_date_examples(upper_table, row, row_index)
+    return row
+
+
 def generate_rows(table: SourceTable, row_count: int, *, seed: int = 2605) -> Iterable[dict[str, object]]:
     rng = random.Random(seed + sum(ord(ch) for ch in table.name))
     for row_index in range(row_count):
@@ -157,22 +179,3 @@ def write_seed_files(
         paths.append(write_csv_for_table(table, destination, row_count=rows))
         paths.append(write_metadata_sidecar(table, destination / f"{table.name}.json"))
     return paths
-
-
-def write_seed_csvs(
-    source_file: Path,
-    destination: Path,
-    *,
-    default_rows: int = YEAR_DAYS,
-    fact_rows: int = 2000,
-) -> list[Path]:
-    return [
-        path
-        for path in write_seed_files(
-            source_file,
-            destination,
-            default_rows=default_rows,
-            fact_rows=fact_rows,
-        )
-        if path.suffix.lower() == ".csv"
-    ]

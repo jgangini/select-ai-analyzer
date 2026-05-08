@@ -5,9 +5,9 @@ import json
 import oracledb
 
 from apps.backend.app.select_ai.conversations import normalize_conversation_id
-from apps.backend.app.select_ai.source_intents import _is_velocity_window_intent
-from apps.backend.app.select_ai.source_sql_guidance import (
+from apps.backend.app.select_ai.source_intents import (
     _fallback_sql_for_question,
+    _is_velocity_window_intent,
     _sql_generation_hints,
     _uses_current_clock,
     _uses_current_clock_for_velocity_sql,

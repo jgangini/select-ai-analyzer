@@ -9,6 +9,37 @@ if TYPE_CHECKING:
 logger = logging.getLogger(__name__)
 
 
+def fetch_user_info(db_manager: "DatabaseManager", user_id: int) -> dict | None:
+    conn = db_manager.get_connection()
+    cursor = conn.cursor()
+    try:
+        cursor.execute(
+            """
+            SELECT u.user_id, u.user_username, u.user_name, u.user_last_name,
+                   u.user_group_id, ug.user_group_name
+            FROM users u
+            JOIN user_group ug ON u.user_group_id = ug.user_group_id
+            WHERE u.user_id = :1 AND u.user_state = 1
+            """,
+            [user_id],
+        )
+        row = cursor.fetchone()
+        if not row:
+            return None
+        return {
+            "user_id": row[0],
+            "username": row[1],
+            "name": row[2],
+            "last_name": row[3],
+            "email": row[1],
+            "group_id": row[4],
+            "group_name": row[5],
+        }
+    finally:
+        cursor.close()
+        conn.close()
+
+
 class UserService:
     def __init__(self, db_manager: "DatabaseManager"):
         self.db_manager = db_manager
@@ -130,34 +161,7 @@ class UserService:
             conn.close()
 
     def get_user_info(self, user_id: int) -> dict | None:
-        conn = self.db_manager.get_connection()
-        cursor = conn.cursor()
-        try:
-            cursor.execute(
-                """
-                SELECT u.user_id, u.user_username, u.user_name, u.user_last_name,
-                       u.user_group_id, ug.user_group_name
-                FROM users u
-                JOIN user_group ug ON u.user_group_id = ug.user_group_id
-                WHERE u.user_id = :1 AND u.user_state = 1
-                """,
-                [user_id],
-            )
-            row = cursor.fetchone()
-            if not row:
-                return None
-            return {
-                "user_id": row[0],
-                "username": row[1],
-                "name": row[2],
-                "last_name": row[3],
-                "email": row[1],
-                "group_id": row[4],
-                "group_name": row[5],
-            }
-        finally:
-            cursor.close()
-            conn.close()
+        return fetch_user_info(self.db_manager, user_id)
 
     def update_profile(self, user_id: int, name: str, last_name: str) -> None:
         conn = self.db_manager.get_connection()

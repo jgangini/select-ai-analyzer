@@ -1,4 +1,4 @@
-export type UserSearchRecord = {
+type UserSearchRecord = {
   username?: string | null;
   name?: string | null;
   last_name?: string | null;
