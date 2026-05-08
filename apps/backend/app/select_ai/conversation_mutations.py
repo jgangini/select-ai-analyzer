@@ -10,10 +10,26 @@ from apps.backend.app.select_ai.conversation_store import (
     _delete_analytics_conversation,
     _delete_question_runs,
     _insert_question_run,
+    _insert_question_run_snapshot,
     _rename_analytics_conversation,
     _select_conversation_summary,
+    _select_conversation_owner,
 )
 from apps.backend.app.select_ai.value_serialization import _json_safe
+
+
+def _json_dump(value: Any) -> str:
+    return json.dumps(value, ensure_ascii=False, default=str)
+
+
+def _assert_conversation_writable(cursor, *, conversation_id: str, user_id: int) -> str | None:
+    _select_conversation_owner(cursor, conversation_id=conversation_id)
+    row = cursor.fetchone()
+    if not row or int(user_id or 0) == 0:
+        return str(row[1] or conversation_id) if row else None
+    if int(row[0] or 0) not in {0, int(user_id or 0)}:
+        raise ValueError("Conversation was not found.")
+    return str(row[1] or conversation_id)
 
 
 class SelectAIConversationMutationMixin:
@@ -101,16 +117,27 @@ class SelectAIConversationMutationMixin:
         row_count: int,
         chart_spec: dict[str, Any],
         conversation_id: str,
+        columns: list[str],
+        rows: list[dict[str, Any]],
+        max_rows: int = 500,
+        oracle_conversation_id: str | None = None,
         user_id: int = 0,
         profile_name: str | None = None,
     ) -> str:
         run_id = uuid.uuid4().hex
+        resolved_conversation_id = normalize_conversation_id(conversation_id)
         conn = self._connection()
         cursor = conn.cursor()
         try:
+            _assert_conversation_writable(
+                cursor,
+                conversation_id=resolved_conversation_id,
+                user_id=int(user_id or 0),
+            )
             ensure_conversation(
                 cursor,
-                conversation_id=conversation_id,
+                conversation_id=resolved_conversation_id,
+                oracle_conversation_id=oracle_conversation_id or resolved_conversation_id,
                 conversation_type="analytics",
                 title=question,
                 user_id=user_id,
@@ -121,7 +148,7 @@ class SelectAIConversationMutationMixin:
             _insert_question_run(
                 cursor,
                 run_id=run_id,
-                conversation_id=conversation_id,
+                conversation_id=resolved_conversation_id,
                 profile_name=profile_name or self._profile_name(),
                 question=question,
                 sql=sql,
@@ -129,8 +156,39 @@ class SelectAIConversationMutationMixin:
                 row_count=row_count,
                 chart_spec=json.dumps(chart_spec),
             )
+            _insert_question_run_snapshot(
+                cursor,
+                run_id=run_id,
+                columns_json=_json_dump(columns),
+                rows_json=_json_dump(rows),
+                row_count=int(row_count or 0),
+                max_rows=int(max_rows or 0),
+                truncated_flag="Y" if int(row_count or 0) >= int(max_rows or 0) else "N",
+            )
             conn.commit()
             return run_id
+        except Exception:
+            conn.rollback()
+            raise
+        finally:
+            cursor.close()
+            conn.close()
+
+    def resolve_oracle_conversation_id(
+        self,
+        *,
+        conversation_id: str,
+        user_id: int = 0,
+    ) -> str:
+        resolved_conversation_id = normalize_conversation_id(conversation_id)
+        conn = self._connection()
+        cursor = conn.cursor()
+        try:
+            return _assert_conversation_writable(
+                cursor,
+                conversation_id=resolved_conversation_id,
+                user_id=int(user_id or 0),
+            ) or resolved_conversation_id
         finally:
             cursor.close()
             conn.close()

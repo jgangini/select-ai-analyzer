@@ -27,5 +27,7 @@ This directory is the source of truth for the initial installation executed by t
 
 - Keep operational compatibility with the frontend installation flow.
 - The only source of truth is `apps/backend/db/bootstrap/sql`.
-- Conversation history is stored in `analytics_conversations` and `question_runs`;
-  the row data for old chats is rebuilt by re-running the stored SQL.
+- Conversation history is stored in `analytics_conversations`, `question_runs`,
+  and `question_run_result_snapshots`. The snapshot preserves the rows shown
+  when the user asked the question; re-running SQL is an explicit refresh path,
+  not the default history view.

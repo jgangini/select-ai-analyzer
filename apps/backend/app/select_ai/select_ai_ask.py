@@ -28,11 +28,19 @@ class SelectAIAskMixin:
             if conversation_id
             else self._create_select_ai_conversation(title=question)
         )
+        oracle_conversation_id = (
+            self.resolve_oracle_conversation_id(
+                conversation_id=resolved_conversation_id,
+                user_id=user_id,
+            )
+            if conversation_id
+            else resolved_conversation_id
+        )
         scoped_profile_name, scoped_objects = self.create_scoped_profile(question)
         try:
             sql = self.generate_sql(
                 question,
-                conversation_id=resolved_conversation_id,
+                conversation_id=oracle_conversation_id,
                 profile_name=scoped_profile_name,
             )
             columns, rows = self.execute_select(sql, max_rows=max_rows)
@@ -46,7 +54,7 @@ class SelectAIAskMixin:
                     rows = fallback_rows
             answer = self.narrate(
                 question,
-                conversation_id=resolved_conversation_id,
+                conversation_id=oracle_conversation_id,
                 profile_name=scoped_profile_name,
             )
             chart_spec = validate_chart_spec(
@@ -60,6 +68,10 @@ class SelectAIAskMixin:
                 row_count=len(rows),
                 chart_spec=chart_spec,
                 conversation_id=resolved_conversation_id,
+                oracle_conversation_id=oracle_conversation_id,
+                columns=columns,
+                rows=rows,
+                max_rows=max_rows,
                 user_id=user_id,
                 profile_name=scoped_profile_name,
             )

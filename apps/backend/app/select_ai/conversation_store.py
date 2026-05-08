@@ -17,6 +17,18 @@ def _analytics_conversation_exists(cursor, *, conversation_id: str, user_id: int
     return bool(row and int(row[0] or 0) == 1)
 
 
+def _select_conversation_owner(cursor, *, conversation_id: str) -> None:
+    cursor.execute(
+        """
+        SELECT created_by_user_id, oracle_conversation_id
+        FROM analytics_conversations
+        WHERE conversation_id = :conversation_id
+          AND conversation_type = 'analytics'
+        """,
+        conversation_id=conversation_id,
+    )
+
+
 def _delete_question_runs(cursor, *, conversation_id: str) -> int:
     cursor.execute(
         """
@@ -100,6 +112,19 @@ def _insert_question_run(cursor, **params: object) -> None:
     )
 
 
+def _insert_question_run_snapshot(cursor, **params: object) -> None:
+    cursor.execute(
+        """
+        INSERT INTO question_run_result_snapshots (
+            question_run_id, columns_json, rows_json, row_count, max_rows, truncated_flag
+        ) VALUES (
+            :run_id, :columns_json, :rows_json, :row_count, :max_rows, :truncated_flag
+        )
+        """,
+        **params,
+    )
+
+
 def _select_conversation_list(cursor, *, user_id: int, search_filter: str | None, limit_value: int) -> None:
     cursor.execute(
         """
@@ -166,18 +191,26 @@ def _select_question_runs(cursor, *, conversation_id: str) -> None:
     cursor.execute(
         """
         SELECT
-            question_run_id,
-            profile_name,
-            question_text,
-            generated_sql,
-            answer_text,
-            row_count,
-            chart_spec_json,
-            status,
-            created_at
-        FROM question_runs
-        WHERE conversation_id = :conversation_id
-        ORDER BY created_at ASC
+            qr.question_run_id,
+            qr.profile_name,
+            qr.question_text,
+            qr.generated_sql,
+            qr.answer_text,
+            qr.row_count,
+            qr.chart_spec_json,
+            qr.status,
+            qr.created_at,
+            s.columns_json,
+            s.rows_json,
+            s.row_count AS snapshot_row_count,
+            s.max_rows AS snapshot_max_rows,
+            s.truncated_flag AS snapshot_truncated_flag,
+            s.captured_at AS snapshot_captured_at
+        FROM question_runs qr
+        LEFT JOIN question_run_result_snapshots s
+          ON s.question_run_id = qr.question_run_id
+        WHERE qr.conversation_id = :conversation_id
+        ORDER BY qr.created_at ASC
         """,
         conversation_id=conversation_id,
     )

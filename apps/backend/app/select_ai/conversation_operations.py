@@ -23,17 +23,24 @@ def _materialize_stored_result(
     *,
     generated_sql: Any,
     chart_spec_json: Any,
+    columns_json: Any = None,
+    rows_json: Any = None,
+    snapshot_row_count: Any = None,
     execute_select,
     max_rows: int | None = 500,
 ) -> dict[str, Any]:
     safe_sql = validate_read_only_select(str(generated_sql or ""))
-    columns, rows = execute_select(safe_sql, max_rows=_safe_max_rows(max_rows))
+    if columns_json is not None and rows_json is not None:
+        columns = _json_loads(columns_json, default=[])
+        rows = _json_loads(rows_json, default=[])
+    else:
+        columns, rows = execute_select(safe_sql, max_rows=_safe_max_rows(max_rows))
     chart_spec = validate_chart_spec(_json_loads(chart_spec_json, default={}), columns)
     return {
         "sql": safe_sql,
         "columns": columns,
         "rows": rows,
-        "row_count": len(rows),
+        "row_count": int(snapshot_row_count or len(rows)),
         "chart_spec": chart_spec,
     }
 
@@ -94,6 +101,9 @@ class SelectAIConversationMixin(SelectAIConversationMutationMixin):
             result = _materialize_stored_result(
                 generated_sql=run.get("generated_sql"),
                 chart_spec_json=run.get("chart_spec_json"),
+                columns_json=run.get("columns_json"),
+                rows_json=run.get("rows_json"),
+                snapshot_row_count=run.get("snapshot_row_count"),
                 execute_select=self.execute_select,
                 max_rows=max_rows,
             )
