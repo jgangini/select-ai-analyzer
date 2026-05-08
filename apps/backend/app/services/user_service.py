@@ -1,19 +1,19 @@
 import logging
-from typing import List, Optional
+from typing import TYPE_CHECKING
 
-from apps.backend.app.core.config import Settings
-from apps.backend.app.core.database import DatabaseManager
 from apps.backend.app.core.security import get_password_hash, verify_password
+
+if TYPE_CHECKING:
+    from apps.backend.app.core.database import DatabaseManager
 
 logger = logging.getLogger(__name__)
 
 
 class UserService:
-    def __init__(self, db_manager: DatabaseManager, settings: Settings):
+    def __init__(self, db_manager: "DatabaseManager"):
         self.db_manager = db_manager
-        self.settings = settings
 
-    def list_groups(self) -> List[dict]:
+    def list_groups(self) -> list[dict]:
         conn = self.db_manager.get_connection()
         cursor = conn.cursor()
         try:
@@ -45,7 +45,7 @@ class UserService:
             cursor.close()
             conn.close()
 
-    def list_users(self, current_user_id: int) -> List[dict]:
+    def list_users(self, current_user_id: int) -> list[dict]:
         self.ensure_admin(current_user_id)
         conn = self.db_manager.get_connection()
         cursor = conn.cursor()
@@ -129,7 +129,7 @@ class UserService:
             cursor.close()
             conn.close()
 
-    def get_user_info(self, user_id: int) -> Optional[dict]:
+    def get_user_info(self, user_id: int) -> dict | None:
         conn = self.db_manager.get_connection()
         cursor = conn.cursor()
         try:
@@ -203,4 +203,3 @@ class UserService:
         finally:
             cursor.close()
             conn.close()
-

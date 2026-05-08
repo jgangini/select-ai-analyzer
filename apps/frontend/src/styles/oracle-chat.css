@@ -1,0 +1,245 @@
+﻿.app-shell-dark .app-light-surface,
+
+.app-shell-dark .chat-composer-surface,
+
+.app-shell-dark .chat-suggestion-menu {
+
+  background:
+
+    linear-gradient(180deg, #ffffff, #fffdfa) !important;
+
+  border-color: rgba(229, 219, 211, 0.98) !important;
+
+  color: #171412 !important;
+
+  box-shadow:
+
+    0 24px 70px rgba(0, 0, 0, 0.18),
+
+    inset 0 1px 0 rgba(255, 255, 255, 0.9) !important;
+
+}
+
+.app-shell-dark .chat-panel-surface {
+
+  background: transparent !important;
+
+  border: 0 !important;
+
+  box-shadow: none !important;
+
+}
+
+.app-shell-dark .chat-start-surface {
+
+  background:
+
+    radial-gradient(circle at 8% 8%, rgba(199, 70, 52, 0.18), transparent 28rem),
+
+    radial-gradient(circle at 90% 88%, rgba(199, 70, 52, 0.14), transparent 30rem),
+
+    radial-gradient(circle at 55% 15%, rgba(255, 255, 255, 0.04), transparent 24rem),
+
+    linear-gradient(135deg, var(--app-bg-start) 0%, var(--app-bg-mid) 48%, var(--app-bg-end) 100%) !important;
+
+}
+
+.app-shell-dark .chat-start-surface .text-oracle-dark-gray {
+
+  color: var(--app-text) !important;
+
+}
+
+.app-shell-dark .chat-message-list {
+
+  background:
+
+    linear-gradient(180deg, #f7f3ef 0%, #f1ece6 100%) !important;
+
+}
+
+.app-shell-dark .chat-assistant-message {
+
+  background:
+
+    linear-gradient(180deg, #fffdfb 0%, #ffffff 100%) !important;
+
+  background-color: #ffffff !important;
+
+  border-color: #dfcbc1 !important;
+
+  box-shadow:
+
+    0 14px 34px rgba(49, 45, 42, 0.11),
+
+    0 0 0 3px rgba(199, 70, 52, 0.035),
+
+    0 1px 0 rgba(255, 255, 255, 0.9) inset !important;
+
+}
+
+.app-shell-dark .chat-start-surface .chat-sample-question {
+
+  color: #171412 !important;
+
+  background: #ffffff !important;
+
+  border-color: #e5ddd6 !important;
+
+}
+
+.app-shell-dark .chat-start-surface .chat-sample-question:hover {
+
+  border-color: rgba(199, 70, 52, 0.64) !important;
+
+  box-shadow:
+
+    0 14px 32px rgba(49, 45, 42, 0.16),
+
+    0 0 0 3px rgba(199, 70, 52, 0.08) !important;
+
+}
+
+.chat-markdown-table-scroll {
+
+  scrollbar-width: thin;
+
+  scrollbar-color: rgba(77, 77, 77, 0.38) transparent;
+
+}
+
+.chat-markdown-table-scroll::-webkit-scrollbar {
+
+  height: 0.5rem;
+
+}
+
+.chat-markdown-table-scroll::-webkit-scrollbar-track {
+
+  background: transparent;
+
+}
+
+.chat-markdown-table-scroll::-webkit-scrollbar-thumb {
+
+  background: rgba(77, 77, 77, 0.32);
+
+  border: 2px solid #ffffff;
+
+  border-radius: 999px;
+
+}
+
+.chat-markdown-table-scroll::-webkit-scrollbar-thumb:hover {
+
+  background: rgba(77, 77, 77, 0.48);
+
+}
+
+.chart-scroll-shell {
+
+  position: relative;
+
+  min-width: 0;
+
+  padding-bottom: 0.875rem;
+
+}
+
+.chart-horizontal-scroll {
+
+  scrollbar-width: none;
+
+}
+
+.chart-horizontal-scroll::-webkit-scrollbar {
+
+  display: none;
+
+  height: 0;
+
+}
+
+.chart-horizontal-scroll-rail {
+
+  position: absolute;
+
+  right: 0;
+
+  bottom: 0.125rem;
+
+  left: 0;
+
+  height: 0.625rem;
+
+  cursor: grab;
+
+  border-radius: 999px;
+
+  background: rgba(77, 77, 77, 0.055);
+
+  transition: opacity 120ms ease;
+
+}
+
+.chart-horizontal-scroll-rail:active {
+
+  cursor: grabbing;
+
+}
+
+.chart-horizontal-scroll-thumb {
+
+  position: absolute;
+
+  top: 0;
+
+  bottom: 0;
+
+  left: 0;
+
+  min-width: 3rem;
+
+  border: 0.1875rem solid transparent;
+
+  border-radius: 999px;
+
+  background:
+
+    linear-gradient(rgba(77, 77, 77, 0.34), rgba(77, 77, 77, 0.34))
+
+    padding-box;
+
+  will-change: transform, width;
+
+}
+
+.chart-horizontal-scroll-rail:hover .chart-horizontal-scroll-thumb,
+
+.chart-horizontal-scroll-rail:active .chart-horizontal-scroll-thumb {
+
+  background:
+
+    linear-gradient(rgba(77, 77, 77, 0.48), rgba(77, 77, 77, 0.48))
+
+    padding-box;
+
+}
+
+.app-shell-dark .chat-composer-footer {
+
+  background:
+
+    radial-gradient(circle at 2rem 50%, rgba(199, 70, 52, 0.12), transparent 6.75rem),
+
+    linear-gradient(135deg, #5b4d49 0%, #484240 48%, #343437 100%) !important;
+
+  border-color: rgba(199, 70, 52, 0.2) !important;
+
+  box-shadow:
+
+    inset 0 1px 0 rgba(255, 255, 255, 0.08),
+
+    0 -14px 36px rgba(49, 45, 42, 0.18) !important;
+
+}

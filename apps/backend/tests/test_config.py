@@ -1,5 +1,9 @@
 from pathlib import Path
 
+import pytest
+from fastapi import HTTPException
+
+from apps.backend.app.api.routes.setup import _safe_upload_name
 from apps.backend.app.core.config import BACKEND_ROOT, Settings
 
 
@@ -36,3 +40,13 @@ def test_settings_defaults_are_safe_without_env_file() -> None:
     assert settings.database_backend == "oracle"
     assert settings.oci_genai_model == "google.gemini-2.5-flash"
     assert settings.user_runtime_scope == "global"
+
+
+def test_setup_upload_name_strips_client_path_and_requires_suffix() -> None:
+    assert _safe_upload_name("..\\secrets\\api.pem", ".pem", "File must be .pem") == "api.pem"
+
+    with pytest.raises(HTTPException) as exc_info:
+        _safe_upload_name(None, ".pem", "File must be .pem")
+
+    assert exc_info.value.status_code == 400
+    assert exc_info.value.detail == "File must be .pem"

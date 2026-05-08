@@ -1,27 +1,30 @@
 import { useState, useEffect } from 'react';
-import { Header } from '../common/Header';
-import { LoadingState } from '../common/LoadingState';
-import { Sidebar } from '../common/Sidebar';
-import { Footer } from '../common/Footer';
-import { useAuth } from '../../context/AuthContext';
-import api from '../../services/api';
+
+import { LoadingState } from './shared/LoadingState';
+import { usersApi, type UserAccount } from '../../services/usersApi';
+
+type ProfileFormData = {
+  name: string;
+  last_name: string;
+  current_password: string;
+  new_password: string;
+  confirm_password: string;
+};
+
+function getApiErrorMessage(error: unknown, fallback: string): string {
+  const maybeError = error as { response?: { data?: { detail?: string } } };
+  return maybeError.response?.data?.detail || fallback;
+}
 
 export function Profile() {
-  useAuth();
-  const [sidebarCollapsed, setSidebarCollapsed] = useState(() => sessionStorage.getItem('sidebarCollapsed') === 'true');
-  const handleSidebarToggle = () => setSidebarCollapsed((prev) => {
-    const next = !prev;
-    sessionStorage.setItem('sidebarCollapsed', next ? 'true' : 'false');
-    return next;
-  });
   const [editing, setEditing] = useState(false);
   const [saving, setSaving] = useState(false);
   const [loading, setLoading] = useState(true);
-  const [user, setUser] = useState<any>(null);
+  const [user, setUser] = useState<UserAccount | null>(null);
   const [successMessage, setSuccessMessage] = useState('');
   const [errorMessage, setErrorMessage] = useState('');
   
-  const [formData, setFormData] = useState({
+  const [formData, setFormData] = useState<ProfileFormData>({
     name: '',
     last_name: '',
     current_password: '',
@@ -32,7 +35,7 @@ export function Profile() {
   useEffect(() => {
     const fetchUserData = async () => {
       try {
-        const response = await api.get('/user/me');
+        const response = await usersApi.currentUser();
         const userData = response.data;
         setUser(userData);
         setFormData({
@@ -58,23 +61,27 @@ export function Profile() {
     setErrorMessage('');
     
     try {
-      await api.put('/user/profile', {
+      await usersApi.updateProfile({
         name: formData.name,
         last_name: formData.last_name
       });
       
-      setUser({
-        ...user,
-        name: formData.name,
-        last_name: formData.last_name
-      });
+      setUser((currentUser) =>
+        currentUser
+          ? {
+              ...currentUser,
+              name: formData.name,
+              last_name: formData.last_name,
+            }
+          : currentUser
+      );
       
       setSuccessMessage('Profile updated successfully!');
       setEditing(false);
       
       setTimeout(() => setSuccessMessage(''), 5000);
-    } catch (error: any) {
-      setErrorMessage(error.response?.data?.detail || 'Failed to update profile');
+    } catch (error: unknown) {
+      setErrorMessage(getApiErrorMessage(error, 'Failed to update profile'));
     } finally {
       setSaving(false);
     }
@@ -91,7 +98,7 @@ export function Profile() {
 
     setSaving(true);
     try {
-      await api.post('/user/change-password', {
+      await usersApi.changePassword({
         current_password: formData.current_password,
         new_password: formData.new_password
       });
@@ -105,44 +112,23 @@ export function Profile() {
       });
       
       setTimeout(() => setSuccessMessage(''), 5000);
-    } catch (error: any) {
-      setErrorMessage(error.response?.data?.detail || 'Failed to change password');
+    } catch (error: unknown) {
+      setErrorMessage(getApiErrorMessage(error, 'Failed to change password'));
     } finally {
       setSaving(false);
     }
   };
 
   if (loading) {
-    return (
-      <div className="app-shell-dark min-h-screen flex items-center justify-center">
-        <LoadingState />
-      </div>
-    );
+    return <LoadingState className="py-12" />;
   }
 
   if (!user) {
-    return (
-      <div className="app-shell-dark min-h-screen flex items-center justify-center">
-        <p className="text-gray-600">Failed to load user data</p>
-      </div>
-    );
+    return <p className="py-12 text-center text-gray-600">Failed to load user data</p>;
   }
 
   return (
-    <div className="app-shell-dark min-h-screen flex flex-col">
-      <Header />
-      
-      <div className="app-content-layer flex flex-1 pt-14">
-        <Sidebar collapsed={sidebarCollapsed} onToggle={handleSidebarToggle} />
-        
-        {/* Main Content */}
-        <div
-          className={`flex-1 transition-all duration-300 ${
-            sidebarCollapsed ? 'ml-16' : 'ml-52'
-          }`}
-          style={{ marginBottom: '50px' }}
-        >
-          <div className="max-w-4xl mx-auto px-6 py-8">
+    <div className="max-w-4xl mx-auto px-6 py-8">
             <h1 className="text-3xl font-bold text-gray-900 mb-6">Edit Profile</h1>
             
             {/* Profile Section */}
@@ -305,11 +291,6 @@ export function Profile() {
                 {saving ? 'Changing...' : 'Change Password'}
               </button>
             </div>
-          </div>
-        </div>
-      </div>
-
-      <Footer />
     </div>
   );
 }

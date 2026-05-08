@@ -1,0 +1,395 @@
+.app-shell-dark .chat-suggestion-menu {
+  background: #ffffff !important;
+  border-color: #e7ddd6 !important;
+  box-shadow:
+    0 22px 56px rgba(49, 45, 42, 0.18),
+    0 0 0 1px rgba(255, 255, 255, 0.92) inset !important;
+}
+
+.app-shell-dark .chat-start-surface .chat-composer-surface .text-oracle-dark-gray,
+
+.app-shell-dark .chat-start-surface .chat-suggestion-menu .text-oracle-dark-gray {
+  color: #171412 !important;
+  text-shadow: none !important;
+}
+
+.app-shell-dark .chat-start-surface .chat-composer-surface .text-oracle-medium-gray,
+
+.app-shell-dark .chat-start-surface .chat-suggestion-menu .text-oracle-medium-gray,
+
+.app-shell-dark .chat-start-surface .chat-suggestion-menu .text-oracle-light-gray {
+  color: #6a5d55 !important;
+  text-shadow: none !important;
+}
+
+.app-shell-dark .chat-start-surface .chat-composer-surface textarea {
+  color: #171412 !important;
+  -webkit-text-fill-color: #171412 !important;
+}
+
+.app-shell-dark .chat-start-surface .chat-composer-surface textarea::placeholder {
+  color: #8b7f76 !important;
+  opacity: 1 !important;
+}
+
+.app-shell-dark .composer-token-chip {
+  background: #ffffff !important;
+  border-color: #d9d2cb !important;
+  color: #171412 !important;
+  box-shadow: 0 1px 2px rgba(49, 45, 42, 0.08);
+}
+
+.app-shell-dark .chat-suggestion-kind-badge {
+  background-color: #f3f4f6 !important;
+  border-color: #d1d5db !important;
+  color: #4b5563 !important;
+}
+
+.app-shell-dark .chat-suggestion-item-selected .chat-suggestion-kind-badge {
+  background-color: #e5e7eb !important;
+  border-color: #cbd5e1 !important;
+  color: #374151 !important;
+}
+
+.app-shell-dark .chat-composer-surface textarea,
+
+.app-shell-dark .app-light-surface .chat-composer-surface textarea {
+  background: transparent !important;
+  border: 0 !important;
+  caret-color: #171412;
+  box-shadow: none !important;
+  outline: none !important;
+}
+
+.app-shell-dark .chat-composer-surface .chat-composer-input--overlay,
+
+.app-shell-dark .app-light-surface .chat-composer-surface .chat-composer-input--overlay {
+  color: transparent !important;
+  -webkit-text-fill-color: transparent !important;
+  caret-color: transparent !important;
+  text-shadow: none !important;
+}
+
+.app-shell-dark .chat-composer-surface .chat-composer-input--overlay::selection,
+
+.app-shell-dark .app-light-surface .chat-composer-surface .chat-composer-input--overlay::selection {
+  background: transparent !important;
+  color: transparent !important;
+  -webkit-text-fill-color: transparent !important;
+}
+
+.app-shell-dark .chat-composer-surface textarea:focus,
+
+.app-shell-dark .chat-composer-surface textarea:focus-visible,
+
+.app-shell-dark .app-light-surface .chat-composer-surface textarea:focus,
+
+.app-shell-dark .app-light-surface .chat-composer-surface textarea:focus-visible {
+  border: 0 !important;
+  box-shadow: none !important;
+  outline: none !important;
+}
+
+.app-shell-dark .app-light-surface .bg-white,
+
+.app-shell-dark .app-light-surface [class~="bg-white/95"],
+
+.app-shell-dark .app-light-surface [class~="bg-white/80"],
+
+.app-shell-dark .app-light-surface [class~="bg-white/70"] {
+  background-color: #ffffff !important;
+}
+
+.app-shell-dark .app-light-surface .bg-gray-50,
+
+.app-shell-dark .app-light-surface .bg-gray-100,
+
+.app-shell-dark .app-light-surface .bg-oracle-bg-gray,
+
+.app-shell-dark .app-light-surface .bg-oracle-table-header,
+
+.app-shell-dark .app-light-surface thead {
+  background-color: #f6f2ef !important;
+}
+
+.app-shell-dark .app-light-surface .bg-blue-50,
+
+.app-shell-dark .app-light-surface .bg-amber-50,
+
+.app-shell-dark .app-light-surface .bg-red-50,
+
+.app-shell-dark .app-light-surface .bg-rose-50,
+
+.app-shell-dark .app-light-surface .bg-emerald-50,
+
+.app-shell-dark .app-light-surface [class*="bg-blue-50"],
+
+.app-shell-dark .app-light-surface [class*="bg-amber-50"],
+
+.app-shell-dark .app-light-surface [class*="bg-red-50"],
+
+.app-shell-dark .app-light-surface [class*="bg-rose-50"],
+
+.app-shell-dark .app-light-surface [class*="bg-emerald-50"],
+
+.app-shell-dark .app-light-surface [class*="bg-purple-50"] {
+  background-color: #fff7f3 !important;
+}
+
+.app-shell-dark .app-light-surface [class*="bg-emerald-50"] {
+  background-color: #edf8f1 !important;
+}
+
+.app-shell-dark .app-light-surface [class*="bg-amber-50"] {
+  background-color: #fff7e8 !important;
+}
+
+.app-shell-dark .app-light-surface [class*="bg-blue-50"],
+
+.app-shell-dark .app-light-surface [class*="bg-purple-50"] {
+  background-color: #f4f1ef !important;
+}
+
+.app-shell-dark .app-light-surface .text-gray-900,
+
+.app-shell-dark .app-light-surface .text-gray-800,
+
+.app-shell-dark .app-light-surface .text-gray-700,
+
+.app-shell-dark .app-light-surface .text-oracle-dark-gray,
+
+.app-shell-dark .app-light-surface .text-blue-800,
+
+.app-shell-dark .app-light-surface .text-amber-800,
+
+.app-shell-dark .app-light-surface .text-emerald-800 {
+  color: #171412 !important;
+}
+
+.app-shell-dark .app-light-surface .text-gray-600,
+
+.app-shell-dark .app-light-surface .text-gray-500,
+
+.app-shell-dark .app-light-surface .text-oracle-medium-gray,
+
+.app-shell-dark .app-light-surface .text-oracle-light-gray,
+
+.app-shell-dark .app-light-surface .text-blue-600,
+
+.app-shell-dark .app-light-surface .text-blue-700,
+
+.app-shell-dark .app-light-surface .text-amber-600,
+
+.app-shell-dark .app-light-surface .text-amber-700 {
+  color: #6a5d55 !important;
+}
+
+.app-shell-dark .app-light-surface [class*="text-emerald-"] {
+  color: #047857 !important;
+}
+
+.app-shell-dark .app-light-surface [class*="text-amber-"] {
+  color: #8a5a00 !important;
+}
+
+.app-shell-dark .app-light-surface [class*="text-rose-"],
+
+.app-shell-dark .app-light-surface [class*="text-red-"] {
+  color: var(--oracle-red) !important;
+}
+
+.app-shell-dark .app-light-surface [class*="text-blue-"],
+
+.app-shell-dark .app-light-surface [class*="text-purple-"] {
+  color: #6a5d55 !important;
+}
+
+.app-shell-dark .app-light-surface .text-oracle-blue-link {
+  color: var(--oracle-red) !important;
+}
+
+.app-shell-dark .app-light-surface .chat-start-surface .text-oracle-dark-gray {
+  color: var(--app-text) !important;
+  text-shadow: 0 16px 44px rgba(0, 0, 0, 0.28);
+}
+
+.app-shell-dark .app-light-surface .chat-start-surface .chat-composer-surface .text-oracle-dark-gray,
+
+.app-shell-dark .app-light-surface .chat-start-surface .chat-suggestion-menu .text-oracle-dark-gray {
+  color: #171412 !important;
+  text-shadow: none !important;
+}
+
+.app-shell-dark .app-light-surface .chat-start-surface .chat-composer-surface .text-oracle-medium-gray,
+
+.app-shell-dark .app-light-surface .chat-start-surface .chat-suggestion-menu .text-oracle-medium-gray,
+
+.app-shell-dark .app-light-surface .chat-start-surface .chat-suggestion-menu .text-oracle-light-gray {
+  color: #6a5d55 !important;
+  text-shadow: none !important;
+}
+
+.app-shell-dark .chat-conversation-header {
+  position: relative;
+  overflow: hidden;
+  background:
+    radial-gradient(circle at 2rem 50%, rgba(199, 70, 52, 0.12), transparent 6.75rem),
+    linear-gradient(135deg, #5b4d49 0%, #484240 48%, #343437 100%) !important;
+  border-color: rgba(199, 70, 52, 0.24) !important;
+  box-shadow:
+    0 18px 42px rgba(49, 45, 42, 0.22),
+    inset 0 1px 0 rgba(255, 255, 255, 0.16),
+    inset 0 -1px 0 rgba(255, 255, 255, 0.08) !important;
+}
+
+.app-shell-dark .chat-conversation-header.chat-conversation-header--menu-open {
+  overflow: visible;
+}
+
+.app-shell-dark .chat-conversation-header::before {
+  content: '';
+  position: absolute;
+  inset: -5.5rem auto auto -3.5rem;
+  width: 15rem;
+  height: 15rem;
+  border-radius: 999px;
+  background: rgba(199, 70, 52, 0.1);
+  filter: blur(28px);
+  pointer-events: none;
+}
+
+.app-shell-dark .chat-conversation-header > * {
+  position: relative;
+  z-index: 1;
+}
+
+.app-shell-dark .chat-conversation-header .bg-oracle-red {
+  box-shadow:
+    0 0 0 1px rgba(255, 255, 255, 0.55),
+    0 10px 24px rgba(0, 0, 0, 0.22) !important;
+}
+
+.app-shell-dark .chat-conversation-header .text-oracle-dark-gray {
+  color: #ffffff !important;
+}
+
+.app-shell-dark .chat-conversation-header .text-oracle-light-gray,
+
+.app-shell-dark .chat-conversation-header .text-oracle-medium-gray {
+  color: rgba(255, 255, 255, 0.76) !important;
+}
+
+.app-shell-dark .chat-conversation-header button.text-oracle-medium-gray {
+  color: rgba(255, 255, 255, 0.72) !important;
+}
+
+.app-shell-dark .chat-conversation-header button.text-oracle-medium-gray:hover {
+  background: rgba(255, 255, 255, 0.12) !important;
+  color: #ffffff !important;
+}
+
+.app-shell-dark .chat-conversation-header .chat-header-actions-menu {
+  background: #ffffff !important;
+  border-color: #e7ddd6 !important;
+  color: #171412 !important;
+  box-shadow:
+    0 22px 56px rgba(49, 45, 42, 0.22),
+    0 0 0 1px rgba(255, 255, 255, 0.92) inset !important;
+}
+
+.app-shell-dark .chat-conversation-header .chat-header-actions-menu .text-gray-700 {
+  color: #171412 !important;
+}
+
+.app-shell-dark .chat-conversation-header .chat-header-actions-menu .text-red-600 {
+  color: var(--oracle-red) !important;
+}
+
+.app-shell-dark .chat-conversation-header .chat-header-actions-menu .hover\:bg-gray-100:hover {
+  background-color: #f6f2ef !important;
+}
+
+.app-shell-dark .chat-conversation-header .chat-header-actions-menu .hover\:bg-red-50:hover {
+  background-color: #fff7f3 !important;
+}
+
+.app-shell-dark .app-light-surface .border-gray-100,
+
+.app-shell-dark .app-light-surface .border-gray-200,
+
+.app-shell-dark .app-light-surface .border-gray-300,
+
+.app-shell-dark .app-light-surface .border-oracle-border,
+
+.app-shell-dark .app-light-surface .border-blue-200,
+
+.app-shell-dark .app-light-surface .border-amber-200,
+
+.app-shell-dark .app-light-surface .border-emerald-200 {
+  border-color: #e7ddd6 !important;
+}
+
+.app-shell-dark .app-light-surface .divide-gray-100 > :not([hidden]) ~ :not([hidden]),
+
+.app-shell-dark .app-light-surface .divide-gray-200 > :not([hidden]) ~ :not([hidden]) {
+  border-color: #e7ddd6 !important;
+}
+
+.app-shell-dark .app-light-surface .input-oracle,
+
+.app-shell-dark .chat-composer-surface.input-oracle,
+
+.app-shell-dark .app-light-surface input,
+
+.app-shell-dark .app-light-surface select,
+
+.app-shell-dark .app-light-surface textarea {
+  background-color: #ffffff !important;
+  border-color: #d9d2cb !important;
+  color: #171412 !important;
+  box-shadow: inset 0 1px 0 rgba(49, 45, 42, 0.03) !important;
+}
+
+.app-shell-dark .app-light-surface .input-oracle::placeholder,
+
+.app-shell-dark .app-light-surface input::placeholder,
+
+.app-shell-dark .app-light-surface textarea::placeholder {
+  color: #8b7f76 !important;
+}
+
+.app-shell-dark .app-light-surface .input-oracle:focus,
+
+.app-shell-dark .app-light-surface input:focus,
+
+.app-shell-dark .app-light-surface select:focus,
+
+.app-shell-dark .app-light-surface textarea:focus {
+  border-color: var(--oracle-red) !important;
+  box-shadow:
+    0 0 0 3px rgba(199, 70, 52, 0.18),
+    inset 0 1px 0 rgba(49, 45, 42, 0.03) !important;
+}
+
+.app-shell-dark .app-light-surface select.input-oracle option,
+
+.app-shell-dark .app-light-surface select option {
+  background-color: #ffffff;
+  color: #171412;
+}
+
+.app-shell-dark .app-light-surface table {
+  color: #312d2a;
+}
+
+.app-shell-dark .app-light-surface tbody tr,
+
+.app-shell-dark .app-light-surface tbody tr > td {
+  transition: background-color 150ms ease;
+}
+
+.app-shell-dark .app-light-surface tbody tr:hover,
+
+.app-shell-dark .app-light-surface tbody tr:hover > td {
+  background-color: #f0fbff !important;
+}

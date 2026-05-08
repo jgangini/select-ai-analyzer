@@ -1,6 +1,9 @@
+import io
+
 import pytest
 
-from apps.backend.app.select_ai.service import SelectAIAnalyticsService, _read_csv_upload
+from apps.backend.app.select_ai.csv_upload import _read_csv_upload
+from apps.backend.app.select_ai.data_source_operations import SelectAIDataSourceService
 
 
 class RecordingCursor:
@@ -88,12 +91,49 @@ def test_read_csv_upload_rejects_header_only_files(tmp_path) -> None:
         _read_csv_upload(csv_path)
 
 
+def test_save_csv_upload_uses_configured_upload_directory(tmp_path, monkeypatch) -> None:
+    class Settings:
+        upload_path = tmp_path
+
+    service = SelectAIDataSourceService(RecordingDbManager(RecordingConnection(RecordingCursor())))
+    monkeypatch.setattr(
+        "apps.backend.app.select_ai.csv_upload.get_settings",
+        lambda: Settings(),
+    )
+
+    upload_path = service.save_csv_upload("../accounts.csv", io.BytesIO(b"Account No,Amount\n001,10.50\n"))
+
+    assert upload_path.parent == tmp_path / "csv"
+    assert upload_path.name.endswith("_accounts.csv")
+    assert upload_path.read_bytes() == b"Account No,Amount\n001,10.50\n"
+
+
+def test_resolve_csv_metadata_preserves_explicit_table_comment() -> None:
+    metadata_json = """
+    {
+      "table_comment": "Metadata table comment",
+      "columns": [
+        {"column_name": "Account No", "comment": "Account identifier"}
+      ]
+    }
+    """
+
+    table_comment, column_metadata = SelectAIDataSourceService.resolve_csv_metadata(
+        metadata_json,
+        "Explicit table comment",
+    )
+
+    assert table_comment == "Explicit table comment"
+    assert column_metadata[0]["column_name"] == "ACCOUNT_NO"
+    assert column_metadata[0]["comment"] == "Account identifier"
+
+
 def test_create_table_from_csv_accepts_and_records_column_metadata(tmp_path, monkeypatch) -> None:
     csv_path = tmp_path / "accounts.csv"
     csv_path.write_text("Account No,Amount\n001,10.50\n", encoding="utf-8")
     cursor = RecordingCursor()
     connection = RecordingConnection(cursor)
-    service = SelectAIAnalyticsService(RecordingDbManager(connection))
+    service = SelectAIDataSourceService(RecordingDbManager(connection))
     monkeypatch.setattr(service, "schema_exists", lambda owner_name: True)
     monkeypatch.setattr(service, "refresh_profile", lambda *, user_id=0: None)
 
@@ -130,7 +170,7 @@ def test_register_existing_table_accepts_and_records_column_metadata(monkeypatch
         ]
     )
     connection = RecordingConnection(cursor)
-    service = SelectAIAnalyticsService(RecordingDbManager(connection))
+    service = SelectAIDataSourceService(RecordingDbManager(connection))
     monkeypatch.setattr(service, "refresh_profile", lambda *, user_id=0: None)
 
     result = service.register_existing_table(

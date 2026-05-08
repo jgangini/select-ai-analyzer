@@ -1,0 +1,291 @@
+﻿.app-shell-dark .bg-oracle-bg-gray,
+
+.setup-shell-dark .bg-oracle-bg-gray {
+
+  background-color: rgba(255, 255, 255, 0.045) !important;
+
+}
+
+.app-shell-dark .divide-gray-100 > :not([hidden]) ~ :not([hidden]),
+.setup-shell-dark .divide-gray-100 > :not([hidden]) ~ :not([hidden]),
+.app-shell-dark .divide-gray-200 > :not([hidden]) ~ :not([hidden]),
+.setup-shell-dark .divide-gray-200 > :not([hidden]) ~ :not([hidden]) {
+  border-color: var(--app-border) !important;
+}
+
+.app-shell-dark .shadow,
+.setup-shell-dark .shadow,
+.app-shell-dark .shadow-md,
+.setup-shell-dark .shadow-md,
+.app-shell-dark .shadow-lg,
+.setup-shell-dark .shadow-lg {
+  box-shadow:
+    0 24px 70px rgba(0, 0, 0, 0.26),
+    inset 0 1px 0 rgba(255, 255, 255, 0.055) !important;
+}
+
+.app-shell-dark table,
+.setup-shell-dark table {
+  color: var(--app-text-muted);
+}
+
+.app-shell-dark thead,
+.setup-shell-dark thead {
+  background-color: rgba(255, 255, 255, 0.07) !important;
+}
+
+.app-shell-dark tbody tr:hover,
+.setup-shell-dark tbody tr:hover {
+  background-color: rgba(199, 70, 52, 0.075) !important;
+}
+
+.app-shell-dark mark,
+.setup-shell-dark mark {
+  background-color: rgba(241, 192, 92, 0.72) !important;
+  color: #211c18 !important;
+}
+
+.app-shell-dark .input-oracle,
+.setup-shell-dark .input-oracle {
+  border-color: var(--app-border) !important;
+  background-color: rgba(20, 18, 16, 0.72) !important;
+  color: var(--app-text) !important;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.045);
+}
+
+.app-shell-dark .input-oracle::placeholder,
+.setup-shell-dark .input-oracle::placeholder {
+  color: rgba(236, 227, 219, 0.44);
+}
+
+.app-shell-dark .input-oracle:focus,
+.setup-shell-dark .input-oracle:focus,
+.app-shell-dark .input-oracle:focus-visible,
+.setup-shell-dark .input-oracle:focus-visible {
+  border-color: var(--oracle-red) !important;
+  box-shadow:
+    0 0 0 3px rgba(199, 70, 52, 0.2),
+    inset 0 1px 0 rgba(255, 255, 255, 0.06) !important;
+}
+
+.app-shell-dark select.input-oracle option,
+.setup-shell-dark select.input-oracle option {
+  color: #f8f3ef;
+  background-color: #24201e;
+}
+
+.app-shell-dark .btn-secondary,
+.setup-shell-dark .btn-secondary {
+  border-color: var(--app-border) !important;
+  background-color: rgba(255, 255, 255, 0.065) !important;
+  color: var(--app-text) !important;
+}
+
+.app-shell-dark .btn-secondary:hover,
+.setup-shell-dark .btn-secondary:hover {
+  background-color: rgba(255, 255, 255, 0.1) !important;
+}
+
+.app-shell-dark .text-oracle-blue-link,
+.setup-shell-dark .text-oracle-blue-link {
+  color: #e45d4c !important;
+}
+
+.app-shell-dark .rounded-lg.bg-white,
+.setup-shell-dark .rounded-lg.bg-white,
+.app-shell-dark .rounded-xl.bg-white,
+.setup-shell-dark .rounded-xl.bg-white {
+  border: 1px solid var(--app-border);
+}
+
+.app-shell-dark .bg-white,
+
+.setup-shell-dark .bg-white,
+
+.app-shell-dark [class~="bg-white/95"],
+
+.setup-shell-dark [class~="bg-white/95"],
+
+.app-shell-dark [class~="bg-white/80"],
+
+.setup-shell-dark [class~="bg-white/80"],
+
+.app-shell-dark [class~="bg-white/70"],
+
+.setup-shell-dark [class~="bg-white/70"] {
+
+  background-color: var(--app-surface) !important;
+
+}
+
+.app-shell-dark .bg-gray-50,
+
+.setup-shell-dark .bg-gray-50,
+
+.app-shell-dark .bg-gray-100,
+
+.setup-shell-dark .bg-gray-100,
+
+.app-shell-dark .bg-oracle-table-header,
+
+.setup-shell-dark .bg-oracle-table-header,
+
+.app-shell-dark .bg-blue-50,
+
+.setup-shell-dark .bg-blue-50,
+
+.app-shell-dark .bg-amber-50,
+
+.setup-shell-dark .bg-amber-50,
+
+.app-shell-dark .bg-red-50,
+
+.setup-shell-dark .bg-red-50,
+
+.app-shell-dark .bg-rose-50,
+
+.setup-shell-dark .bg-rose-50,
+
+.app-shell-dark .bg-emerald-50,
+
+.setup-shell-dark .bg-emerald-50,
+
+.app-shell-dark [class*="bg-blue-50"],
+
+.setup-shell-dark [class*="bg-blue-50"],
+
+.app-shell-dark [class*="bg-amber-50"],
+
+.setup-shell-dark [class*="bg-amber-50"],
+
+.app-shell-dark [class*="bg-red-50"],
+
+.setup-shell-dark [class*="bg-red-50"],
+
+.app-shell-dark [class*="bg-rose-50"],
+
+.setup-shell-dark [class*="bg-rose-50"],
+
+.app-shell-dark [class*="bg-emerald-50"],
+
+.setup-shell-dark [class*="bg-emerald-50"] {
+
+  background-color: rgba(255, 255, 255, 0.058) !important;
+
+}
+
+.app-shell-dark .text-gray-900,
+
+.setup-shell-dark .text-gray-900,
+
+.app-shell-dark .text-gray-800,
+
+.setup-shell-dark .text-gray-800,
+
+.app-shell-dark .text-oracle-dark-gray,
+
+.setup-shell-dark .text-oracle-dark-gray,
+
+.app-shell-dark .text-blue-800,
+
+.setup-shell-dark .text-blue-800,
+
+.app-shell-dark .text-amber-800,
+
+.setup-shell-dark .text-amber-800,
+
+.app-shell-dark .text-emerald-800,
+
+.setup-shell-dark .text-emerald-800 {
+
+  color: var(--app-text) !important;
+
+}
+
+.app-shell-dark .text-gray-700,
+
+.setup-shell-dark .text-gray-700,
+
+.app-shell-dark .text-gray-600,
+
+.setup-shell-dark .text-gray-600,
+
+.app-shell-dark .text-gray-500,
+
+.setup-shell-dark .text-gray-500,
+
+.app-shell-dark .text-oracle-medium-gray,
+
+.setup-shell-dark .text-oracle-medium-gray,
+
+.app-shell-dark .text-oracle-light-gray,
+
+.setup-shell-dark .text-oracle-light-gray,
+
+.app-shell-dark .text-blue-600,
+
+.setup-shell-dark .text-blue-600,
+
+.app-shell-dark .text-blue-700,
+
+.setup-shell-dark .text-blue-700,
+
+.app-shell-dark .text-amber-600,
+
+.setup-shell-dark .text-amber-600,
+
+.app-shell-dark .text-amber-700,
+
+.setup-shell-dark .text-amber-700,
+
+.app-shell-dark [class*="text-blue-"],
+
+.setup-shell-dark [class*="text-blue-"],
+
+.app-shell-dark [class*="text-amber-"],
+
+.setup-shell-dark [class*="text-amber-"] {
+
+  color: var(--app-text-muted) !important;
+
+}
+
+.app-shell-dark .border-gray-100,
+
+.setup-shell-dark .border-gray-100,
+
+.app-shell-dark .border-gray-200,
+
+.setup-shell-dark .border-gray-200,
+
+.app-shell-dark .border-gray-300,
+
+.setup-shell-dark .border-gray-300,
+
+.app-shell-dark .border-oracle-border,
+
+.setup-shell-dark .border-oracle-border,
+
+.app-shell-dark .border-blue-200,
+
+.setup-shell-dark .border-blue-200,
+
+.app-shell-dark .border-amber-200,
+
+.setup-shell-dark .border-amber-200,
+
+.app-shell-dark .border-emerald-200,
+
+.setup-shell-dark .border-emerald-200,
+
+.app-shell-dark [class*="border-blue-"],
+
+.setup-shell-dark [class*="border-blue-"],
+
+.app-shell-dark [class*="border-amber-"],
+
+.setup-shell-dark [class*="border-amber-"] {
+
+  border-color: var(--app-border) !important;
+
+}

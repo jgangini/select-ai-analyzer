@@ -103,34 +103,6 @@ CREATE TABLE chart_specs (
         REFERENCES question_runs(question_run_id) ON DELETE CASCADE
 );
 --
-CREATE TABLE agent_definitions (
-    agent_definition_id VARCHAR2(32) NOT NULL,
-    object_type         VARCHAR2(20) NOT NULL,
-    object_name         VARCHAR2(128) NOT NULL,
-    attributes_json     CLOB NOT NULL,
-    status              VARCHAR2(40) DEFAULT 'active' NOT NULL,
-    created_at          TIMESTAMP(6) DEFAULT SYSDATE NOT NULL,
-    updated_at          TIMESTAMP(6) DEFAULT SYSDATE NOT NULL,
-    CONSTRAINT pk_agent_definitions PRIMARY KEY (agent_definition_id),
-    CONSTRAINT ck_agent_definitions_type CHECK (object_type IN ('TOOL', 'TASK', 'AGENT', 'TEAM'))
-);
---
-CREATE UNIQUE INDEX ux_agent_definitions_name
-    ON agent_definitions (object_type, object_name);
---
-CREATE TABLE agent_builder_runs (
-    agent_builder_run_id VARCHAR2(32) NOT NULL,
-    team_name            VARCHAR2(128) NOT NULL,
-    prompt_text          CLOB NOT NULL,
-    response_text        CLOB,
-    conversation_id      VARCHAR2(128),
-    status               VARCHAR2(40) NOT NULL,
-    created_at           TIMESTAMP(6) DEFAULT SYSDATE NOT NULL,
-    CONSTRAINT pk_agent_builder_runs PRIMARY KEY (agent_builder_run_id),
-    CONSTRAINT fk_agent_builder_runs_conversation FOREIGN KEY (conversation_id)
-        REFERENCES analytics_conversations(conversation_id)
-);
---
 CREATE TABLE audit_events (
     audit_event_id      VARCHAR2(32) NOT NULL,
     event_type          VARCHAR2(100) NOT NULL,

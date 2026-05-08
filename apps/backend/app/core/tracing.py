@@ -15,6 +15,9 @@ from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any, Callable, Optional
 
+from starlette.middleware.base import BaseHTTPMiddleware
+from starlette.requests import Request
+
 _TRACE_ENABLED = os.environ.get("TRACE", "0") == "1"
 _run_id: str = str(uuid.uuid4())
 _trace_id_ctx: contextvars.ContextVar[Optional[str]] = contextvars.ContextVar(
@@ -176,3 +179,34 @@ def trace(f: Callable) -> Callable:
         return _trace_impl_async(f, name)
     return _trace_impl_sync(f, name)
 
+
+class TracingMiddleware(BaseHTTPMiddleware):
+    async def dispatch(self, request: Request, call_next):
+        if os.environ.get("TRACE", "0") != "1":
+            return await call_next(request)
+        trace_id = str(uuid.uuid4())
+        set_trace_id(trace_id)
+        checkpoint("request_start", tags={"method": request.method, "path": request.url.path})
+        start = time.perf_counter()
+        try:
+            response = await call_next(request)
+            checkpoint(
+                "request_end",
+                tags={
+                    "method": request.method,
+                    "path": request.url.path,
+                    "duration_ms": round((time.perf_counter() - start) * 1000, 2),
+                },
+            )
+            return response
+        except Exception:
+            checkpoint(
+                "request_end",
+                tags={
+                    "method": request.method,
+                    "path": request.url.path,
+                    "duration_ms": round((time.perf_counter() - start) * 1000, 2),
+                    "error": True,
+                },
+            )
+            raise

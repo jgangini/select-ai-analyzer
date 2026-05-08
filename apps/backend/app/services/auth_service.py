@@ -1,18 +1,19 @@
-import oracledb
 from datetime import timedelta
-from typing import Optional
+from typing import TYPE_CHECKING
 
 from apps.backend.app.core.config import Settings
-from apps.backend.app.core.database import DatabaseManager
 from apps.backend.app.core.security import create_access_token, verify_password
 from apps.backend.app.core.tracing import trace
 from apps.backend.app.services.runtime_config_service import ConfigService
+
+if TYPE_CHECKING:
+    from apps.backend.app.core.database import DatabaseManager
 
 
 class AuthService:
     """User authentication service."""
 
-    def __init__(self, db_manager: DatabaseManager, settings: Settings):
+    def __init__(self, db_manager: "DatabaseManager", settings: Settings):
         self.db_manager = db_manager
         self.settings = settings
         self.config_service = ConfigService(db_manager)
@@ -27,7 +28,7 @@ class AuthService:
             return default_minutes
 
     @trace
-    def authenticate_user(self, username: str, password: str) -> Optional[dict]:
+    def authenticate_user(self, username: str, password: str) -> dict | None:
         conn = self.db_manager.get_connection()
         cursor = conn.cursor()
         try:
@@ -70,7 +71,7 @@ class AuthService:
             conn.close()
 
     @trace
-    def login(self, username: str, password: str) -> Optional[dict]:
+    def login(self, username: str, password: str) -> dict | None:
         user = self.authenticate_user(username, password)
         if not user:
             return None
@@ -82,7 +83,7 @@ class AuthService:
         )
         return {"access_token": access_token, "token_type": "bearer", "user": user}
 
-    def get_current_user_info(self, user_id: int) -> Optional[dict]:
+    def get_current_user_info(self, user_id: int) -> dict | None:
         conn = self.db_manager.get_connection()
         cursor = conn.cursor()
         try:

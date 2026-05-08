@@ -1,4 +1,4 @@
-from datetime import date, datetime, timedelta
+from datetime import date, timedelta
 from decimal import Decimal
 import random
 
@@ -21,23 +21,9 @@ from apps.backend.app.select_ai.synthetic_data import (
     _row_count_for_table,
     generate_rows,
     value_for_column,
+    write_csv_for_table,
+    write_seed_files,
 )
-from scripts.load_source_seed import convert_csv_value
-
-
-def test_convert_csv_value_uses_oracle_column_type() -> None:
-    assert convert_csv_value("2025-01-02", "DATE") == date(2025, 1, 2)
-    assert convert_csv_value("2025-01-02 13:45:00", "TIMESTAMP(6)") == datetime(2025, 1, 2, 13, 45)
-    assert convert_csv_value("11724.000", "NUMBER(24,3)") == Decimal("11724.000")
-    assert convert_csv_value("", "NUMBER") is None
-    assert convert_csv_value("PEN", "VARCHAR2(3)") == "PEN"
-
-
-def test_convert_csv_value_rejects_bad_dates_and_numbers() -> None:
-    with pytest.raises(ValueError):
-        convert_csv_value("not-a-date", "DATE")
-    with pytest.raises(ValueError):
-        convert_csv_value("12x", "NUMBER")
 
 
 def test_synthetic_currency_columns_do_not_get_account_numbers() -> None:
@@ -319,3 +305,49 @@ def test_synthetic_operational_examples_cover_teller_and_term_deposits() -> None
     assert teller_rows[0]["TRN_DT"] == TEST_TODAY.isoformat()
     assert deposit_rows[0]["REFERENCE_NO"] == "TD_NEXT_001"
     assert deposit_rows[0]["LIQD_DATE"] == TEST_TODAY.isoformat()
+
+
+def test_write_csv_for_table_creates_header_and_rows(tmp_path) -> None:
+    table = SourceTable(
+        owner="FLEXCUBE",
+        name="FLEX_TEST_EXPORT",
+        columns=(
+            SourceColumn(name="ROW_ID", data_type="NUMBER(4)", nullable=False),
+            SourceColumn(name="BRANCH_CODE", data_type="VARCHAR2(3)", nullable=True),
+            SourceColumn(name="TRN_DT", data_type="DATE", nullable=True),
+        ),
+    )
+
+    csv_path = write_csv_for_table(table, tmp_path, row_count=2, seed=1)
+
+    assert csv_path.name == "FLEX_TEST_EXPORT.csv"
+    assert csv_path.read_text(encoding="utf-8").splitlines() == [
+        "ROW_ID,BRANCH_CODE,TRN_DT",
+        "1,001,2026-01-01",
+        "2,002,2026-01-02",
+    ]
+
+
+def test_write_seed_files_creates_csv_and_metadata_sidecar(tmp_path) -> None:
+    source_file = tmp_path / "source.sql"
+    source_file.write_text(
+        """
+SQL> desc FLEXCUBE.FLEX_TEST_SEED
+ Name                                      Null?    Type
+ ----------------------------------------- -------- ----------------------------
+ ID                                        NOT NULL NUMBER(4)
+ ACCOUNT_NO                                         VARCHAR2(20)
+ TRN_DT                                             DATE
+""",
+        encoding="utf-8",
+    )
+
+    paths = write_seed_files(source_file, tmp_path / "seed", default_rows=2, fact_rows=3)
+
+    assert [path.name for path in paths] == ["FLEX_TEST_SEED.csv", "FLEX_TEST_SEED.json"]
+    csv_lines = paths[0].read_text(encoding="utf-8").splitlines()
+    assert csv_lines[0] == "ID,ACCOUNT_NO,TRN_DT"
+    assert len(csv_lines) == MIN_ROWS_PER_TABLE + 1
+    metadata_json = paths[1].read_text(encoding="utf-8")
+    assert '"table_name": "FLEX_TEST_SEED"' in metadata_json
+    assert '"column_name": "ACCOUNT_NO"' in metadata_json

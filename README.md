@@ -1,6 +1,6 @@
 # Select AI Analytics
 
-Aplicacion full-stack para consultar esquemas Oracle con Select AI, cargar CSV de prueba y construir agentes nativos con `DBMS_CLOUD_AI_AGENT`. La instalacion se ejecuta siempre sobre el usuario Oracle `APP_AGENT`.
+Aplicacion full-stack para consultar esquemas Oracle con Select AI, cargar CSV de prueba y generar analitica gobernada sobre el usuario Oracle `APP_AGENT`.
 
 ## Docker
 
@@ -34,8 +34,6 @@ Luego abre `http://localhost:8080`.
 - `POST /api/data-sources/csv`: carga CSV y registra la tabla.
 - `POST /api/data-sources/table-access`: registra una tabla existente con permiso `SELECT`.
 - `POST /api/analytics/ask`: genera SQL con Select AI, valida solo lectura, ejecuta y devuelve respuesta, filas y grafico.
-- `POST /api/agent-builder/objects`: crea `TOOL`, `TASK`, `AGENT` o `TEAM`.
-- `POST /api/agent-builder/run-team`: ejecuta `DBMS_CLOUD_AI_AGENT.RUN_TEAM`.
 
 ## Datos ficticios
 

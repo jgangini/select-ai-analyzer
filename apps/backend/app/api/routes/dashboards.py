@@ -7,7 +7,6 @@ from pydantic import BaseModel, Field
 
 from apps.backend.app.api.setup_guard import require_setup_completed
 from apps.backend.app.core.security import get_current_user
-from apps.backend.app.core.session import get_db_manager
 from apps.backend.app.select_ai.dashboards import DashboardService
 
 
@@ -54,7 +53,11 @@ class DashboardReorderRequest(BaseModel):
 
 
 def _service() -> DashboardService:
-    return DashboardService(get_db_manager())
+    return DashboardService.from_runtime()
+
+
+def _current_user_id(current_user: dict) -> int:
+    return int(current_user.get("user_id") or 0)
 
 
 @router.get("")
@@ -66,7 +69,7 @@ def list_dashboards(
     try:
         return {
             "items": _service().list_dashboards(
-                user_id=int(current_user.get("user_id") or 0),
+                user_id=_current_user_id(current_user),
                 limit=limit,
                 owner_only=owner_only,
             )
@@ -86,7 +89,7 @@ def create_dashboard(
             description=request.description,
             visibility=request.visibility,
             items=[item.model_dump() for item in request.items],
-            user_id=int(current_user.get("user_id") or 0),
+            user_id=_current_user_id(current_user),
         )
     except Exception as exc:
         raise HTTPException(status_code=400, detail=str(exc)) from exc
@@ -104,7 +107,7 @@ def update_dashboard(
             name=request.name,
             description=request.description,
             visibility=request.visibility,
-            user_id=int(current_user.get("user_id") or 0),
+            user_id=_current_user_id(current_user),
         )
     except ValueError as exc:
         raise HTTPException(status_code=404, detail=str(exc)) from exc
@@ -120,7 +123,7 @@ def delete_dashboard(
     try:
         return _service().delete_dashboard(
             dashboard_id=dashboard_id,
-            user_id=int(current_user.get("user_id") or 0),
+            user_id=_current_user_id(current_user),
         )
     except ValueError as exc:
         raise HTTPException(status_code=404, detail=str(exc)) from exc
@@ -138,7 +141,7 @@ def add_dashboard_items(
         return _service().add_dashboard_items(
             dashboard_id=dashboard_id,
             items=[item.model_dump() for item in request.items],
-            user_id=int(current_user.get("user_id") or 0),
+            user_id=_current_user_id(current_user),
         )
     except ValueError as exc:
         status_code = 404 if "not found" in str(exc).lower() else 400
@@ -160,7 +163,7 @@ def update_dashboard_item(
             dashboard_item_id=dashboard_item_id,
             title=request.title,
             layout=request.layout,
-            user_id=int(current_user.get("user_id") or 0),
+            user_id=_current_user_id(current_user),
         )
     except ValueError as exc:
         raise HTTPException(status_code=404, detail=str(exc)) from exc
@@ -178,7 +181,7 @@ def delete_dashboard_item(
         return _service().delete_dashboard_item(
             dashboard_id=dashboard_id,
             dashboard_item_id=dashboard_item_id,
-            user_id=int(current_user.get("user_id") or 0),
+            user_id=_current_user_id(current_user),
         )
     except ValueError as exc:
         raise HTTPException(status_code=404, detail=str(exc)) from exc
@@ -196,7 +199,7 @@ def reorder_dashboard_items(
         return _service().reorder_dashboard_items(
             dashboard_id=dashboard_id,
             dashboard_item_ids=request.item_ids,
-            user_id=int(current_user.get("user_id") or 0),
+            user_id=_current_user_id(current_user),
         )
     except ValueError as exc:
         raise HTTPException(status_code=400, detail=str(exc)) from exc
@@ -213,7 +216,7 @@ def get_dashboard(
     try:
         return _service().get_dashboard(
             dashboard_id=dashboard_id,
-            user_id=int(current_user.get("user_id") or 0),
+            user_id=_current_user_id(current_user),
             max_rows=max_rows,
         )
     except ValueError as exc:

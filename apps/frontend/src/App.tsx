@@ -1,38 +1,60 @@
 import { useEffect } from 'react';
-import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
-import { useQuery } from '@tanstack/react-query';
+import { BrowserRouter } from 'react-router-dom';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { AuthProvider, useAuth } from './context/AuthContext';
-import { ToastProvider } from './context/ToastContext';
+import { ToastProvider, ToastViewport, useToast } from './context/ToastContext';
 import { AnalyticsChatProvider } from './context/AnalyticsChatContext';
-import { SetupWizard } from './components/wizard/SetupWizard';
-import { LoginForm } from './components/auth/LoginForm';
-import { Home } from './components/pages/Home';
-import { Chat } from './components/pages/Chat';
-import { DataSources } from './components/pages/DataSources';
-import { Analytics } from './components/pages/Analytics';
-import { AgentBuilder } from './components/pages/AgentBuilder';
-import { Settings } from './components/pages/Settings';
-import { Profile } from './components/pages/Profile';
-import { Users } from './components/pages/Users';
-import { LoadingState } from './components/common/LoadingState';
-import { SearchChatsModal } from './components/common/SearchChatsModal';
-import { useAppBranding } from './hooks/useAppBranding';
-import api from './services/api';
-import { queryClient, queryKeys } from './lib/queryClient';
-import './styles/oracle-theme.css';
+import { analyticsApi, analyticsQueryKeys, sortConversations } from './services/analyticsApi';
+import {
+  checkSetupComplete,
+  resolveAgentName,
+  resolveApplicationName,
+  settingsQueryKeys,
+  setupQueryKeys,
+} from './services/settingsApi';
+import { usersApi, usersQueryKeys } from './services/usersApi';
+import './styles/oracle.css';
 
-function AppRouter() {
-  const { isAuthenticated, loading, logout } = useAuth();
-  const { data: setupCompleted, isPending: setupPending } = useQuery({
-    queryKey: queryKeys.setup.check,
+type ShowToast = (message: string, type?: 'success' | 'error' | 'info' | 'warning') => void;
+type AppRoutesComponent = (props: {
+  agentName: string;
+  appName: string;
+  showToast: ShowToast;
+  sidebarChats: ReturnType<typeof useSidebarChats>;
+  setupGate: ReturnType<typeof useSetupGate>;
+}) => JSX.Element;
+
+async function fetchPublicBranding(): Promise<unknown> {
+  const response = await fetch('/api/settings/public');
+  if (!response.ok) {
+    throw new Error('Could not load public branding.');
+  }
+  return response.json();
+}
+
+function useSidebarChats(isAuthenticated: boolean, userId: number | string | null) {
+  const query = useQuery({
+    queryKey: analyticsQueryKeys.sidebarConversations(userId ?? 'anonymous'),
     queryFn: async () => {
-      try {
-        const res = await api.get('/setup/check', { timeout: 10000 });
-        return res.data.completed === true;
-      } catch {
-        return false;
-      }
+      const response = await analyticsApi.listConversations(undefined, 20);
+      return sortConversations(response.data.items || []);
     },
+    enabled: isAuthenticated,
+  });
+
+  return {
+    recentConversations: query.data || [],
+    recentConversationsLoading: query.isLoading,
+    recentConversationsError: query.isError,
+  };
+}
+
+function useSetupGate() {
+  const queryClient = useQueryClient();
+  const { isAuthenticated, loading, login, logout, token, user } = useAuth();
+  const { data: setupCompleted, isPending: setupPending } = useQuery({
+    queryKey: setupQueryKeys.check,
+    queryFn: checkSetupComplete,
     staleTime: Infinity,
     retry: false,
   });
@@ -44,55 +66,33 @@ function AppRouter() {
     if (!setupPending && !setupDone && setupCompleted === false) logout();
   }, [setupPending, setupDone, setupCompleted, logout]);
 
-  if (showSpinner) {
-    return (
-      <div className="app-shell-dark min-h-screen flex items-center justify-center">
-        <LoadingState />
-      </div>
-    );
-  }
+  const completeSetup = () => queryClient.setQueryData(setupQueryKeys.check, true);
 
-  const handleSetupComplete = () => queryClient.setQueryData(queryKeys.setup.check, true);
-
-  return (
-    <Routes>
-      {!setupDone ? (
-        <>
-          <Route path="/setup" element={<SetupWizard onSetupComplete={handleSetupComplete} />} />
-          <Route path="*" element={<Navigate to="/setup" replace />} />
-        </>
-      ) : (
-        <>
-          <Route path="/login" element={<LoginForm />} />
-          <Route path="/home" element={isAuthenticated ? <Home /> : <Navigate to="/login" replace />} />
-          <Route path="/chat" element={isAuthenticated ? <Chat /> : <Navigate to="/login" replace />} />
-          <Route path="/data-sources" element={isAuthenticated ? <DataSources /> : <Navigate to="/login" replace />} />
-          <Route path="/analytics" element={isAuthenticated ? <Analytics /> : <Navigate to="/login" replace />} />
-          <Route path="/dashboards" element={<Navigate to="/analytics" replace />} />
-          <Route path="/agent-builder" element={isAuthenticated ? <AgentBuilder /> : <Navigate to="/login" replace />} />
-          <Route path="/metadata" element={<Navigate to="/data-sources" replace />} />
-          <Route path="/observability" element={<Navigate to="/chat" replace />} />
-          <Route path="/improvement" element={<Navigate to="/chat" replace />} />
-          <Route path="/profile" element={isAuthenticated ? <Profile /> : <Navigate to="/login" replace />} />
-          <Route
-            path="/users"
-            element={isAuthenticated ? <Users /> : <Navigate to="/login" replace />}
-          />
-          <Route
-            path="/settings"
-            element={isAuthenticated ? <Settings /> : <Navigate to="/login" replace />}
-          />
-          <Route path="*" element={<Navigate to={isAuthenticated ? '/home' : '/login'} replace />} />
-        </>
-      )}
-    </Routes>
-  );
+  return { isAuthenticated, login, logout, setupDone, showSpinner, completeSetup, user, token };
 }
 
-function SessionScopedApp() {
-  const { user, token } = useAuth();
-  const { appName } = useAppBranding();
+function useAppBranding() {
+  const query = useQuery({
+    queryKey: settingsQueryKeys.publicBranding,
+    queryFn: fetchPublicBranding,
+    staleTime: 60_000,
+    retry: false,
+  });
+
+  return {
+    ...query,
+    appName: resolveApplicationName(query.data),
+    agentName: resolveAgentName(query.data),
+  };
+}
+
+function SessionScopedApp({ RoutesComponent }: { RoutesComponent: AppRoutesComponent }) {
+  const setupGate = useSetupGate();
+  const { isAuthenticated, user, token } = setupGate;
+  const { showToast } = useToast();
+  const { agentName, appName } = useAppBranding();
   const sessionScope = user?.user_id ?? token ?? 'anonymous';
+  const sidebarChats = useSidebarChats(isAuthenticated, user?.user_id ?? null);
 
   useEffect(() => {
     document.title = appName;
@@ -100,13 +100,18 @@ function SessionScopedApp() {
 
   return (
     <AnalyticsChatProvider key={String(sessionScope)}>
-      <AppRouter />
-      <SearchChatsModal />
+      <RoutesComponent
+        agentName={agentName}
+        appName={appName}
+        showToast={showToast}
+        sidebarChats={sidebarChats}
+        setupGate={setupGate}
+      />
     </AnalyticsChatProvider>
   );
 }
 
-function App() {
+function App({ RoutesComponent }: { RoutesComponent: AppRoutesComponent }) {
   return (
     <BrowserRouter
       future={{
@@ -114,9 +119,10 @@ function App() {
         v7_relativeSplatPath: true,
       }}
     >
-      <AuthProvider>
+      <AuthProvider authClient={usersApi} userQueryKeys={usersQueryKeys}>
         <ToastProvider>
-          <SessionScopedApp />
+          <SessionScopedApp RoutesComponent={RoutesComponent} />
+          <ToastViewport />
         </ToastProvider>
       </AuthProvider>
     </BrowserRouter>

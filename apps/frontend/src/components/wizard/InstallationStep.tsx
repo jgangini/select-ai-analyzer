@@ -1,20 +1,57 @@
 import { useState } from 'react';
-import api from '../../services/api';
+import api from '../../services/httpClient';
 import { useToast } from '../../context/ToastContext';
-import { APP_DISPLAY_NAME } from '../../config/branding';
+import { DEFAULT_APP_DISPLAY_NAME } from '../../config/branding';
 
 interface Props {
-  data: any;
-  onNext: (data: any) => void;
-  onBack: () => void;
-  isFirstStep: boolean;
-  isLastStep: boolean;
+  data: InstallationData;
+  onNext: (data: { installation: InstallationResult }) => void;
 }
 
-export function InstallationStep({ data, onNext, onBack: _onBack }: Props) {
+type InstallationData = {
+  adminEmail?: string;
+  adminPassword?: string;
+  database?: {
+    walletPath?: string;
+    walletPassword?: string;
+    username?: string;
+    password?: string;
+    dsn?: string;
+  };
+};
+
+type SetupScriptError = {
+  file: string;
+  error: string;
+};
+
+type InstallationResult = {
+  success?: boolean;
+  message?: string;
+  discovered?: string[];
+  executed?: string[];
+  errors?: SetupScriptError[];
+  [key: string]: unknown;
+};
+
+export function buildInstallErrorMessage(error: unknown): string {
+  const maybeError = error as { response?: { data?: { detail?: unknown } }; message?: string };
+  const detail = maybeError?.response?.data?.detail;
+  if (typeof detail === 'string' && detail.trim()) return detail;
+  if (detail && typeof detail === 'object') {
+    const fields = detail as { errors?: SetupScriptError[]; message?: string };
+    if (Array.isArray(fields.errors) && fields.errors.length) {
+      return fields.errors.map((entry) => `${entry.file}: ${entry.error}`).join(' | ');
+    }
+    if (typeof fields.message === 'string' && fields.message.trim()) return fields.message;
+  }
+  return maybeError?.message || 'Installation failed';
+}
+
+export function InstallationStep({ data, onNext }: Props) {
   const { showToast } = useToast();
   const [installing, setInstalling] = useState(false);
-  const [installResult, setInstallResult] = useState<any>(null);
+  const [installResult, setInstallResult] = useState<InstallationResult | null>(null);
   const [logs, setLogs] = useState<string[]>([]);
 
   const appendLogs = (entries: string[]) => {
@@ -27,18 +64,6 @@ export function InstallationStep({ data, onNext, onBack: _onBack }: Props) {
       }
       return next;
     });
-  };
-
-  const buildInstallErrorMessage = (error: any): string => {
-    const detail = error?.response?.data?.detail;
-    if (typeof detail === 'string' && detail.trim()) return detail;
-    if (detail && typeof detail === 'object') {
-      if (Array.isArray(detail.errors) && detail.errors.length) {
-        return detail.errors.map((entry: any) => `${entry.file}: ${entry.error}`).join(' | ');
-      }
-      if (typeof detail.message === 'string' && detail.message.trim()) return detail.message;
-    }
-    return error?.message || 'Installation failed';
   };
 
   const handleInstall = async () => {
@@ -72,7 +97,7 @@ export function InstallationStep({ data, onNext, onBack: _onBack }: Props) {
       });
       const discovered = Array.isArray(response.data?.discovered) ? response.data.discovered : [];
       const executed = Array.isArray(response.data?.executed) ? response.data.executed : [];
-      const errors = Array.isArray(response.data?.errors) ? response.data.errors : [];
+      const errors: SetupScriptError[] = Array.isArray(response.data?.errors) ? response.data.errors : [];
 
       if (executed.length) {
         appendLogs([
@@ -93,7 +118,7 @@ export function InstallationStep({ data, onNext, onBack: _onBack }: Props) {
           '-----------------------------------------------------------',
           '✗ Database setup failed with errors:',
         ]);
-        errors.forEach((err: any) => {
+        errors.forEach((err) => {
           appendLogs([`  - ${err.file}: ${err.error}`]);
         });
         throw new Error('Database setup failed');
@@ -109,7 +134,7 @@ export function InstallationStep({ data, onNext, onBack: _onBack }: Props) {
       
       setInstallResult({ success: true, ...response.data });
       showToast('Installation completed successfully!');
-    } catch (error: any) {
+    } catch (error: unknown) {
       const errorMsg = buildInstallErrorMessage(error);
       appendLogs([`✗ Error: ${errorMsg}`]);
       setInstallResult({
@@ -140,9 +165,9 @@ export function InstallationStep({ data, onNext, onBack: _onBack }: Props) {
             <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clipRule="evenodd"></path>
           </svg>
           <div className="text-xs text-blue-800">
-            <strong>Install {APP_DISPLAY_NAME} into the configured database.</strong>
+            <strong>Install {DEFAULT_APP_DISPLAY_NAME} into the configured database.</strong>
             <br />
-            {APP_DISPLAY_NAME} will import the database installation files into your Database instance.
+            {DEFAULT_APP_DISPLAY_NAME} will import the database installation files into your Database instance.
           </div>
         </div>
       </div>

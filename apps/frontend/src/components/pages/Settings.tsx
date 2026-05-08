@@ -1,13 +1,10 @@
 import { useEffect, useMemo, useState } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 
-import { Layout } from '../common/Layout';
-import { ConfirmModal } from '../common/ConfirmModal';
-import { LoadingState } from '../common/LoadingState';
-import { settingsApi } from '../../services/api';
-import { useToast } from '../../context/ToastContext';
+import { ConfirmQuestionModal } from './shared/Modal';
+import { LoadingState } from './shared/LoadingState';
+import { settingsApi, settingsQueryKeys } from '../../services/settingsApi';
 import { DEFAULT_AGENT_DISPLAY_NAME, DEFAULT_APP_DISPLAY_NAME } from '../../config/branding';
-import { appBrandingQueryKey } from '../../hooks/useAppBranding';
 
 type SettingsPayload = {
   app?: Record<string, unknown>;
@@ -16,13 +13,15 @@ type SettingsPayload = {
   oci?: Record<string, unknown>;
 };
 
+type ShowToast = (message: string, type?: 'success' | 'error' | 'info' | 'warning') => void;
+
 const DEFAULT_AGENT_NAME = DEFAULT_AGENT_DISPLAY_NAME;
 
 function FieldHint({ children }: { children: React.ReactNode }) {
   return <p className="mt-1 text-xs text-oracle-light-gray">{children}</p>;
 }
 
-function normalizeSettingsPayload(payload: SettingsPayload): SettingsPayload {
+export function normalizeSettingsPayload(payload: SettingsPayload): SettingsPayload {
   const app = { ...(payload?.app || {}) };
   const selectAi = { ...(payload?.select_ai || {}) };
   const genai = { ...(payload?.genai || {}) };
@@ -37,16 +36,15 @@ function normalizeSettingsPayload(payload: SettingsPayload): SettingsPayload {
   return { ...payload, app, select_ai: selectAi, genai };
 }
 
-function fieldValue(payload: SettingsPayload | null, category: string, field: string, defaultValue = ''): string {
+export function fieldValue(payload: SettingsPayload | null, category: string, field: string, defaultValue = ''): string {
   const value = payload?.[category as keyof SettingsPayload]?.[field];
   return value === undefined || value === null ? defaultValue : String(value);
 }
 
-export function Settings() {
+export function Settings({ showToast }: { showToast: ShowToast }) {
   const [formData, setFormData] = useState<SettingsPayload | null>(null);
   const [activeTab, setActiveTab] = useState('app');
   const [showSaveModal, setShowSaveModal] = useState(false);
-  const { showToast } = useToast();
   const queryClient = useQueryClient();
 
   const { data, isLoading } = useQuery({
@@ -64,7 +62,7 @@ export function Settings() {
     mutationFn: (updates: SettingsPayload) => settingsApi.update(updates as Record<string, unknown>),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['settings'] });
-      queryClient.invalidateQueries({ queryKey: appBrandingQueryKey });
+      queryClient.invalidateQueries({ queryKey: settingsQueryKeys.publicBranding });
       showToast('Settings saved successfully', 'success');
     },
     onError: (error: unknown) => {
@@ -89,11 +87,7 @@ export function Settings() {
   );
 
   if (isLoading || !formData) {
-    return (
-      <Layout>
-        <LoadingState className="py-8" label="Loading settings..." textClassName="text-oracle-light-gray" />
-      </Layout>
-    );
+    return <LoadingState className="py-8" label="Loading settings..." textClassName="text-oracle-light-gray" />;
   }
 
   const tabs = [
@@ -108,7 +102,7 @@ export function Settings() {
   };
 
   return (
-    <Layout>
+    <>
       <div>
         <div className="mb-4 flex items-start justify-between gap-4">
           <div>
@@ -285,14 +279,7 @@ export function Settings() {
       </div>
 
       {showSaveModal && (
-        <ConfirmModal
-          icon={
-            <svg className="h-10 w-10 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.75} d="M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.54-.994 1.093m0 3h.01M12 21a9 9 0 100-18 9 9 0 000 18z" />
-            </svg>
-          }
-          iconBg="bg-red-100"
-          iconRing="ring-red-50"
+        <ConfirmQuestionModal
           title="Save settings"
           message="Are you sure you want to save these changes?"
           detail="Applies modified settings immediately for all users."
@@ -304,6 +291,6 @@ export function Settings() {
           loadingText="Saving..."
         />
       )}
-    </Layout>
+    </>
   );
 }

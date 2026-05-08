@@ -1,4 +1,26 @@
-from apps.backend.app.select_ai.service import _score_source_match
+from apps.backend.app.select_ai.service import SelectAIAnalyticsService, _score_source_match
+
+
+class FakeAnalyticsService(SelectAIAnalyticsService):
+    def __init__(self) -> None:
+        pass
+
+    def _registered_source_objects(self) -> list[dict[str, object]]:
+        return [
+            {"owner": "APP_AGENT_DATA", "name": "FLEX_STTM_CUST_ACCOUNT", "columns": ["CUST_AC_NO"]},
+            {"owner": "APP_AGENT_DATA", "name": "FLEX_IFTB_ATM_TRANS_LOG", "columns": ["CARD_NO", "TRANS_STATUS"]},
+            {"owner": "APP_AGENT_DATA", "name": "FLEX_DETB_RTL_TELLER_1", "columns": ["TRN_REF_NO", "AUTH_STAT"]},
+            {"owner": "APP_AGENT_DATA", "name": "FLEX_ICTM_TD_DETAILS", "columns": ["REFERENCE_NO", "LIQD_DATE"]},
+            {"owner": "APP_AGENT_DATA", "name": "FLEX_CSTB_CLEARING_MASTER", "columns": ["REFERENCE_NO", "STATUS"]},
+            {"owner": "APP_AGENT_DATA", "name": "FLEX_STTM_DATES", "columns": ["BRANCH_CODE", "TODAY"]},
+            {"owner": "APP_AGENT_DATA", "name": "FLEX_ICTB_ACC_PR", "columns": ["ACCOUNT", "INT_RATE"]},
+            {"owner": "APP_AGENT_DATA", "name": "FLEX_EXT_ACCOUNT_STATEMENT", "columns": ["ACCOUNT_NO", "HIDE_TXN_IN_STMT"]},
+            {
+                "owner": "APP_AGENT_DATA",
+                "name": "FLEX_EXT_ACCOUNT_TRANSACTIONS",
+                "columns": ["ACCOUNT_NO", "TRN_DT", "LCY_AMOUNT", "DRCR_IND", "PRODUCT_CODE"],
+            },
+        ]
 
 
 def test_score_source_match_prioritizes_explicit_table_name() -> None:
@@ -115,3 +137,27 @@ def test_score_source_match_prioritizes_term_deposit_maturity_table() -> None:
     )
 
     assert td_score > account_score
+
+
+def test_resolve_scoped_objects_uses_domain_terms_without_name_error() -> None:
+    matches = FakeAnalyticsService().resolve_scoped_objects("retiros fallidos en cajero")
+
+    assert matches == [{"owner": "APP_AGENT_DATA", "name": "FLEX_IFTB_ATM_TRANS_LOG"}]
+
+
+def test_resolve_scoped_objects_uses_preferred_domain_tables() -> None:
+    service = FakeAnalyticsService()
+    cases = [
+        ("transacciones pendientes en teller", "FLEX_DETB_RTL_TELLER_1"),
+        ("proximo contrato de deposito a vencer", "FLEX_ICTM_TD_DETAILS"),
+        ("cheques rechazados en clearing", "FLEX_CSTB_CLEARING_MASTER"),
+        ("fecha habil por sucursal", "FLEX_STTM_DATES"),
+        ("interes por cuenta", "FLEX_ICTB_ACC_PR"),
+        ("transacciones ocultas en estado de cuenta", "FLEX_EXT_ACCOUNT_STATEMENT"),
+        ("volumen de transacciones por producto", "FLEX_EXT_ACCOUNT_TRANSACTIONS"),
+    ]
+
+    for question, expected_table in cases:
+        matches = service.resolve_scoped_objects(question)
+
+        assert matches[0] == {"owner": "APP_AGENT_DATA", "name": expected_table}

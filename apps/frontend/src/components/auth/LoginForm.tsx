@@ -1,13 +1,11 @@
-import React, { useState } from 'react';
+import { useState, type FormEvent } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { useAuth } from '../../context/AuthContext';
-import { AppBrand } from '../common/AppBrand';
-import { useAppBranding } from '../../hooks/useAppBranding';
+import { AppBrand } from '../shell/AppBrand';
 import autonomousDatabaseSvg from '../../assets/oci/autonomous-database.svg?raw';
 import generativeAiSvg from '../../assets/oci/generative-ai.svg?raw';
 import objectStorageSvg from '../../assets/oci/object-storage.svg?raw';
 
-function makeMonochromeOracleSvg(svg: string) {
+export function makeMonochromeOracleSvg(svg: string) {
   return svg
     .replace(/<\?xml[\s\S]*?\?>/g, '')
     .replace(/<metadata[\s\S]*?<\/metadata>/gi, '')
@@ -18,6 +16,11 @@ function makeMonochromeOracleSvg(svg: string) {
       /<svg\b([^>]*)>/i,
       '<svg$1 class="h-full w-full" aria-hidden="true" focusable="false">'
     );
+}
+
+export function getLoginErrorMessage(error: unknown): string {
+  const maybeError = error as { response?: { data?: { detail?: string } } };
+  return maybeError.response?.data?.detail || 'Login failed. Please check your credentials.';
 }
 
 const oracleServices = [
@@ -40,10 +43,14 @@ const oracleServices = [
 
 const reviewSignals = ['SQL inspectable', 'Charts', 'DBMS agents'];
 
-export function LoginForm() {
+export function LoginForm({
+  appName,
+  login,
+}: {
+  appName: string;
+  login: (username: string, password: string) => Promise<void>;
+}) {
   const navigate = useNavigate();
-  const { login } = useAuth();
-  const { appName } = useAppBranding();
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
@@ -52,7 +59,7 @@ export function LoginForm() {
   const [rememberMe, setRememberMe] = useState(false);
   const [focusedField, setFocusedField] = useState<'email' | 'password' | null>(null);
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
     setError('');
     setLoading(true);
@@ -60,8 +67,8 @@ export function LoginForm() {
     try {
       await login(username, password);
       navigate('/home');
-    } catch (err: any) {
-      setError(err.response?.data?.detail || 'Login failed. Please check your credentials.');
+    } catch (err: unknown) {
+      setError(getLoginErrorMessage(err));
     } finally {
       setLoading(false);
     }
@@ -79,6 +86,7 @@ export function LoginForm() {
 
               <div className="relative z-10 flex h-full flex-col">
                 <AppBrand
+                  appName={appName}
                   className="gap-3"
                   logoClassName="h-3.5 opacity-90"
                   title="Oracle Cloud Infrastructure"

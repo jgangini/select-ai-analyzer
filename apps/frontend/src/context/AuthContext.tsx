@@ -1,21 +1,26 @@
 import { createContext, useContext, useState, useEffect, ReactNode } from 'react';
-import { useQuery } from '@tanstack/react-query';
-import api from '../services/api';
-import { queryClient, queryKeys } from '../lib/queryClient';
+import { useQuery, useQueryClient, type QueryClient } from '@tanstack/react-query';
 
-interface User {
+type AuthUser = {
+  group_id: number;
   user_id: number;
   username: string;
-  name: string;
-  last_name: string;
-  email: string;
-  modules: number[];
-  group_id: number;
-  group_name: string;
-}
+  name?: string;
+  last_name?: string;
+  group_name?: string;
+};
+
+type AuthClient = {
+  currentUser: () => Promise<{ data: AuthUser }>;
+  login: (username: string, password: string) => Promise<{ data: { access_token: string; user: AuthUser } }>;
+};
+
+type AuthQueryKeys = {
+  me: readonly unknown[];
+};
 
 interface AuthContextType {
-  user: User | null;
+  user: AuthUser | null;
   token: string | null;
   login: (username: string, password: string) => Promise<void>;
   logout: () => void;
@@ -26,18 +31,26 @@ interface AuthContextType {
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
-function clearSessionCaches() {
+function clearSessionCaches(queryClient: QueryClient) {
   queryClient.removeQueries({ queryKey: ['analytics'] });
   queryClient.removeQueries({ queryKey: ['data-sources'] });
-  queryClient.removeQueries({ queryKey: ['agent-builder'] });
 }
 
-export function AuthProvider({ children }: { children: ReactNode }) {
+export function AuthProvider({
+  authClient,
+  children,
+  userQueryKeys,
+}: {
+  authClient: AuthClient;
+  children: ReactNode;
+  userQueryKeys: AuthQueryKeys;
+}) {
+  const queryClient = useQueryClient();
   const [token, setToken] = useState<string | null>(localStorage.getItem('token'));
 
   const { data: user, isPending: userLoading, isError } = useQuery({
-    queryKey: [...queryKeys.users.me, token],
-    queryFn: () => api.get('/user/me', { timeout: 10000 }).then((res) => res.data as User),
+    queryKey: [...userQueryKeys.me, token],
+    queryFn: () => authClient.currentUser().then((res) => res.data),
     enabled: !!token,
     retry: false,
     staleTime: 5 * 60 * 1000,
@@ -47,28 +60,26 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     if (!!token && !userLoading && isError) {
       setToken(null);
       localStorage.removeItem('token');
-      clearSessionCaches();
-      queryClient.removeQueries({ queryKey: queryKeys.users.me });
+      clearSessionCaches(queryClient);
+      queryClient.removeQueries({ queryKey: userQueryKeys.me });
     }
-  }, [token, userLoading, isError]);
+  }, [queryClient, token, userLoading, isError, userQueryKeys.me]);
 
   const login = async (username: string, password: string) => {
-    const response = await api.post('/auth/login', { username, password });
+    const response = await authClient.login(username, password);
     const { access_token, user: userData } = response.data;
-    clearSessionCaches();
-    queryClient.removeQueries({ queryKey: queryKeys.users.me });
+    clearSessionCaches(queryClient);
+    queryClient.removeQueries({ queryKey: userQueryKeys.me });
     setToken(access_token);
     localStorage.setItem('token', access_token);
-    queryClient.setQueryData([...queryKeys.users.me, access_token], userData);
+    queryClient.setQueryData([...userQueryKeys.me, access_token], userData);
   };
 
   const logout = () => {
-    clearSessionCaches();
+    clearSessionCaches(queryClient);
     setToken(null);
     localStorage.removeItem('token');
-    sessionStorage.removeItem('builder-last-flow-id');
-    sessionStorage.removeItem('flow-builder-state');
-    queryClient.removeQueries({ queryKey: queryKeys.users.me });
+    queryClient.removeQueries({ queryKey: userQueryKeys.me });
   };
 
   const loading = !!token && userLoading;

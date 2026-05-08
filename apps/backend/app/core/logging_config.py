@@ -14,4 +14,3 @@ def configure_logging() -> None:
         format=LOG_FORMAT,
         datefmt="%Y-%m-%d %H:%M:%S",
     )
-

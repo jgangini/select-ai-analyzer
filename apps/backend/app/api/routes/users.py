@@ -15,12 +15,15 @@ router = APIRouter(
     dependencies=[Depends(require_setup_completed)],
 )
 
-settings = None
 db_manager = None
 
 
 def get_user_service() -> UserService:
-    return UserService(db_manager, settings)
+    return UserService(db_manager)
+
+
+def current_user_id(current_user: dict) -> int:
+    return int(current_user.get("user_id") or 0)
 
 
 class UpdateProfileRequest(BaseModel):
@@ -41,10 +44,9 @@ class CreateUserRequest(BaseModel):
     group_id: int = 1
 
 
-@router.get("/groups")
+@router.get("/groups", dependencies=[Depends(get_current_user)])
 @trace
-async def list_user_groups(current_user: dict = Depends(get_current_user)):
-    del current_user
+async def list_user_groups():
     if db_manager is None:
         raise HTTPException(500, "Database not initialized")
     try:
@@ -58,7 +60,7 @@ async def list_user_groups(current_user: dict = Depends(get_current_user)):
 @trace
 async def list_users(current_user: dict = Depends(get_current_user)):
     try:
-        users = get_user_service().list_users(current_user.get("user_id"))
+        users = get_user_service().list_users(current_user_id(current_user))
         return {"users": users}
     except PermissionError as e:
         raise HTTPException(403, str(e))
@@ -71,7 +73,7 @@ async def list_users(current_user: dict = Depends(get_current_user)):
 async def create_user(request: CreateUserRequest, current_user: dict = Depends(get_current_user)):
     try:
         get_user_service().create_user(
-            current_user.get("user_id"),
+            current_user_id(current_user),
             request.username,
             request.password,
             request.name,
@@ -93,7 +95,7 @@ async def create_user(request: CreateUserRequest, current_user: dict = Depends(g
 @trace
 async def delete_user(user_id: int, current_user: dict = Depends(get_current_user)):
     try:
-        get_user_service().delete_user(current_user.get("user_id"), user_id)
+        get_user_service().delete_user(current_user_id(current_user), user_id)
         return {"success": True, "message": "User deleted successfully"}
     except PermissionError as e:
         raise HTTPException(403, str(e))
@@ -109,7 +111,7 @@ async def delete_user(user_id: int, current_user: dict = Depends(get_current_use
 @trace
 async def get_current_user_info(current_user: dict = Depends(get_current_user)):
     try:
-        user_info = get_user_service().get_user_info(current_user.get("user_id"))
+        user_info = get_user_service().get_user_info(current_user_id(current_user))
         if not user_info:
             raise HTTPException(404, "User not found")
         return user_info
@@ -129,7 +131,7 @@ async def get_current_user_info(current_user: dict = Depends(get_current_user)):
 async def update_profile(request: UpdateProfileRequest, current_user: dict = Depends(get_current_user)):
     try:
         get_user_service().update_profile(
-            current_user.get("user_id"),
+            current_user_id(current_user),
             request.name,
             request.last_name,
         )
@@ -143,7 +145,7 @@ async def update_profile(request: UpdateProfileRequest, current_user: dict = Dep
 async def change_password(request: ChangePasswordRequest, current_user: dict = Depends(get_current_user)):
     try:
         get_user_service().change_password(
-            current_user.get("user_id"),
+            current_user_id(current_user),
             request.current_password,
             request.new_password,
         )
@@ -156,4 +158,3 @@ async def change_password(request: ChangePasswordRequest, current_user: dict = D
         raise HTTPException(400, str(e))
     except Exception as e:
         raise HTTPException(500, f"Error changing password: {str(e)}")
-

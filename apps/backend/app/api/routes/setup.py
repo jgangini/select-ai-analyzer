@@ -2,12 +2,19 @@ import logging
 import shutil
 import zipfile
 from pathlib import Path
-from typing import Optional
 
-from fastapi import APIRouter, Depends, File, HTTPException, UploadFile
-from pydantic import BaseModel, ConfigDict
+from fastapi import APIRouter, File, HTTPException, UploadFile
 
-from apps.backend.app.core.security import get_current_user
+from apps.backend.app.api.setup_models import (
+    AdminPasswordRequest,
+    DBRuntimeConfigRequest,
+    DBTestRequest,
+    GenerativeAIConfigRequest,
+    ObjectStorageTestRequest,
+    OCIConfigRequest,
+    SetupRequest,
+    WalletDSNRequest,
+)
 from apps.backend.app.core.tracing import trace
 from apps.backend.app.services.bootstrap_service import SetupService
 
@@ -15,72 +22,44 @@ logger = logging.getLogger(__name__)
 router = APIRouter(prefix="/setup", tags=["setup"])
 settings = None
 db_manager = None
-
-
-class DBTestRequest(BaseModel):
-    wallet_path: Optional[str] = ""
-    wallet_password: Optional[str] = ""
-    user: str
-    password: str
-    dsn: str
-
-
-class DBRuntimeConfigRequest(BaseModel):
-    wallet_path: str
-    wallet_password: str
-    user: str
-    password: str
-    dsn: str
-
-
-class WalletDSNRequest(BaseModel):
-    wallet_path: Optional[str] = ""
-
-
-class OCIConfigRequest(BaseModel):
-    model_config = ConfigDict(protected_namespaces=())
-
-    compartment_id: Optional[str] = ""
-    user: Optional[str] = ""
-    fingerprint: Optional[str] = ""
-    tenancy: Optional[str] = ""
-    region: Optional[str] = ""
-    key_file: Optional[str] = ""
-    namespace: Optional[str] = ""
-    bucket_name: Optional[str] = "app_agent"
-    bucket_input: Optional[str] = ""
-    bucket_output: Optional[str] = ""
-    selected_project: Optional[str] = ""
-
-
-class AdminPasswordRequest(BaseModel):
-    password: str
-
-
-class SetupRequest(BaseModel):
-    admin_email: str
-    admin_password: str
-    wallet_path: str
-    wallet_password: str
-    user: str
-    password: str
-    dsn: str
-
-
-class ObjectStorageTestRequest(BaseModel):
-    namespace: str
-    bucket_name: str
-
-
-class GenerativeAIConfigRequest(BaseModel):
-    model_config = ConfigDict(protected_namespaces=())
-
-    inference_url: Optional[str] = ""
-    generative_model: Optional[str] = ""
+SERVER_DEFAULT_WALLET = "__SERVER_DEFAULT_WALLET__"
+BACKEND_ROOT = Path(__file__).resolve().parents[3]
 
 
 def get_setup_service():
     return SetupService(db_manager)
+
+
+def _resolve_wallet_path(wallet_path: str | None) -> str:
+    resolved = (wallet_path or "").strip()
+    if resolved == SERVER_DEFAULT_WALLET:
+        return str(settings.wallet_dir) if settings is not None else ""
+    return resolved
+
+
+def _has_complete_database_config(*values: str | None) -> bool:
+    return all((value or "").strip() for value in values)
+
+
+def _require_success(result: dict, default_message: str = "Setup request failed") -> dict:
+    if not result["success"]:
+        raise HTTPException(400, result.get("message", default_message))
+    return result
+
+
+def _run_setup_action(action, message: str) -> dict:
+    try:
+        action()
+    except Exception as exc:
+        raise HTTPException(500, str(exc)) from exc
+    return {"success": True, "message": message}
+
+
+def _safe_upload_name(file_name: str | None, expected_suffix: str, error_message: str) -> str:
+    safe_name = Path(file_name or "").name
+    if Path(safe_name).suffix.lower() != expected_suffix.lower():
+        raise HTTPException(400, error_message)
+    return safe_name
 
 
 @router.get("/check")
@@ -100,16 +79,13 @@ async def check_setup_status():
 @trace
 async def upload_wallet(file: UploadFile = File(...)):
     logger.debug("Upload wallet started: %s", file.filename)
-    file_name = file.filename or ""
-    if Path(file_name).suffix.lower() != ".zip":
-        raise HTTPException(400, "File must be a ZIP archive")
+    _safe_upload_name(file.filename, ".zip", "File must be a ZIP archive")
     try:
         import time
 
-        backend_root = Path(__file__).resolve().parents[3]
-        wallet_dir = backend_root / "wallet"
+        wallet_dir = BACKEND_ROOT / "wallet"
         wallet_dir.mkdir(parents=True, exist_ok=True)
-        zip_path = backend_root / "__uploaded_wallet__.zip"
+        zip_path = BACKEND_ROOT / "__uploaded_wallet__.zip"
         with open(zip_path, "wb") as buffer:
             shutil.copyfileobj(file.file, buffer)
         with zipfile.ZipFile(zip_path, "r") as zip_ref:
@@ -141,9 +117,7 @@ async def upload_wallet(file: UploadFile = File(...)):
 @router.post("/test-db")
 @trace
 async def test_db_connection(request: DBTestRequest):
-    wallet_path = (request.wallet_path or "").strip()
-    if wallet_path == "__SERVER_DEFAULT_WALLET__":
-        wallet_path = str(settings.wallet_dir) if settings is not None else ""
+    wallet_path = _resolve_wallet_path(request.wallet_path)
     if not wallet_path:
         raise HTTPException(400, "Wallet path is required")
     result = get_setup_service().test_db_connection(
@@ -153,24 +127,20 @@ async def test_db_connection(request: DBTestRequest):
         request.password,
         request.dsn,
     )
-    if not result["success"]:
-        raise HTTPException(400, result["message"])
-    return result
+    return _require_success(result)
 
 
 @router.post("/save-db-runtime")
 @trace
 async def save_db_runtime(request: DBRuntimeConfigRequest):
-    wallet_path = (request.wallet_path or "").strip()
-    if wallet_path == "__SERVER_DEFAULT_WALLET__":
-        wallet_path = str(settings.wallet_dir) if settings is not None else ""
-    if not all([
+    wallet_path = _resolve_wallet_path(request.wallet_path)
+    if not _has_complete_database_config(
         wallet_path,
-        (request.wallet_password or "").strip(),
-        (request.user or "").strip(),
-        (request.password or "").strip(),
-        (request.dsn or "").strip(),
-    ]):
+        request.wallet_password,
+        request.user,
+        request.password,
+        request.dsn,
+    ):
         raise HTTPException(400, "Complete DB configuration is required")
 
     setup_service = get_setup_service()
@@ -199,15 +169,11 @@ async def save_db_runtime(request: DBRuntimeConfigRequest):
 @router.post("/list-wallet-dsns")
 @trace
 async def list_wallet_dsns(request: WalletDSNRequest):
-    wallet_path = (request.wallet_path or "").strip()
-    if wallet_path == "__SERVER_DEFAULT_WALLET__":
-        wallet_path = str(settings.wallet_dir) if settings is not None else ""
+    wallet_path = _resolve_wallet_path(request.wallet_path)
     if not wallet_path:
         raise HTTPException(400, "Wallet path is required")
     result = get_setup_service().list_wallet_dsns(wallet_path)
-    if not result["success"]:
-        raise HTTPException(400, result["message"])
-    return result
+    return _require_success(result)
 
 
 @router.post("/installation")
@@ -215,16 +181,14 @@ async def list_wallet_dsns(request: WalletDSNRequest):
 async def execute_setup(request: SetupRequest):
     logger.debug("Setup started")
     try:
-        wallet_path = (request.wallet_path or "").strip()
-        if wallet_path == "__SERVER_DEFAULT_WALLET__":
-            wallet_path = str(settings.wallet_dir) if settings is not None else ""
-        if not all([
+        wallet_path = _resolve_wallet_path(request.wallet_path)
+        if not _has_complete_database_config(
             wallet_path,
-            (request.wallet_password or "").strip(),
-            (request.user or "").strip(),
-            (request.password or "").strip(),
-            (request.dsn or "").strip(),
-        ]):
+            request.wallet_password,
+            request.user,
+            request.password,
+            request.dsn,
+        ):
             raise HTTPException(400, detail="Database configuration is required before installation.")
 
         setup_service = get_setup_service()
@@ -259,23 +223,20 @@ async def execute_setup(request: SetupRequest):
 @router.post("/admin-password")
 @trace
 async def set_admin_password(request: AdminPasswordRequest):
-    try:
-        success = get_setup_service().update_admin_password(request.password)
-    except Exception as exc:
-        raise HTTPException(500, str(exc)) from exc
-    return {"success": True, "message": "Password updated"}
+    return _run_setup_action(
+        lambda: get_setup_service().update_admin_password(request.password),
+        "Password updated",
+    )
 
 
 @router.post("/upload-key")
 @trace
 async def upload_key_file(file: UploadFile = File(...)):
-    if not file.filename.endswith(".pem"):
-        raise HTTPException(400, "File must be .pem")
+    file_name = _safe_upload_name(file.filename, ".pem", "File must be .pem")
     try:
-        backend_root = Path(__file__).resolve().parents[3]
-        keys_dir = backend_root / "keys"
+        keys_dir = BACKEND_ROOT / "keys"
         keys_dir.mkdir(parents=True, exist_ok=True)
-        key_path = keys_dir / file.filename
+        key_path = keys_dir / file_name
         with open(key_path, "wb") as buffer:
             shutil.copyfileobj(file.file, buffer)
         return {"success": True, "message": "Key file uploaded", "key_path": str(key_path.absolute())}
@@ -287,9 +248,7 @@ async def upload_key_file(file: UploadFile = File(...)):
 @trace
 async def test_oci_connection(request: OCIConfigRequest):
     result = get_setup_service().test_oci_connection(request.model_dump())
-    if not result["success"]:
-        raise HTTPException(400, result["message"])
-    return result
+    return _require_success(result)
 
 
 @router.post("/save-oci-config")
@@ -301,20 +260,17 @@ async def save_oci_config(request: OCIConfigRequest):
         or (request.bucket_input or "").strip()
         or (request.bucket_output or "").strip()
     )
-    try:
-        success = get_setup_service().save_oci_config(payload)
-    except Exception as exc:
-        raise HTTPException(500, str(exc)) from exc
-    return {"success": True, "message": "Configuration saved"}
+    return _run_setup_action(
+        lambda: get_setup_service().save_oci_config(payload),
+        "Configuration saved",
+    )
 
 
 @router.post("/test-object-storage")
 @trace
 async def test_object_storage(request: ObjectStorageTestRequest):
     result = get_setup_service().test_object_storage(request.namespace, request.bucket_name)
-    if not result["success"]:
-        raise HTTPException(400, result["message"])
-    return result
+    return _require_success(result)
 
 
 @router.get("/list-genai-models")
@@ -333,31 +289,28 @@ async def test_generative_ai(request: GenerativeAIConfigRequest):
         request.inference_url or "",
         request.generative_model or "",
     )
-    if not result["success"]:
-        raise HTTPException(400, result["message"])
-    return result
+    return _require_success(result)
 
 
 @router.post("/save-generative-ai-config")
 @trace
 async def save_generative_ai_config(request: GenerativeAIConfigRequest):
-    try:
-        success = get_setup_service().save_generative_ai_config(
+    return _run_setup_action(
+        lambda: get_setup_service().save_generative_ai_config(
             {
                 "inference_url": request.inference_url or "",
                 "generative_model": request.generative_model or "",
             }
-        )
-    except Exception as exc:
-        raise HTTPException(500, str(exc)) from exc
-    return {"success": True, "message": "Configuration saved"}
+        ),
+        "Configuration saved",
+    )
 
 
 @router.post("/complete")
 @trace
 async def complete_setup():
     try:
-        success = get_setup_service().complete_setup()
+        get_setup_service().complete_setup()
     except Exception as exc:
         raise HTTPException(500, str(exc)) from exc
     try:
