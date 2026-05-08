@@ -69,7 +69,7 @@ export function pickPreferredGenAIModel(
   preferredModel = DEFAULT_GENAI_MODEL
 ): string {
   const match = models.find((model) => model.display_name === preferredModel || model.id === preferredModel);
-  return match?.id || preferredModel;
+  return match?.id || models[0]?.id || preferredModel;
 }
 
 export function isWalletZipFile(fileName: string): boolean {

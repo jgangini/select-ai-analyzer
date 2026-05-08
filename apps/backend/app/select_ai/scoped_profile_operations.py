@@ -40,6 +40,16 @@ def _objects_named(objects: list[dict[str, Any]], *name_parts: str) -> list[dict
     return matches
 
 
+def _require_profile_config_value(config: dict[str, str], key: str, label: str) -> str:
+    value = str(config.get(key) or "").strip()
+    if not value:
+        raise ValueError(
+            f"{label} is not configured. "
+            "Save Generative AI configuration before creating Select AI profiles."
+        )
+    return value
+
+
 class SelectAIScopedProfileMixin:
     def _registered_source_objects(self) -> list[dict[str, Any]]:
         with self._cursor() as (_, cursor):
@@ -114,7 +124,7 @@ class SelectAIScopedProfileMixin:
     def _profile_config(self, cursor) -> dict[str, str]:
         _select_profile_config(cursor)
         values = {
-            "genai.model": "google.gemini-2.5-flash",
+            "genai.model": "",
             "select_ai.credential_name": "APP_AGENT_OCI_CRED",
             "oci.region": "",
             "oci.compartment_id": "",
@@ -140,10 +150,11 @@ class SelectAIScopedProfileMixin:
         profile_name = f"{self._profile_name()}_Q_{digest}"
         with self._cursor() as (conn, cursor):
             config = self._profile_config(cursor)
+            model_name = _require_profile_config_value(config, "genai.model", "Generative AI model")
             attributes = {
                 "provider": "oci",
                 "credential_name": config["select_ai.credential_name"],
-                "model": config["genai.model"],
+                "model": model_name,
                 "temperature": 0.2,
                 "comments": "true",
                 "annotations": "true",

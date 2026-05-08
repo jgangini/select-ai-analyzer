@@ -57,6 +57,15 @@ describe('selectAISetupUtils', () => {
     expect(pickPreferredGenAIModel([])).toBe(DEFAULT_GENAI_MODEL);
   });
 
+  it('uses the first available GenAI model when the old default is unavailable', () => {
+    expect(
+      pickPreferredGenAIModel([
+        { id: 'meta.llama-4-maverick', display_name: 'Meta Llama 4 Maverick' },
+        { id: 'cohere.command-r-plus', display_name: 'Command R+' },
+      ])
+    ).toBe('meta.llama-4-maverick');
+  });
+
   it('accepts wallet ZIP filenames case-insensitively', () => {
     expect(isWalletZipFile('Wallet_APPAGENT.ZIP')).toBe(true);
     expect(isWalletZipFile('wallet.pem')).toBe(false);

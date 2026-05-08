@@ -10,12 +10,19 @@ CREATE OR REPLACE PROCEDURE SP_SEL_AI_PROFILE (
     l_json_attributes CLOB;
     l_object_count    NUMBER := 0;
 BEGIN
-    SELECT NVL(MAX(CASE WHEN config_key = 'genai.model' THEN DBMS_LOB.SUBSTR(config_value, 4000, 1) END), 'google.gemini-2.5-flash'),
+    SELECT MAX(CASE WHEN config_key = 'genai.model' THEN TRIM(DBMS_LOB.SUBSTR(config_value, 4000, 1)) END),
            NVL(MAX(CASE WHEN config_key = 'select_ai.credential_name' THEN DBMS_LOB.SUBSTR(config_value, 4000, 1) END), 'APP_AGENT_OCI_CRED'),
            NVL(MAX(CASE WHEN config_key = 'oci.region' THEN DBMS_LOB.SUBSTR(config_value, 4000, 1) END), ''),
            NVL(MAX(CASE WHEN config_key = 'oci.compartment_id' THEN DBMS_LOB.SUBSTR(config_value, 4000, 1) END), '')
       INTO l_model, l_credential, l_region, l_compartment_id
       FROM config;
+
+    IF l_model IS NULL THEN
+        RAISE_APPLICATION_ERROR(
+            -20011,
+            'Generative AI model is not configured. Save Generative AI configuration before creating Select AI profile.'
+        );
+    END IF;
 
     l_object_list := '[';
     FOR rec IN (
