@@ -217,6 +217,25 @@ def test_parse_bootstrap_sql_statements_cleans_script_chunks() -> None:
     ]
 
 
+def test_bootstrap_sql_files_are_grouped_by_domain() -> None:
+    sql_dir = Path(__file__).resolve().parents[1] / "db" / "bootstrap" / "sql"
+    sql_files = [path.name for path in sorted(sql_dir.glob("*.sql"))]
+
+    assert sql_files == [
+        "01_user_group.sql",
+        "02_users.sql",
+        "03_config.sql",
+        "04_data_sources.sql",
+        "05_select_ai_profiles.sql",
+        "06_analytics_runtime.sql",
+        "07_select_ai_procedures.sql",
+        "08_dashboards.sql",
+    ]
+    for sql_file in sql_files:
+        content = (sql_dir / sql_file).read_text(encoding="utf-8")
+        assert parse_bootstrap_sql_statements(content), f"{sql_file} must contain executable statements"
+
+
 def test_is_ignorable_bootstrap_sql_error_matches_idempotent_oracle_errors() -> None:
     assert is_ignorable_bootstrap_sql_error(Exception("ORA-00955 name is already used"))
     assert is_ignorable_bootstrap_sql_error(Exception("ORA-04080 trigger does not exist"))
