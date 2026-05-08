@@ -1,9 +1,9 @@
-from apps.backend.app.select_ai.source_metadata import (
+from scripts.source_seed_sidecar import (
     build_source_table_metadata,
     infer_classification,
     parse_metadata_payload,
 )
-from apps.backend.app.select_ai.source_parser import SourceColumn, SourceTable
+from scripts.source_seed_parser import SourceColumn, SourceTable
 
 
 def test_build_source_table_metadata_creates_json_sidecar_shape() -> None:

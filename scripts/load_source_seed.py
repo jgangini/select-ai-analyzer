@@ -11,8 +11,8 @@ import oracledb
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT))
 
-from apps.backend.app.select_ai.source_metadata import read_metadata_sidecar
-from apps.backend.app.select_ai.source_parser import SourceTable, build_create_table_sql, parse_source_tables
+from scripts.source_seed_parser import SourceTable, build_create_table_sql, parse_source_tables
+from scripts.source_seed_sidecar import read_metadata_sidecar
 from scripts.source_seed_db import (
     assert_connected_schema,
     drop_table_if_exists,

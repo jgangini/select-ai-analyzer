@@ -8,9 +8,9 @@ from pathlib import Path
 import random
 import re
 
-from apps.backend.app.select_ai.source_metadata import write_metadata_sidecar
-from apps.backend.app.select_ai.source_parser import SourceColumn, SourceTable, parse_source_tables
-from apps.backend.app.select_ai.synthetic_examples import (
+from scripts.source_seed_parser import SourceColumn, SourceTable, parse_source_tables
+from scripts.source_seed_sidecar import write_metadata_sidecar
+from scripts.source_seed_synthetic_examples import (
     DATA_YEAR,
     DOC_EXAMPLE_ACCOUNT,
     MIN_ROWS_PER_TABLE,
@@ -19,7 +19,7 @@ from apps.backend.app.select_ai.synthetic_examples import (
     YEAR_DAYS,
     apply_doc_example_overrides,
 )
-from apps.backend.app.select_ai.synthetic_value_rules import CURRENCIES, text_value_for_column
+from scripts.source_seed_synthetic_value_rules import CURRENCIES, text_value_for_column
 
 
 FACT_TABLE_TOKENS = ("DAILY_LOG", "TRANSACTIONS", "STATEMENT", "ATM_TRANS", "CLEARING")

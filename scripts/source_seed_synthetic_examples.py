@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from apps.backend.app.select_ai.synthetic_example_values import (
+from scripts.source_seed_synthetic_example_values import (
     DATA_YEAR,
     DOC_EXAMPLE_ACCOUNT,
     DOC_EXAMPLE_MARCH,
@@ -18,15 +18,15 @@ from apps.backend.app.select_ai.synthetic_example_values import (
     YEAR_DAYS,
     _set_if_present,
 )
-from apps.backend.app.select_ai.synthetic_operational_examples import (
+from scripts.source_seed_synthetic_operational_examples import (
     _apply_atm_examples,
     _apply_clearing_examples,
     _apply_interest_examples,
     _apply_operating_date_examples,
     _apply_teller_examples,
 )
-from apps.backend.app.select_ai.synthetic_term_deposit_examples import _apply_term_deposit_examples
-from apps.backend.app.select_ai.synthetic_transaction_examples import _apply_transaction_examples
+from scripts.source_seed_synthetic_term_deposit_examples import _apply_term_deposit_examples
+from scripts.source_seed_synthetic_transaction_examples import _apply_transaction_examples
 
 
 def _apply_balance_history_example(table_name: str, row: dict[str, object], row_index: int) -> None:

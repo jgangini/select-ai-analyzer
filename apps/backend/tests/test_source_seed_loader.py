@@ -4,8 +4,8 @@ import random
 
 import pytest
 
-from apps.backend.app.select_ai.source_parser import SourceColumn
-from apps.backend.app.select_ai.source_parser import SourceTable
+from scripts.source_seed_parser import SourceColumn
+from scripts.source_seed_parser import SourceTable
 from apps.backend.app.select_ai.service import (
     _is_velocity_window_intent,
     _score_source_match,
@@ -13,7 +13,7 @@ from apps.backend.app.select_ai.service import (
     _uses_current_clock,
     _uses_current_clock_for_velocity_sql,
 )
-from apps.backend.app.select_ai.synthetic_data import (
+from scripts.source_seed_synthetic import (
     CURRENCIES,
     DOC_EXAMPLE_ACCOUNT,
     MIN_ROWS_PER_TABLE,

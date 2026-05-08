@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from datetime import date, timedelta
 
-from apps.backend.app.select_ai.synthetic_example_values import (
+from scripts.source_seed_synthetic_example_values import (
     DOC_EXAMPLE_ACCOUNT,
     DOC_EXAMPLE_MARCH,
     TEST_ACCOUNT,

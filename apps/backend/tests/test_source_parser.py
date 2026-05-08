@@ -1,6 +1,6 @@
 from pathlib import Path
 
-from apps.backend.app.select_ai.source_parser import build_create_table_sql, parse_source_tables
+from scripts.source_seed_parser import build_create_table_sql, parse_source_tables
 
 
 FIXTURE_PATH = Path(__file__).resolve().parent / "fixtures" / "decoupling_tables_structures.sql"

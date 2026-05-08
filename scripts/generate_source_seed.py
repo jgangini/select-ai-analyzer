@@ -7,8 +7,8 @@ import sys
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT))
 
-from apps.backend.app.select_ai.source_parser import build_create_table_sql, parse_source_tables
-from apps.backend.app.select_ai.synthetic_data import YEAR_DAYS, write_seed_files
+from scripts.source_seed_parser import build_create_table_sql, parse_source_tables
+from scripts.source_seed_synthetic import YEAR_DAYS, write_seed_files
 
 
 def main() -> int:

@@ -6,7 +6,7 @@ import re
 from typing import Any
 
 from apps.backend.app.select_ai.metadata_payload import parse_metadata_payload
-from apps.backend.app.select_ai.source_parser import SourceColumn, SourceTable
+from scripts.source_seed_parser import SourceColumn, SourceTable
 
 
 def display_label(value: str) -> str:
