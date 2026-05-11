@@ -7,7 +7,7 @@ from apps.backend.app.services.bootstrap_status_service import SetupStatusServic
 
 
 def require_setup_completed() -> None:
-    """Bloquea operaciones de runtime hasta completar el wizard."""
+    """Block runtime operations until the setup wizard has completed."""
     status_service = SetupStatusService(get_db_manager())
     if not status_service.check_setup_status():
         raise HTTPException(

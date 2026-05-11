@@ -312,6 +312,9 @@ class BootstrapOciMixin:
             except Exception as file_error:
                 logger.error("Could not generate keys/config during complete_setup: %s", file_error)
                 raise RuntimeError(f"Could not generate OCI config file during setup completion: {file_error}") from file_error
+            clear_status_cache = getattr(self, "clear_status_cache", None)
+            if callable(clear_status_cache):
+                clear_status_cache()
             return True
         except Exception as e:
             conn.rollback()

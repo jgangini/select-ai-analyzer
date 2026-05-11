@@ -39,6 +39,16 @@ class FakeConnection:
         self.closed = True
 
 
+class PooledDbManager:
+    def __init__(self, connection: FakeConnection) -> None:
+        self.connection = connection
+        self.get_connection_calls = 0
+
+    def get_connection(self) -> FakeConnection:
+        self.get_connection_calls += 1
+        return self.connection
+
+
 class FakeStatusReader(BootstrapStatusMixin):
     def __init__(self, connection: FakeConnection | None) -> None:
         self.db_manager = object()
@@ -58,6 +68,13 @@ class DbManager:
         return self.config
 
 
+@pytest.fixture(autouse=True)
+def clear_setup_status_cache():
+    SetupStatusService.clear_status_cache()
+    yield
+    SetupStatusService.clear_status_cache()
+
+
 def test_bootstrap_status_mixin_reads_completed_flag_from_lob() -> None:
     connection = FakeConnection((ReadableValue("true"),))
     service = FakeStatusReader(connection)
@@ -72,6 +89,26 @@ def test_bootstrap_status_mixin_returns_false_when_runtime_config_is_missing() -
     service = FakeStatusReader(None)
 
     assert service.check_setup_status() is False
+
+
+def test_setup_status_service_prefers_pooled_connection() -> None:
+    connection = FakeConnection(("true",))
+    db_manager = PooledDbManager(connection)
+    service = SetupStatusService(db_manager)  # type: ignore[arg-type]
+
+    assert service.check_setup_status() is True
+    assert db_manager.get_connection_calls == 1
+    assert connection.closed is True
+
+
+def test_setup_status_service_caches_completed_status() -> None:
+    connection = FakeConnection(("true",))
+    db_manager = PooledDbManager(connection)
+    service = SetupStatusService(db_manager)  # type: ignore[arg-type]
+
+    assert service.check_setup_status() is True
+    assert service.check_setup_status() is True
+    assert db_manager.get_connection_calls == 1
 
 
 def test_setup_status_service_uses_runtime_database_config(monkeypatch) -> None:

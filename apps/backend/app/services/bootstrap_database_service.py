@@ -91,6 +91,9 @@ class BootstrapDatabaseMixin:
             password=password,
             dsn=dsn,
         )
+        clear_status_cache = getattr(self, "clear_status_cache", None)
+        if callable(clear_status_cache):
+            clear_status_cache()
 
     def list_wallet_dsns(self, wallet_path: str) -> dict:
         try:

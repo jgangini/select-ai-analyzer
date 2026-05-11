@@ -1,4 +1,5 @@
 from datetime import timedelta
+import time
 from typing import TYPE_CHECKING
 
 from apps.backend.app.core.config import Settings
@@ -14,19 +15,48 @@ if TYPE_CHECKING:
 class AuthService:
     """User authentication service."""
 
+    _SESSION_TIMEOUT_CACHE_TTL_SECONDS = 30.0
+    _session_timeout_cache: tuple[int, int, float] | None = None
+
     def __init__(self, db_manager: "DatabaseManager", settings: Settings):
         self.db_manager = db_manager
         self.settings = settings
         self.config_service = ConfigService(db_manager)
 
+    @classmethod
+    def clear_session_timeout_cache(cls) -> None:
+        cls._session_timeout_cache = None
+
+    def _cached_session_timeout_minutes(self) -> int | None:
+        cache = self.__class__._session_timeout_cache
+        if cache is None:
+            return None
+        cache_db_id, timeout_minutes, expires_at = cache
+        if cache_db_id == id(self.db_manager) and time.monotonic() < expires_at:
+            return timeout_minutes
+        self.__class__._session_timeout_cache = None
+        return None
+
+    def _remember_session_timeout_minutes(self, timeout_minutes: int) -> None:
+        self.__class__._session_timeout_cache = (
+            id(self.db_manager),
+            timeout_minutes,
+            time.monotonic() + self._SESSION_TIMEOUT_CACHE_TTL_SECONDS,
+        )
+
     def _resolve_session_timeout_minutes(self) -> int:
         default_minutes = int(self.settings.ACCESS_TOKEN_EXPIRE_MINUTES)
+        cached_timeout = self._cached_session_timeout_minutes()
+        if cached_timeout is not None:
+            return cached_timeout
         try:
             raw_value = self.config_service.get_value("app.session_timeout_minutes", str(default_minutes)).strip()
             resolved = int(raw_value)
-            return max(1, resolved)
+            timeout_minutes = max(1, resolved)
         except Exception:
-            return default_minutes
+            timeout_minutes = default_minutes
+        self._remember_session_timeout_minutes(timeout_minutes)
+        return timeout_minutes
 
     @trace
     def authenticate_user(self, username: str, password: str) -> dict | None:

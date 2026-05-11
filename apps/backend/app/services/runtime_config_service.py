@@ -25,10 +25,16 @@ class ConfigService:
     def table_exists(self) -> bool:
         return self.db_manager.table_exists("config")
 
+    @staticmethod
+    def _is_missing_config_table_error(error: Exception) -> bool:
+        message = str(error)
+        return "ORA-00942" in message or "does not exist" in message.lower()
+
     def get_value(self, key: str, default: Any = "") -> str:
-        if not self.table_exists():
+        try:
+            connection = self.db_manager.get_connection()
+        except Exception:
             return self._normalize_value(default)
-        connection = self.db_manager.get_connection()
         cursor = connection.cursor()
         try:
             cursor.execute(
@@ -46,6 +52,10 @@ class ConfigService:
             if hasattr(value, "read"):
                 value = value.read()
             return self._normalize_value(value)
+        except Exception as exc:
+            if self._is_missing_config_table_error(exc):
+                return self._normalize_value(default)
+            raise
         finally:
             cursor.close()
             connection.close()

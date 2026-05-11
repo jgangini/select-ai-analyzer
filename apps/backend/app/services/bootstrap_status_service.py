@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import logging
+import time
 
 from apps.backend.app.core.database import DatabaseManager
 from apps.backend.app.core.tracing import trace
@@ -13,6 +14,33 @@ logger = logging.getLogger(__name__)
 
 
 class BootstrapStatusMixin:
+    _STATUS_CACHE_TTL_SECONDS = 30.0
+    _status_cache: tuple[int, bool, float] | None = None
+
+    @classmethod
+    def clear_status_cache(cls) -> None:
+        BootstrapStatusMixin._status_cache = None
+
+    def _cached_completed_status(self) -> bool | None:
+        cache = BootstrapStatusMixin._status_cache
+        if cache is None:
+            return None
+        cache_db_id, completed, expires_at = cache
+        if cache_db_id == id(self.db_manager) and time.monotonic() < expires_at:
+            return completed
+        BootstrapStatusMixin._status_cache = None
+        return None
+
+    def _remember_completed_status(self, completed: bool) -> None:
+        if completed:
+            BootstrapStatusMixin._status_cache = (
+                id(self.db_manager),
+                True,
+                time.monotonic() + self._STATUS_CACHE_TTL_SECONDS,
+            )
+        else:
+            BootstrapStatusMixin._status_cache = None
+
     def _get_direct_connection(
         self,
         *,
@@ -31,12 +59,25 @@ class BootstrapStatusMixin:
             dsn=dsn,
         )
 
+    def _get_status_connection(self):
+        get_connection = getattr(self.db_manager, "get_connection", None)
+        if callable(get_connection):
+            try:
+                return get_connection()
+            except Exception as pool_error:
+                logger.debug("Pooled setup status connection unavailable: %s", pool_error)
+        return self._get_direct_connection()
+
     @trace
     def check_setup_status(self) -> bool:
         try:
             if self.db_manager is None:
                 return False
-            conn = self._get_direct_connection()
+            cached = self._cached_completed_status()
+            if cached is not None:
+                return cached
+
+            conn = self._get_status_connection()
             cursor = conn.cursor()
             try:
                 cursor.execute(
@@ -51,13 +92,17 @@ class BootstrapStatusMixin:
                     if hasattr(value, "read"):
                         value = value.read()
                     logger.debug("check_setup_status: wizard.completed = '%s'", value)
-                    return value == "true"
+                    completed = str(value).strip().lower() == "true"
+                    self._remember_completed_status(completed)
+                    return completed
                 logger.debug("check_setup_status: wizard.completed not found")
+                self._remember_completed_status(False)
                 return False
             finally:
                 cursor.close()
                 conn.close()
         except Exception as e:
+            self._remember_completed_status(False)
             error_str = str(e)
             if "Database runtime connection is not configured" in error_str:
                 logger.info("Setup status unavailable because database runtime config is incomplete.")
