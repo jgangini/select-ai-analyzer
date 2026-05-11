@@ -1,0 +1,1018 @@
+{
+  "D:\\dev\\codex-select-ai\\apps\\__init__.py": {
+    "mtime": 1778278489.7048726,
+    "hash": "8391b7fad1db0afe1c1cec2f036f4ee5"
+  },
+  "D:\\dev\\codex-select-ai\\apps\\backend\\app\\main.py": {
+    "mtime": 1778267723.9982617,
+    "hash": "db12dc254b6a9a49e3aa8c78eed6cf57"
+  },
+  "D:\\dev\\codex-select-ai\\apps\\backend\\app\\api\\setup_guard.py": {
+    "mtime": 1778534458.4265208,
+    "hash": "2202e857358d9e76d3dd89fd6048cd34"
+  },
+  "D:\\dev\\codex-select-ai\\apps\\backend\\app\\api\\setup_models.py": {
+    "mtime": 1778229320.7107098,
+    "hash": "52e4a2cb5d997acc54db70638ded0638"
+  },
+  "D:\\dev\\codex-select-ai\\apps\\backend\\app\\api\\upload_validation.py": {
+    "mtime": 1778265228.7153592,
+    "hash": "4e9511dec9c9cd18d1ca5ca206010ca7"
+  },
+  "D:\\dev\\codex-select-ai\\apps\\backend\\app\\api\\routes\\analytics.py": {
+    "mtime": 1778532336.258836,
+    "hash": "83d3879a065917e4435da0789d720cd4"
+  },
+  "D:\\dev\\codex-select-ai\\apps\\backend\\app\\api\\routes\\auth.py": {
+    "mtime": 1778190505.1318514,
+    "hash": "97721c36c4c9d9aeb1daac1e1aa07b68"
+  },
+  "D:\\dev\\codex-select-ai\\apps\\backend\\app\\api\\routes\\dashboards.py": {
+    "mtime": 1778213596.6540756,
+    "hash": "f2055702611f1c55a412c959d1f270ca"
+  },
+  "D:\\dev\\codex-select-ai\\apps\\backend\\app\\api\\routes\\data_sources.py": {
+    "mtime": 1778250052.8435142,
+    "hash": "c2792af629ec4ebc05a14948bf19bc77"
+  },
+  "D:\\dev\\codex-select-ai\\apps\\backend\\app\\api\\routes\\settings.py": {
+    "mtime": 1778275665.903343,
+    "hash": "d1c01e89971a91ee84761c1c38c08b4e"
+  },
+  "D:\\dev\\codex-select-ai\\apps\\backend\\app\\api\\routes\\setup.py": {
+    "mtime": 1778265237.7235026,
+    "hash": "fdd43653ba8a2cd4585732e9de6e98af"
+  },
+  "D:\\dev\\codex-select-ai\\apps\\backend\\app\\api\\routes\\status.py": {
+    "mtime": 1778267481.7720573,
+    "hash": "aa86ab2c6a1d18825a6528bb954f2029"
+  },
+  "D:\\dev\\codex-select-ai\\apps\\backend\\app\\api\\routes\\users.py": {
+    "mtime": 1778214181.7109647,
+    "hash": "c523981cdce025c49729c1f9af025525"
+  },
+  "D:\\dev\\codex-select-ai\\apps\\backend\\app\\core\\config.py": {
+    "mtime": 1778274776.606432,
+    "hash": "0b327e428409ab45c367baa3e429445d"
+  },
+  "D:\\dev\\codex-select-ai\\apps\\backend\\app\\core\\database.py": {
+    "mtime": 1778216252.8865473,
+    "hash": "c45303eea86190d1693f841a7aefd54a"
+  },
+  "D:\\dev\\codex-select-ai\\apps\\backend\\app\\core\\logging_config.py": {
+    "mtime": 1778267723.9982617,
+    "hash": "6eadb4042d12a4dec65ccecb6d74230a"
+  },
+  "D:\\dev\\codex-select-ai\\apps\\backend\\app\\core\\oci_db_config.py": {
+    "mtime": 1778268120.7196612,
+    "hash": "1266ecb366648ac1afeec7054e877cb7"
+  },
+  "D:\\dev\\codex-select-ai\\apps\\backend\\app\\core\\security.py": {
+    "mtime": 1778274588.726777,
+    "hash": "6f12bc8640fe71c4e753ac4f05a80796"
+  },
+  "D:\\dev\\codex-select-ai\\apps\\backend\\app\\core\\session.py": {
+    "mtime": 1778268171.8946903,
+    "hash": "45cd806f549e26834aec878bde90e4a3"
+  },
+  "D:\\dev\\codex-select-ai\\apps\\backend\\app\\core\\tracing.py": {
+    "mtime": 1778275872.6918485,
+    "hash": "9336d7483fcff8ca591eec148188e3ab"
+  },
+  "D:\\dev\\codex-select-ai\\apps\\backend\\app\\dev\\server_runner.py": {
+    "mtime": 1778250350.2812605,
+    "hash": "682b4d9547d9a02a8e80bacababddc83"
+  },
+  "D:\\dev\\codex-select-ai\\apps\\backend\\app\\select_ai\\base_service.py": {
+    "mtime": 1778225401.2971478,
+    "hash": "ef452376181e4808a478e4e99c6f6591"
+  },
+  "D:\\dev\\codex-select-ai\\apps\\backend\\app\\select_ai\\charting.py": {
+    "mtime": 1778012601.1789222,
+    "hash": "b61a98e357bf9e8cce6f5ecb4d1bc1cb"
+  },
+  "D:\\dev\\codex-select-ai\\apps\\backend\\app\\select_ai\\constants.py": {
+    "mtime": 1778203723.0065472,
+    "hash": "c9ac0bdd6298ff61c02a3daaa90c1343"
+  },
+  "D:\\dev\\codex-select-ai\\apps\\backend\\app\\select_ai\\conversations.py": {
+    "mtime": 1778246501.3491027,
+    "hash": "ed86d7e65df287065aebfcefde49c8e8"
+  },
+  "D:\\dev\\codex-select-ai\\apps\\backend\\app\\select_ai\\conversation_operations.py": {
+    "mtime": 1778249866.874104,
+    "hash": "82db5ad592aa8662c5ee05b3fed4f834"
+  },
+  "D:\\dev\\codex-select-ai\\apps\\backend\\app\\select_ai\\conversation_store.py": {
+    "mtime": 1778246501.3471026,
+    "hash": "8d3bdd30b4815dec9ab66c88306c7f75"
+  },
+  "D:\\dev\\codex-select-ai\\apps\\backend\\app\\select_ai\\dashboards.py": {
+    "mtime": 1778225631.416928,
+    "hash": "796c35fbbb0502ebe124a7d734d06d2e"
+  },
+  "D:\\dev\\codex-select-ai\\apps\\backend\\app\\select_ai\\dashboard_item_mutations.py": {
+    "mtime": 1778229075.3883653,
+    "hash": "6fc40e4388a2d1047a631429171fff58"
+  },
+  "D:\\dev\\codex-select-ai\\apps\\backend\\app\\select_ai\\dashboard_item_payload.py": {
+    "mtime": 1778228873.0175023,
+    "hash": "100bb28d37ef112f423108c6647ba8ad"
+  },
+  "D:\\dev\\codex-select-ai\\apps\\backend\\app\\select_ai\\dashboard_item_store.py": {
+    "mtime": 1778229055.4347322,
+    "hash": "63c1b434bfd8749ef16b0099749764bf"
+  },
+  "D:\\dev\\codex-select-ai\\apps\\backend\\app\\select_ai\\dashboard_mutations.py": {
+    "mtime": 1778267429.0262864,
+    "hash": "55456dd6712ac93f297f2e370ee04ed2"
+  },
+  "D:\\dev\\codex-select-ai\\apps\\backend\\app\\select_ai\\dashboard_mutation_store.py": {
+    "mtime": 1778230108.1791737,
+    "hash": "f17240512f4976af904f1c12625ada12"
+  },
+  "D:\\dev\\codex-select-ai\\apps\\backend\\app\\select_ai\\dashboard_queries.py": {
+    "mtime": 1778267429.02779,
+    "hash": "75eccb9c9c3d83c14a96e8f23e4bfde3"
+  },
+  "D:\\dev\\codex-select-ai\\apps\\backend\\app\\select_ai\\dashboard_query_store.py": {
+    "mtime": 1778230020.8725655,
+    "hash": "b5b4cc8035f176500ab3978d82b5c6b7"
+  },
+  "D:\\dev\\codex-select-ai\\apps\\backend\\app\\select_ai\\dashboard_schema.py": {
+    "mtime": 1778267429.0262864,
+    "hash": "a48b69bb8635670646fce3e22eb0bb02"
+  },
+  "D:\\dev\\codex-select-ai\\apps\\backend\\app\\select_ai\\data_source_catalog.py": {
+    "mtime": 1778243449.107723,
+    "hash": "b137789f3eafa41199a0e62da480a38c"
+  },
+  "D:\\dev\\codex-select-ai\\apps\\backend\\app\\select_ai\\data_source_catalog_store.py": {
+    "mtime": 1778243449.107723,
+    "hash": "e9b6c3e66f4bd9c078227c465b613445"
+  },
+  "D:\\dev\\codex-select-ai\\apps\\backend\\app\\select_ai\\data_source_csv.py": {
+    "mtime": 1778261452.6033804,
+    "hash": "404d7185d3d81113c31d4e00719f0f7c"
+  },
+  "D:\\dev\\codex-select-ai\\apps\\backend\\app\\select_ai\\data_source_metadata.py": {
+    "mtime": 1778243449.107723,
+    "hash": "1ed4097e54b965b22d001010b1a28db4"
+  },
+  "D:\\dev\\codex-select-ai\\apps\\backend\\app\\select_ai\\data_source_operations.py": {
+    "mtime": 1778243449.1092267,
+    "hash": "12301ec46cda2125ac6f507f567d2339"
+  },
+  "D:\\dev\\codex-select-ai\\apps\\backend\\app\\select_ai\\data_source_preview.py": {
+    "mtime": 1778243449.1092267,
+    "hash": "0a62d326b899b9aedc056ba7aefac645"
+  },
+  "D:\\dev\\codex-select-ai\\apps\\backend\\app\\select_ai\\data_source_schema.py": {
+    "mtime": 1778532336.258836,
+    "hash": "ed1909531d160836de3eca5abe30723b"
+  },
+  "D:\\dev\\codex-select-ai\\apps\\backend\\app\\select_ai\\errors.py": {
+    "mtime": 1778532706.6475096,
+    "hash": "f87655efb7d80a3cd3552b101e24eb10"
+  },
+  "D:\\dev\\codex-select-ai\\apps\\backend\\app\\select_ai\\metadata_payload.py": {
+    "mtime": 1778243449.1092267,
+    "hash": "361f22a5abda1c7eed300219a0d49ed9"
+  },
+  "D:\\dev\\codex-select-ai\\apps\\backend\\app\\select_ai\\query_execution.py": {
+    "mtime": 1778267954.40253,
+    "hash": "93144a9bc22579b65316a9cc1700a238"
+  },
+  "D:\\dev\\codex-select-ai\\apps\\backend\\app\\select_ai\\scoped_profile_operations.py": {
+    "mtime": 1778267248.62671,
+    "hash": "a1ebaffd714452088baae7ef832e4b46"
+  },
+  "D:\\dev\\codex-select-ai\\apps\\backend\\app\\select_ai\\scoped_profile_store.py": {
+    "mtime": 1778230205.9438162,
+    "hash": "96abc95e37843129f88ff01874eff0c7"
+  },
+  "D:\\dev\\codex-select-ai\\apps\\backend\\app\\select_ai\\select_ai_ask.py": {
+    "mtime": 1778532706.6485095,
+    "hash": "8817115a3c11c9691dea16a7e07e6f24"
+  },
+  "D:\\dev\\codex-select-ai\\apps\\backend\\app\\select_ai\\select_ai_generation.py": {
+    "mtime": 1778532336.2598357,
+    "hash": "0c9cc858b38e1f9fa15c8a2e3627ab3d"
+  },
+  "D:\\dev\\codex-select-ai\\apps\\backend\\app\\select_ai\\service.py": {
+    "mtime": 1778275607.1690214,
+    "hash": "33712716cabb1436ac298ebcd182f2ea"
+  },
+  "D:\\dev\\codex-select-ai\\apps\\backend\\app\\select_ai\\source_intents.py": {
+    "mtime": 1778532738.631647,
+    "hash": "d9727b35396df842100efa1a6dc3c32e"
+  },
+  "D:\\dev\\codex-select-ai\\apps\\backend\\app\\select_ai\\sql_names.py": {
+    "mtime": 1778243449.1102326,
+    "hash": "a810294eecd79881ea09db7747c77de4"
+  },
+  "D:\\dev\\codex-select-ai\\apps\\backend\\app\\select_ai\\sql_validation.py": {
+    "mtime": 1778012353.0098557,
+    "hash": "c944e0550c5d9cddbebb7e327e7ceeaf"
+  },
+  "D:\\dev\\codex-select-ai\\apps\\backend\\app\\select_ai\\value_serialization.py": {
+    "mtime": 1778211306.6045182,
+    "hash": "36dc982e57a35031ecec566b9df1168b"
+  },
+  "D:\\dev\\codex-select-ai\\apps\\backend\\app\\services\\app_status_service.py": {
+    "mtime": 1778225739.14353,
+    "hash": "e20b456dd4325f86c0fc23d2be905bbd"
+  },
+  "D:\\dev\\codex-select-ai\\apps\\backend\\app\\services\\auth_service.py": {
+    "mtime": 1778534623.4914207,
+    "hash": "21e5afd9f71a7ba6adaeb39dc5922907"
+  },
+  "D:\\dev\\codex-select-ai\\apps\\backend\\app\\services\\bootstrap_database_service.py": {
+    "mtime": 1778534479.304024,
+    "hash": "c4d165e63e135b1c301b1926817e2aed"
+  },
+  "D:\\dev\\codex-select-ai\\apps\\backend\\app\\services\\bootstrap_oci_service.py": {
+    "mtime": 1778534479.305026,
+    "hash": "c9530d7f61d0b2a134ff0057e6699b2b"
+  },
+  "D:\\dev\\codex-select-ai\\apps\\backend\\app\\services\\bootstrap_script_service.py": {
+    "mtime": 1778178652.5638976,
+    "hash": "944a7631657fc675813f429a3d4d89a5"
+  },
+  "D:\\dev\\codex-select-ai\\apps\\backend\\app\\services\\bootstrap_service.py": {
+    "mtime": 1778275933.2928445,
+    "hash": "2b80cb12765428647867d2cff46bfa8a"
+  },
+  "D:\\dev\\codex-select-ai\\apps\\backend\\app\\services\\bootstrap_status_service.py": {
+    "mtime": 1778534458.4232297,
+    "hash": "6ef0d8567931d5fb13c3f0d5ef9b2b7f"
+  },
+  "D:\\dev\\codex-select-ai\\apps\\backend\\app\\services\\bootstrap_support.py": {
+    "mtime": 1778230387.0566518,
+    "hash": "45b9e71a13f54633f0d8d1f2f2b4f8b1"
+  },
+  "D:\\dev\\codex-select-ai\\apps\\backend\\app\\services\\runtime_config_service.py": {
+    "mtime": 1778534458.4247334,
+    "hash": "41c017c653ee446c2b7612ffd9dacb46"
+  },
+  "D:\\dev\\codex-select-ai\\apps\\backend\\app\\services\\settings_avatar.py": {
+    "mtime": 1778228944.3683743,
+    "hash": "a78c5e6566d9cc3c984ef508c68bd1b2"
+  },
+  "D:\\dev\\codex-select-ai\\apps\\backend\\app\\services\\settings_service.py": {
+    "mtime": 1778532678.4795456,
+    "hash": "62d11a82edb1c8808cbbae1afcf91db8"
+  },
+  "D:\\dev\\codex-select-ai\\apps\\backend\\app\\services\\user_service.py": {
+    "mtime": 1778276120.5129137,
+    "hash": "f19d8607f6863cd2c27eaba2c673c136"
+  },
+  "D:\\dev\\codex-select-ai\\apps\\backend\\data\\source_seed\\ddl\\app_agent_data_source_tables.sql": {
+    "mtime": 1778023768.4157033,
+    "hash": "6f4cf77c494da08c62e518f7748f0b66"
+  },
+  "D:\\dev\\codex-select-ai\\apps\\backend\\db\\admin\\create_app_agent_user.sql": {
+    "mtime": 1778007851.810715,
+    "hash": "2f916b52d81454b95277ccd43a08af14"
+  },
+  "D:\\dev\\codex-select-ai\\apps\\backend\\db\\bootstrap\\sql\\01_user_group.sql": {
+    "mtime": 1777995363.5155113,
+    "hash": "a6cde69a630ef4f3453beba11692a7cd"
+  },
+  "D:\\dev\\codex-select-ai\\apps\\backend\\db\\bootstrap\\sql\\02_users.sql": {
+    "mtime": 1777995369.0627627,
+    "hash": "8030d4b28cdc12af53786ae0d63d4a6c"
+  },
+  "D:\\dev\\codex-select-ai\\apps\\backend\\db\\bootstrap\\sql\\03_config.sql": {
+    "mtime": 1778015577.912357,
+    "hash": "92fbbc2ffdb066d42bfbdd7071e65226"
+  },
+  "D:\\dev\\codex-select-ai\\apps\\backend\\db\\bootstrap\\sql\\04_data_sources.sql": {
+    "mtime": 1778244317.2984028,
+    "hash": "e1124d0db6475eca6391e01916168e85"
+  },
+  "D:\\dev\\codex-select-ai\\apps\\backend\\db\\bootstrap\\sql\\05_select_ai_profiles.sql": {
+    "mtime": 1778244317.2996438,
+    "hash": "14b138df7d9546e6a2552f2b960caa1b"
+  },
+  "D:\\dev\\codex-select-ai\\apps\\backend\\db\\bootstrap\\sql\\06_analytics_runtime.sql": {
+    "mtime": 1778246271.6476986,
+    "hash": "a4630dc14200cfa5ecdb25bddf052951"
+  },
+  "D:\\dev\\codex-select-ai\\apps\\backend\\db\\bootstrap\\sql\\07_select_ai_procedures.sql": {
+    "mtime": 1778243733.4656966,
+    "hash": "ce50ce3c8363348cf0c918693cfbace1"
+  },
+  "D:\\dev\\codex-select-ai\\apps\\backend\\db\\bootstrap\\sql\\08_dashboards.sql": {
+    "mtime": 1778125557.078361,
+    "hash": "08975515676ab3051cbe6323da1b0e21"
+  },
+  "D:\\dev\\codex-select-ai\\apps\\backend\\tests\\test_app_status_service.py": {
+    "mtime": 1778195688.9383218,
+    "hash": "0e214cabfab91e4e99312e911c29f09d"
+  },
+  "D:\\dev\\codex-select-ai\\apps\\backend\\tests\\test_auth_service.py": {
+    "mtime": 1778534623.4924214,
+    "hash": "5ff56bbb021a09f323206dd7451cdd41"
+  },
+  "D:\\dev\\codex-select-ai\\apps\\backend\\tests\\test_bootstrap_database_service.py": {
+    "mtime": 1778220369.193497,
+    "hash": "cba27ee7bcde28b71807065d6f180140"
+  },
+  "D:\\dev\\codex-select-ai\\apps\\backend\\tests\\test_bootstrap_oci_service.py": {
+    "mtime": 1778230928.031187,
+    "hash": "468f63db0812d114db5b163d84747cfe"
+  },
+  "D:\\dev\\codex-select-ai\\apps\\backend\\tests\\test_bootstrap_script_service.py": {
+    "mtime": 1778178652.564897,
+    "hash": "1ded95c302b0a7c8f88d7a66c5b4bafb"
+  },
+  "D:\\dev\\codex-select-ai\\apps\\backend\\tests\\test_bootstrap_status_service.py": {
+    "mtime": 1778534479.30553,
+    "hash": "69b4e4bab1cecad7e35cc4d87351f6fa"
+  },
+  "D:\\dev\\codex-select-ai\\apps\\backend\\tests\\test_bootstrap_support.py": {
+    "mtime": 1778244524.7086997,
+    "hash": "276619637afb9ede04ca57fa8fc094ef"
+  },
+  "D:\\dev\\codex-select-ai\\apps\\backend\\tests\\test_config.py": {
+    "mtime": 1778265248.1731594,
+    "hash": "b3cd5fd0efa45a83fd7e13ee61cbdcae"
+  },
+  "D:\\dev\\codex-select-ai\\apps\\backend\\tests\\test_conversation_operations.py": {
+    "mtime": 1778532905.4809835,
+    "hash": "9af9e960e265ce4dc36e1fcfd16a8995"
+  },
+  "D:\\dev\\codex-select-ai\\apps\\backend\\tests\\test_csv_upload.py": {
+    "mtime": 1778261452.6043792,
+    "hash": "944c19b5315e055ba02dfcaba72611d1"
+  },
+  "D:\\dev\\codex-select-ai\\apps\\backend\\tests\\test_dashboard_item_mutations.py": {
+    "mtime": 1778228782.3967624,
+    "hash": "d616f2e23f6fc3ca3bb8d11281a046f2"
+  },
+  "D:\\dev\\codex-select-ai\\apps\\backend\\tests\\test_dashboard_service.py": {
+    "mtime": 1778225906.106595,
+    "hash": "80830371abbb64e4b65c4fca621b1d43"
+  },
+  "D:\\dev\\codex-select-ai\\apps\\backend\\tests\\test_dashboard_support.py": {
+    "mtime": 1778267429.02779,
+    "hash": "5440f955b5c06455ffaaaa9cedc9baa7"
+  },
+  "D:\\dev\\codex-select-ai\\apps\\backend\\tests\\test_data_source_helpers.py": {
+    "mtime": 1778532336.2613418,
+    "hash": "3fd5e04c2849cc09aeac9c9e77cbf077"
+  },
+  "D:\\dev\\codex-select-ai\\apps\\backend\\tests\\test_query_execution.py": {
+    "mtime": 1778267954.4040334,
+    "hash": "b92ed9e3831fc3642cbe358183d31213"
+  },
+  "D:\\dev\\codex-select-ai\\apps\\backend\\tests\\test_runtime_config_service.py": {
+    "mtime": 1778534479.30553,
+    "hash": "7573d63c46db3a3744c7db9c4426d085"
+  },
+  "D:\\dev\\codex-select-ai\\apps\\backend\\tests\\test_scoped_profile_operations.py": {
+    "mtime": 1778243762.6263292,
+    "hash": "81c9fbc77602201963340053fba1490c"
+  },
+  "D:\\dev\\codex-select-ai\\apps\\backend\\tests\\test_select_ai_base_service.py": {
+    "mtime": 1778203771.2922027,
+    "hash": "67899630f8b19a417e859299a877cc54"
+  },
+  "D:\\dev\\codex-select-ai\\apps\\backend\\tests\\test_select_ai_error_handling.py": {
+    "mtime": 1778532800.5354898,
+    "hash": "015c42f9127a472cbec9969b145e386e"
+  },
+  "D:\\dev\\codex-select-ai\\apps\\backend\\tests\\test_select_ai_scoring.py": {
+    "mtime": 1778532772.7350092,
+    "hash": "3e7d69f098264a4e59ea8809fcfcae33"
+  },
+  "D:\\dev\\codex-select-ai\\apps\\backend\\tests\\test_settings_service.py": {
+    "mtime": 1778532759.722641,
+    "hash": "2be6919e6514e0db415b609aabf2fdc7"
+  },
+  "D:\\dev\\codex-select-ai\\apps\\backend\\tests\\test_source_metadata.py": {
+    "mtime": 1778243449.1112309,
+    "hash": "ed5ced48fed4f30bcc55b2c42ecc3ef3"
+  },
+  "D:\\dev\\codex-select-ai\\apps\\backend\\tests\\test_source_parser.py": {
+    "mtime": 1778241793.908442,
+    "hash": "160c8bb1496f84be9179a49e9664b874"
+  },
+  "D:\\dev\\codex-select-ai\\apps\\backend\\tests\\test_source_seed_loader.py": {
+    "mtime": 1778532800.5344853,
+    "hash": "51c9359849304dde3085a32b93f0b39a"
+  },
+  "D:\\dev\\codex-select-ai\\apps\\backend\\tests\\test_source_seed_script_helpers.py": {
+    "mtime": 1778532336.263036,
+    "hash": "51300a71fa004ab58f69d16af08d0dbb"
+  },
+  "D:\\dev\\codex-select-ai\\apps\\backend\\tests\\test_sql_validation_and_charting.py": {
+    "mtime": 1778532800.5354898,
+    "hash": "81263581004f0966894c0fcc3f7a1578"
+  },
+  "D:\\dev\\codex-select-ai\\apps\\backend\\tests\\test_user_service.py": {
+    "mtime": 1778214688.924697,
+    "hash": "f63f54b7d0854f1ef6f7301530fefaa9"
+  },
+  "D:\\dev\\codex-select-ai\\apps\\backend\\tests\\fixtures\\decoupling_tables_structures.sql": {
+    "mtime": 1778107446.5492277,
+    "hash": "e1726d7d4bde32ba17bdfc5778f6e98e"
+  },
+  "D:\\dev\\codex-select-ai\\apps\\frontend\\postcss.config.js": {
+    "mtime": 1773767387.047294,
+    "hash": "ef3ba2a81ba19f8ea5ddf625521e96f0"
+  },
+  "D:\\dev\\codex-select-ai\\apps\\frontend\\tailwind.config.js": {
+    "mtime": 1773770225.0551531,
+    "hash": "5dbc1c5b06dd61e511057a2234f0d4b1"
+  },
+  "D:\\dev\\codex-select-ai\\apps\\frontend\\vite.config.ts": {
+    "mtime": 1778532336.2700398,
+    "hash": "b6baa13feddeefe18cd6d0c0e5cd8477"
+  },
+  "D:\\dev\\codex-select-ai\\apps\\frontend\\src\\App.tsx": {
+    "mtime": 1778532336.2640407,
+    "hash": "8b362a9d88e24ed5cad6e4c588626329"
+  },
+  "D:\\dev\\codex-select-ai\\apps\\frontend\\src\\main.tsx": {
+    "mtime": 1778209614.2536376,
+    "hash": "4e639cd4e2a11ed81819183af2c48495"
+  },
+  "D:\\dev\\codex-select-ai\\apps\\frontend\\src\\vite-env.d.ts": {
+    "mtime": 1773767276.3577106,
+    "hash": "0352474ba2918efe13895edbc3780d94"
+  },
+  "D:\\dev\\codex-select-ai\\apps\\frontend\\src\\components\\auth\\LoginForm.test.ts": {
+    "mtime": 1778534998.0457952,
+    "hash": "ac38915ad81373d254393c473b93515b"
+  },
+  "D:\\dev\\codex-select-ai\\apps\\frontend\\src\\components\\auth\\LoginForm.tsx": {
+    "mtime": 1778534998.043794,
+    "hash": "6e2d7fb42db94d607c01b47daed12571"
+  },
+  "D:\\dev\\codex-select-ai\\apps\\frontend\\src\\components\\common\\LoadingState.tsx": {
+    "mtime": 1774372527.1233354,
+    "hash": "3db85f2e17bf75129b352ae7e15386c1"
+  },
+  "D:\\dev\\codex-select-ai\\apps\\frontend\\src\\components\\common\\Modal.tsx": {
+    "mtime": 1778266489.176619,
+    "hash": "e938fc15e7345b771d7dafd9b0ddd5b1"
+  },
+  "D:\\dev\\codex-select-ai\\apps\\frontend\\src\\components\\pages\\Analytics.tsx": {
+    "mtime": 1778267404.2852037,
+    "hash": "e612e83917cc72aacdfbd8c89e5a854e"
+  },
+  "D:\\dev\\codex-select-ai\\apps\\frontend\\src\\components\\pages\\DataSources.test.tsx": {
+    "mtime": 1778252942.3112113,
+    "hash": "30d550d0663c9446ab2c4f41e7192a92"
+  },
+  "D:\\dev\\codex-select-ai\\apps\\frontend\\src\\components\\pages\\DataSources.tsx": {
+    "mtime": 1778252937.0834422,
+    "hash": "2bd839a0405c9a508bd5ca5c6cfdc77c"
+  },
+  "D:\\dev\\codex-select-ai\\apps\\frontend\\src\\components\\pages\\Home.tsx": {
+    "mtime": 1778215199.498552,
+    "hash": "0406addc439a75e26fefaf7bf55005e5"
+  },
+  "D:\\dev\\codex-select-ai\\apps\\frontend\\src\\components\\pages\\homeStats.test.ts": {
+    "mtime": 1778223124.762144,
+    "hash": "486b2fe219fc08b6d5d635de4c4fbe74"
+  },
+  "D:\\dev\\codex-select-ai\\apps\\frontend\\src\\components\\pages\\homeStats.ts": {
+    "mtime": 1778275300.8861954,
+    "hash": "a5957a1cf4cfaded558023008b41f940"
+  },
+  "D:\\dev\\codex-select-ai\\apps\\frontend\\src\\components\\pages\\Profile.test.tsx": {
+    "mtime": 1778217351.5348794,
+    "hash": "2de409fdb036bd8737c8c117573a1a9d"
+  },
+  "D:\\dev\\codex-select-ai\\apps\\frontend\\src\\components\\pages\\Profile.tsx": {
+    "mtime": 1778262053.633942,
+    "hash": "7bd16552c9bb4151ebaf3ebde11e08ec"
+  },
+  "D:\\dev\\codex-select-ai\\apps\\frontend\\src\\components\\pages\\Settings.test.ts": {
+    "mtime": 1778532759.72508,
+    "hash": "e167b462fa92f6fec990ec1004d07df0"
+  },
+  "D:\\dev\\codex-select-ai\\apps\\frontend\\src\\components\\pages\\Settings.tsx": {
+    "mtime": 1778532336.2650397,
+    "hash": "514d05d12703871fe8398568618d2453"
+  },
+  "D:\\dev\\codex-select-ai\\apps\\frontend\\src\\components\\pages\\Users.tsx": {
+    "mtime": 1778217890.6666763,
+    "hash": "e778921adb90bf5dddcccff8b0d12cbc"
+  },
+  "D:\\dev\\codex-select-ai\\apps\\frontend\\src\\components\\pages\\analytics\\AnalyticsChartChrome.tsx": {
+    "mtime": 1778205447.38824,
+    "hash": "a56fdd2a3f64555f441825c1ecf59314"
+  },
+  "D:\\dev\\codex-select-ai\\apps\\frontend\\src\\components\\pages\\analytics\\AnalyticsChartPreview.tsx": {
+    "mtime": 1778265436.2103891,
+    "hash": "8de3ed04cc8de4c84b6306cf86ab8106"
+  },
+  "D:\\dev\\codex-select-ai\\apps\\frontend\\src\\components\\pages\\analytics\\AnalyticsChartRenderers.test.ts": {
+    "mtime": 1778275129.1364255,
+    "hash": "f9bea68bb2615cf1eaf51552b426f3bf"
+  },
+  "D:\\dev\\codex-select-ai\\apps\\frontend\\src\\components\\pages\\analytics\\AnalyticsChartRenderers.tsx": {
+    "mtime": 1778275307.8377175,
+    "hash": "ab02d4f4f50430e09fea36bff0c45424"
+  },
+  "D:\\dev\\codex-select-ai\\apps\\frontend\\src\\components\\pages\\analytics\\analyticsChartUtils.test.ts": {
+    "mtime": 1778274962.8185828,
+    "hash": "9ed74550c994472c81f5169ccac732da"
+  },
+  "D:\\dev\\codex-select-ai\\apps\\frontend\\src\\components\\pages\\analytics\\analyticsChartUtils.ts": {
+    "mtime": 1778275233.659446,
+    "hash": "3c9db1f2fa370427cf126d5dd1ba36c9"
+  },
+  "D:\\dev\\codex-select-ai\\apps\\frontend\\src\\components\\pages\\analytics\\AnalyticsChatOverlays.test.tsx": {
+    "mtime": 1778253242.7005167,
+    "hash": "eb34f98b513555ab130dd456fb3549fa"
+  },
+  "D:\\dev\\codex-select-ai\\apps\\frontend\\src\\components\\pages\\analytics\\AnalyticsChatOverlays.tsx": {
+    "mtime": 1778266969.8680081,
+    "hash": "b7b813caf4d713713318b8ade44b280c"
+  },
+  "D:\\dev\\codex-select-ai\\apps\\frontend\\src\\components\\pages\\analytics\\AnalyticsChatPanel.tsx": {
+    "mtime": 1778532336.2650397,
+    "hash": "8459e14bc642bceb0882d907b2795edc"
+  },
+  "D:\\dev\\codex-select-ai\\apps\\frontend\\src\\components\\pages\\analytics\\AnalyticsChatPanelParts.test.tsx": {
+    "mtime": 1778532759.7260842,
+    "hash": "347967ef366a078ffbfa4ba0ab1b1c8a"
+  },
+  "D:\\dev\\codex-select-ai\\apps\\frontend\\src\\components\\pages\\analytics\\AnalyticsChatPanelParts.tsx": {
+    "mtime": 1778532706.6515815,
+    "hash": "4545e7df0d957123a058c9c2b372e359"
+  },
+  "D:\\dev\\codex-select-ai\\apps\\frontend\\src\\components\\pages\\analytics\\analyticsChatPanelUtils.test.ts": {
+    "mtime": 1778532856.8201492,
+    "hash": "d90c41bdc1d6a698eb1b6132c0f06df3"
+  },
+  "D:\\dev\\codex-select-ai\\apps\\frontend\\src\\components\\pages\\analytics\\analyticsChatPanelUtils.ts": {
+    "mtime": 1778532706.6495812,
+    "hash": "072840928f2d6755afe09cfe05a01a00"
+  },
+  "D:\\dev\\codex-select-ai\\apps\\frontend\\src\\components\\pages\\analytics\\AnalyticsChatResult.tsx": {
+    "mtime": 1778266589.8841865,
+    "hash": "94a492290443e5910536c61e5f8bf467"
+  },
+  "D:\\dev\\codex-select-ai\\apps\\frontend\\src\\components\\pages\\analytics\\AnalyticsDashboardHeader.test.tsx": {
+    "mtime": 1778199731.1794038,
+    "hash": "3b6b2127ede92f73aa3ce44772d6ad82"
+  },
+  "D:\\dev\\codex-select-ai\\apps\\frontend\\src\\components\\pages\\analytics\\AnalyticsDashboardHeader.tsx": {
+    "mtime": 1778266969.8680081,
+    "hash": "17c63fdd61c3742f2427fbc82e501317"
+  },
+  "D:\\dev\\codex-select-ai\\apps\\frontend\\src\\components\\pages\\analytics\\AnalyticsDashboardModals.test.tsx": {
+    "mtime": 1778276058.3250878,
+    "hash": "0d5da5b6e6ca5896d8c006bfbb8b3837"
+  },
+  "D:\\dev\\codex-select-ai\\apps\\frontend\\src\\components\\pages\\analytics\\AnalyticsDashboardModals.tsx": {
+    "mtime": 1778275746.2713115,
+    "hash": "19d22fb300684c90fd565a43feb37e69"
+  },
+  "D:\\dev\\codex-select-ai\\apps\\frontend\\src\\components\\pages\\analytics\\AnalyticsDashboardSurface.test.tsx": {
+    "mtime": 1778253434.0753736,
+    "hash": "73f08e7cf61f2831352e703987eb3561"
+  },
+  "D:\\dev\\codex-select-ai\\apps\\frontend\\src\\components\\pages\\analytics\\AnalyticsDashboardSurface.tsx": {
+    "mtime": 1778267404.2852037,
+    "hash": "5d683811e94d813882973585df1748a7"
+  },
+  "D:\\dev\\codex-select-ai\\apps\\frontend\\src\\components\\pages\\analytics\\AnalyticsIcons.tsx": {
+    "mtime": 1778532336.2660398,
+    "hash": "0afe32363aafbde6176fa20b09a7af8d"
+  },
+  "D:\\dev\\codex-select-ai\\apps\\frontend\\src\\components\\pages\\analytics\\AnalyticsResultTable.tsx": {
+    "mtime": 1778274954.4059172,
+    "hash": "7ca6e80a42bd550bd4ebc8d60c08d7b9"
+  },
+  "D:\\dev\\codex-select-ai\\apps\\frontend\\src\\components\\pages\\analytics\\AnalyticsVisualizationCard.test.tsx": {
+    "mtime": 1778253403.1563866,
+    "hash": "a0d23d1b739c804f4a523f74a15f4062"
+  },
+  "D:\\dev\\codex-select-ai\\apps\\frontend\\src\\components\\pages\\analytics\\AnalyticsVisualizationCard.tsx": {
+    "mtime": 1778260782.156814,
+    "hash": "0e5845784298e7130a68f56969d24dcb"
+  },
+  "D:\\dev\\codex-select-ai\\apps\\frontend\\src\\components\\pages\\analytics\\dashboardDropPosition.test.ts": {
+    "mtime": 1778222962.3805902,
+    "hash": "bafca2aaf651f2fbbc2aae1c71cc36a3"
+  },
+  "D:\\dev\\codex-select-ai\\apps\\frontend\\src\\components\\pages\\analytics\\dashboardDropPosition.ts": {
+    "mtime": 1778224935.5565333,
+    "hash": "547e138ff01b01bb094e5db2cb3f3313"
+  },
+  "D:\\dev\\codex-select-ai\\apps\\frontend\\src\\components\\pages\\analytics\\oracleAgentGraphModel.test.ts": {
+    "mtime": 1778193150.3952005,
+    "hash": "cff86f3404071a81b652b75bf263d2ea"
+  },
+  "D:\\dev\\codex-select-ai\\apps\\frontend\\src\\components\\pages\\analytics\\oracleAgentGraphModel.ts": {
+    "mtime": 1778275322.9600296,
+    "hash": "b6b4fcb220273e3037fb2e466ddd0d9a"
+  },
+  "D:\\dev\\codex-select-ai\\apps\\frontend\\src\\components\\pages\\analytics\\OracleAgentGraphPanel.tsx": {
+    "mtime": 1778223195.902794,
+    "hash": "6235a6f3a366d9fbb5b7a8b48f57dd61"
+  },
+  "D:\\dev\\codex-select-ai\\apps\\frontend\\src\\components\\pages\\analytics\\SearchChatsModal.tsx": {
+    "mtime": 1778266679.9263206,
+    "hash": "74b407e173ed8d37b011299e203b14e4"
+  },
+  "D:\\dev\\codex-select-ai\\apps\\frontend\\src\\components\\pages\\analytics\\searchChatsUtils.ts": {
+    "mtime": 1778205556.4897554,
+    "hash": "9f256ddb629b7c27e848abea9ca46c87"
+  },
+  "D:\\dev\\codex-select-ai\\apps\\frontend\\src\\components\\pages\\analytics\\useAnalyticsConversationState.test.tsx": {
+    "mtime": 1778261808.6195638,
+    "hash": "2004997044e02960278ef5f052103d43"
+  },
+  "D:\\dev\\codex-select-ai\\apps\\frontend\\src\\components\\pages\\analytics\\useAnalyticsConversationState.ts": {
+    "mtime": 1778275817.9982774,
+    "hash": "faf04c417ce612bf446121e6f4d360ff"
+  },
+  "D:\\dev\\codex-select-ai\\apps\\frontend\\src\\components\\pages\\analytics\\useAnalyticsDashboardDraft.test.tsx": {
+    "mtime": 1778261707.1706705,
+    "hash": "edcc1f0218c9641cf43e198c221ae329"
+  },
+  "D:\\dev\\codex-select-ai\\apps\\frontend\\src\\components\\pages\\analytics\\useAnalyticsDashboardDraft.ts": {
+    "mtime": 1778225273.3867712,
+    "hash": "b40030acec930ebca44a4435d21f11cb"
+  },
+  "D:\\dev\\codex-select-ai\\apps\\frontend\\src\\components\\pages\\analytics\\useSearchChatsController.test.ts": {
+    "mtime": 1778532856.8201492,
+    "hash": "ae6bdb1edd8b9c12dace9ffa9efa8625"
+  },
+  "D:\\dev\\codex-select-ai\\apps\\frontend\\src\\components\\pages\\data-sources\\DataDictionaryEditor.test.tsx": {
+    "mtime": 1778253009.9046018,
+    "hash": "38857320d6f9a3db5c5f7d6f1f175e91"
+  },
+  "D:\\dev\\codex-select-ai\\apps\\frontend\\src\\components\\pages\\data-sources\\DataDictionaryEditor.tsx": {
+    "mtime": 1778253179.2409146,
+    "hash": "b602bafbbbd09c22d58a8ac5b1a2cd8a"
+  },
+  "D:\\dev\\codex-select-ai\\apps\\frontend\\src\\components\\pages\\data-sources\\DataSourceObjectModal.test.tsx": {
+    "mtime": 1778252826.2817688,
+    "hash": "434d676b55f476d4cc3b49ed22d7891e"
+  },
+  "D:\\dev\\codex-select-ai\\apps\\frontend\\src\\components\\pages\\data-sources\\DataSourceObjectModal.tsx": {
+    "mtime": 1778266572.8842583,
+    "hash": "3bc7e55085c4735773b79ca145e55445"
+  },
+  "D:\\dev\\codex-select-ai\\apps\\frontend\\src\\components\\pages\\data-sources\\DataSourcePreviewModal.test.tsx": {
+    "mtime": 1778253107.467287,
+    "hash": "01e3a19258272c09eb8d1456de1caad8"
+  },
+  "D:\\dev\\codex-select-ai\\apps\\frontend\\src\\components\\pages\\data-sources\\DataSourcePreviewModal.tsx": {
+    "mtime": 1778266526.2651896,
+    "hash": "5558d4bb6453ad68ddb1e0a375e9b269"
+  },
+  "D:\\dev\\codex-select-ai\\apps\\frontend\\src\\components\\pages\\data-sources\\DataSourcesTable.test.tsx": {
+    "mtime": 1778253064.459367,
+    "hash": "aa6bd2d3b85912ef83d95e26df4b35a0"
+  },
+  "D:\\dev\\codex-select-ai\\apps\\frontend\\src\\components\\pages\\data-sources\\DataSourcesTable.tsx": {
+    "mtime": 1778262053.6379464,
+    "hash": "dc22f4dda3e5ddfd060cc9c77497fa25"
+  },
+  "D:\\dev\\codex-select-ai\\apps\\frontend\\src\\components\\pages\\data-sources\\dataSourceUtils.test.ts": {
+    "mtime": 1778264966.3651824,
+    "hash": "0ea1753d04f34adf9cecadc1dc1cfdb4"
+  },
+  "D:\\dev\\codex-select-ai\\apps\\frontend\\src\\components\\pages\\data-sources\\dataSourceUtils.ts": {
+    "mtime": 1778275332.388603,
+    "hash": "c1436c8a3ba0740a41b53ea1bf97b162"
+  },
+  "D:\\dev\\codex-select-ai\\apps\\frontend\\src\\components\\pages\\data-sources\\useDataSourceListState.test.ts": {
+    "mtime": 1778215403.670848,
+    "hash": "65581b0b60eb0e1d6ea25c492323f2c1"
+  },
+  "D:\\dev\\codex-select-ai\\apps\\frontend\\src\\components\\pages\\data-sources\\useDataSourceListState.ts": {
+    "mtime": 1778219031.923843,
+    "hash": "23b5bf8becbfb854d8f3c6beb745fcfa"
+  },
+  "D:\\dev\\codex-select-ai\\apps\\frontend\\src\\components\\pages\\data-sources\\useDataSourceMutations.ts": {
+    "mtime": 1778243449.1142309,
+    "hash": "35b0270ee4b4ff56340a51db81531198"
+  },
+  "D:\\dev\\codex-select-ai\\apps\\frontend\\src\\components\\pages\\data-sources\\useDataSourceObjectForm.test.ts": {
+    "mtime": 1778243449.1152306,
+    "hash": "3312d2e95b5857b4186fd9d692e274e4"
+  },
+  "D:\\dev\\codex-select-ai\\apps\\frontend\\src\\components\\pages\\data-sources\\useDataSourceObjectForm.ts": {
+    "mtime": 1778243449.1152306,
+    "hash": "afd3bb959ebf4f71b83405c48bd01fc2"
+  },
+  "D:\\dev\\codex-select-ai\\apps\\frontend\\src\\components\\pages\\data-sources\\useDataSourcesController.test.tsx": {
+    "mtime": 1778262761.7180018,
+    "hash": "644e158ba3e6edadef0211784aa11f1d"
+  },
+  "D:\\dev\\codex-select-ai\\apps\\frontend\\src\\components\\pages\\data-sources\\useDataSourcesController.ts": {
+    "mtime": 1778264946.3655353,
+    "hash": "9aa865d30ac8df054084c1399a797332"
+  },
+  "D:\\dev\\codex-select-ai\\apps\\frontend\\src\\components\\pages\\users\\UsersComponents.tsx": {
+    "mtime": 1778262053.6349468,
+    "hash": "f002528ad1189d65b75a843c6060395b"
+  },
+  "D:\\dev\\codex-select-ai\\apps\\frontend\\src\\components\\pages\\users\\usersUtils.test.ts": {
+    "mtime": 1778217890.6666763,
+    "hash": "8d3e49266f37103ee823d81620d5fc3b"
+  },
+  "D:\\dev\\codex-select-ai\\apps\\frontend\\src\\components\\pages\\users\\usersUtils.ts": {
+    "mtime": 1778275340.453292,
+    "hash": "1847e91e863c5b92a017e5b676ef93df"
+  },
+  "D:\\dev\\codex-select-ai\\apps\\frontend\\src\\components\\shell\\AppBrand.tsx": {
+    "mtime": 1778200554.2716181,
+    "hash": "1c79c15554fc897c48576544f53297e1"
+  },
+  "D:\\dev\\codex-select-ai\\apps\\frontend\\src\\components\\shell\\Footer.tsx": {
+    "mtime": 1778194472.3101923,
+    "hash": "c5cbecaf812cd557d3c04eb44690db5f"
+  },
+  "D:\\dev\\codex-select-ai\\apps\\frontend\\src\\components\\shell\\Header.tsx": {
+    "mtime": 1778204515.4572942,
+    "hash": "dfca04a2bf4d01cf023c1c5aea60cfdf"
+  },
+  "D:\\dev\\codex-select-ai\\apps\\frontend\\src\\components\\shell\\Layout.tsx": {
+    "mtime": 1778204549.2631176,
+    "hash": "0e0d281c58ac6f4111554e49a35afc79"
+  },
+  "D:\\dev\\codex-select-ai\\apps\\frontend\\src\\components\\shell\\Sidebar.tsx": {
+    "mtime": 1778532336.2680423,
+    "hash": "4f02d20dd55da87f701f66c1134e77de"
+  },
+  "D:\\dev\\codex-select-ai\\apps\\frontend\\src\\components\\wizard\\DatabaseConfigFields.tsx": {
+    "mtime": 1778207743.4010177,
+    "hash": "cfa5762e4790eb928ec0a932fb441a2d"
+  },
+  "D:\\dev\\codex-select-ai\\apps\\frontend\\src\\components\\wizard\\DatabaseConfigStep.test.tsx": {
+    "mtime": 1778261955.1239257,
+    "hash": "1730c47787f215d36c1eb6d65e7bc510"
+  },
+  "D:\\dev\\codex-select-ai\\apps\\frontend\\src\\components\\wizard\\DatabaseConfigStep.tsx": {
+    "mtime": 1778218697.7415638,
+    "hash": "05dc01ae00f2a1bcc0ef27518919a023"
+  },
+  "D:\\dev\\codex-select-ai\\apps\\frontend\\src\\components\\wizard\\InstallationStep.test.ts": {
+    "mtime": 1778217987.5420675,
+    "hash": "ba0b505be9878143b16414b0ed668df8"
+  },
+  "D:\\dev\\codex-select-ai\\apps\\frontend\\src\\components\\wizard\\InstallationStep.tsx": {
+    "mtime": 1778217987.5420675,
+    "hash": "4f6d020dc5c4a381e4d8818cc3874100"
+  },
+  "D:\\dev\\codex-select-ai\\apps\\frontend\\src\\components\\wizard\\SelectAIServicesStep.test.tsx": {
+    "mtime": 1778261889.1508687,
+    "hash": "78f75db7bd59384fb0e47f3a8c17ff61"
+  },
+  "D:\\dev\\codex-select-ai\\apps\\frontend\\src\\components\\wizard\\SelectAIServicesStep.tsx": {
+    "mtime": 1778218027.1024647,
+    "hash": "8b37e07b44f449208dd9aecc323d4b7d"
+  },
+  "D:\\dev\\codex-select-ai\\apps\\frontend\\src\\components\\wizard\\SelectAISetupSections.test.tsx": {
+    "mtime": 1778261241.3590195,
+    "hash": "2cf0cbff4735766b7e6d917e0fbdbbed"
+  },
+  "D:\\dev\\codex-select-ai\\apps\\frontend\\src\\components\\wizard\\SelectAISetupSections.tsx": {
+    "mtime": 1778532706.6505814,
+    "hash": "6a7f202b8ec2a5899bc834f3f41b784f"
+  },
+  "D:\\dev\\codex-select-ai\\apps\\frontend\\src\\components\\wizard\\selectAISetupUtils.test.ts": {
+    "mtime": 1778243743.229847,
+    "hash": "a15f68af8a4b378512e32e6d8f5daead"
+  },
+  "D:\\dev\\codex-select-ai\\apps\\frontend\\src\\components\\wizard\\selectAISetupUtils.ts": {
+    "mtime": 1778243738.4242735,
+    "hash": "df465d16c559d72a5a849e9c695ff3e5"
+  },
+  "D:\\dev\\codex-select-ai\\apps\\frontend\\src\\components\\wizard\\SetupWizard.test.ts": {
+    "mtime": 1778218213.1622114,
+    "hash": "5ea0058d3967e2fb957f5c4e24f130f5"
+  },
+  "D:\\dev\\codex-select-ai\\apps\\frontend\\src\\components\\wizard\\SetupWizard.tsx": {
+    "mtime": 1778218510.9929101,
+    "hash": "f984e37eaf5902bebed182e07912ef6a"
+  },
+  "D:\\dev\\codex-select-ai\\apps\\frontend\\src\\config\\branding.ts": {
+    "mtime": 1778212440.8084583,
+    "hash": "e3e8a67daa5ed334a3c83c540ee90a5d"
+  },
+  "D:\\dev\\codex-select-ai\\apps\\frontend\\src\\config\\suggestedQuestions.ts": {
+    "mtime": 1778532678.4795456,
+    "hash": "4b6b62a263fcf93f0e0dae875d5e6dbf"
+  },
+  "D:\\dev\\codex-select-ai\\apps\\frontend\\src\\context\\AnalyticsChatContext.test.tsx": {
+    "mtime": 1778215142.3179605,
+    "hash": "108fdb2e5d6a6e4303ac9acec6c3988f"
+  },
+  "D:\\dev\\codex-select-ai\\apps\\frontend\\src\\context\\AnalyticsChatContext.tsx": {
+    "mtime": 1778196043.9671433,
+    "hash": "4cf937fb9cbf4e112647b7fae3e85dd0"
+  },
+  "D:\\dev\\codex-select-ai\\apps\\frontend\\src\\context\\AuthContext.test.tsx": {
+    "mtime": 1778215054.9098454,
+    "hash": "da42ea364e5da88b0b064324e563876c"
+  },
+  "D:\\dev\\codex-select-ai\\apps\\frontend\\src\\context\\AuthContext.tsx": {
+    "mtime": 1778205021.950173,
+    "hash": "adea58d9e6478451856964ba13510268"
+  },
+  "D:\\dev\\codex-select-ai\\apps\\frontend\\src\\context\\ToastContext.test.tsx": {
+    "mtime": 1778215089.6794043,
+    "hash": "56d3ec550c209c8bd7e921ad1c67ce33"
+  },
+  "D:\\dev\\codex-select-ai\\apps\\frontend\\src\\context\\ToastContext.tsx": {
+    "mtime": 1778275287.7694397,
+    "hash": "c29eacd954664494264fa9f40b9c2d0e"
+  },
+  "D:\\dev\\codex-select-ai\\apps\\frontend\\src\\routes\\AppRoutes.tsx": {
+    "mtime": 1778532336.2680423,
+    "hash": "766571115762c8481663eeb04b03297d"
+  },
+  "D:\\dev\\codex-select-ai\\apps\\frontend\\src\\services\\analyticsApi.test.ts": {
+    "mtime": 1778224034.302876,
+    "hash": "fd916e1678ad111e59124d1b56e5a08b"
+  },
+  "D:\\dev\\codex-select-ai\\apps\\frontend\\src\\services\\analyticsApi.ts": {
+    "mtime": 1778275205.1182258,
+    "hash": "3737a948bb53268adc9755c2cd41103a"
+  },
+  "D:\\dev\\codex-select-ai\\apps\\frontend\\src\\services\\dashboardsApi.test.ts": {
+    "mtime": 1778214344.6252942,
+    "hash": "eb4bb0bf20fa991a5ae3057d9d8b2a27"
+  },
+  "D:\\dev\\codex-select-ai\\apps\\frontend\\src\\services\\dashboardsApi.ts": {
+    "mtime": 1778275211.144675,
+    "hash": "d1cfe727610ee7aec7186367435dab31"
+  },
+  "D:\\dev\\codex-select-ai\\apps\\frontend\\src\\services\\dataSourcesApi.test.ts": {
+    "mtime": 1778243449.1162314,
+    "hash": "f85fb9a06e3110de4b97b32f18a96d11"
+  },
+  "D:\\dev\\codex-select-ai\\apps\\frontend\\src\\services\\dataSourcesApi.ts": {
+    "mtime": 1778275217.892541,
+    "hash": "4a2101938ce1dc7bca7012f8183b786b"
+  },
+  "D:\\dev\\codex-select-ai\\apps\\frontend\\src\\services\\httpClient.ts": {
+    "mtime": 1778275294.4351692,
+    "hash": "05864162cc5c39af47695351c68e2ec8"
+  },
+  "D:\\dev\\codex-select-ai\\apps\\frontend\\src\\services\\settingsApi.test.ts": {
+    "mtime": 1778532759.7240682,
+    "hash": "7d20ec5584ea3942254757c71f1ac656"
+  },
+  "D:\\dev\\codex-select-ai\\apps\\frontend\\src\\services\\settingsApi.ts": {
+    "mtime": 1778532336.269041,
+    "hash": "fba8a89b9649c4dd7e6bc4c7e11ddba9"
+  },
+  "D:\\dev\\codex-select-ai\\apps\\frontend\\src\\services\\usersApi.test.ts": {
+    "mtime": 1778534998.043794,
+    "hash": "8bbf71ad4a8f2b3abca43af2be5c1e62"
+  },
+  "D:\\dev\\codex-select-ai\\apps\\frontend\\src\\services\\usersApi.ts": {
+    "mtime": 1778534998.042793,
+    "hash": "26d70e50013b0d22e33bdd8f3d86a7c1"
+  },
+  "D:\\dev\\codex-select-ai\\apps\\frontend\\src\\test\\setup.ts": {
+    "mtime": 1778178367.9683971,
+    "hash": "b6047cb48430aab17d0c9a3cec1e4bb5"
+  },
+  "D:\\dev\\codex-select-ai\\scripts\\check-project.ps1": {
+    "mtime": 1778532336.2700398,
+    "hash": "1d257f2f3844bcd95586509c2552666c"
+  },
+  "D:\\dev\\codex-select-ai\\scripts\\dev-cleanup.ps1": {
+    "mtime": 1778532336.2700398,
+    "hash": "e1603bd1a44dd30e2e2f95342d5800bc"
+  },
+  "D:\\dev\\codex-select-ai\\scripts\\dev.ps1": {
+    "mtime": 1778532336.2710419,
+    "hash": "88c4ebac3098ada8c1066e3a21eda3c4"
+  },
+  "D:\\dev\\codex-select-ai\\scripts\\dev_reinstall_oracle.py": {
+    "mtime": 1778532336.2710419,
+    "hash": "fa234cc4c73c5d26354a8eff9fea5965"
+  },
+  "D:\\dev\\codex-select-ai\\scripts\\generate_source_seed.py": {
+    "mtime": 1778243449.1172345,
+    "hash": "e7d131c97e59099118ce2e2068bee433"
+  },
+  "D:\\dev\\codex-select-ai\\scripts\\load_source_seed.py": {
+    "mtime": 1778276200.694986,
+    "hash": "d6bab295e53ba9a4fb4d15e6aa00c062"
+  },
+  "D:\\dev\\codex-select-ai\\scripts\\source_seed_db.py": {
+    "mtime": 1778532336.2710419,
+    "hash": "ba1b831e347bf037c67751f111aeda98"
+  },
+  "D:\\dev\\codex-select-ai\\scripts\\source_seed_metadata.py": {
+    "mtime": 1778243449.1182313,
+    "hash": "70a54518c6bd40aba119211d3b148ea0"
+  },
+  "D:\\dev\\codex-select-ai\\scripts\\source_seed_parser.py": {
+    "mtime": 1778243260.4200137,
+    "hash": "fad63b07cff28574d3f4c98c258d44ed"
+  },
+  "D:\\dev\\codex-select-ai\\scripts\\source_seed_registry.py": {
+    "mtime": 1778243449.1182313,
+    "hash": "dbbb3a9d276362744ccc60729625b333"
+  },
+  "D:\\dev\\codex-select-ai\\scripts\\source_seed_runtime.py": {
+    "mtime": 1778203023.7422175,
+    "hash": "3fc06bc41d8c5d82416bd53e63cc561c"
+  },
+  "D:\\dev\\codex-select-ai\\scripts\\source_seed_sidecar.py": {
+    "mtime": 1778243449.1182313,
+    "hash": "916d17a5053575514c92eabba8631fd3"
+  },
+  "D:\\dev\\codex-select-ai\\scripts\\source_seed_synthetic.py": {
+    "mtime": 1778275632.0003562,
+    "hash": "095592d775dbae280005140daff16c42"
+  },
+  "D:\\dev\\codex-select-ai\\scripts\\source_seed_synthetic_examples.py": {
+    "mtime": 1778265973.7243044,
+    "hash": "c1fc921c457bf71b141cc7034811a5e5"
+  },
+  "D:\\dev\\codex-select-ai\\scripts\\source_seed_synthetic_example_values.py": {
+    "mtime": 1778226735.7546566,
+    "hash": "9cfe9120bb3f7f48cfb442d5d887222a"
+  },
+  "D:\\dev\\codex-select-ai\\scripts\\source_seed_synthetic_operational_examples.py": {
+    "mtime": 1778241793.905442,
+    "hash": "aa0a8631144c8dc47824df5bf6d4519a"
+  },
+  "D:\\dev\\codex-select-ai\\scripts\\source_seed_synthetic_term_deposit_examples.py": {
+    "mtime": 1778265941.670905,
+    "hash": "fb806f9547c599a4c40c3a5250b0fc88"
+  },
+  "D:\\dev\\codex-select-ai\\scripts\\source_seed_synthetic_transaction_examples.py": {
+    "mtime": 1778241793.905442,
+    "hash": "114c4f382f94f72390693566fa1c547f"
+  },
+  "D:\\dev\\codex-select-ai\\scripts\\source_seed_synthetic_value_rules.py": {
+    "mtime": 1778265828.7484508,
+    "hash": "c1ceca681ee053dc51f27f813efcfe43"
+  },
+  "D:\\dev\\codex-select-ai\\scripts\\source_seed_table_io.py": {
+    "mtime": 1778203138.7827523,
+    "hash": "7c071043351c78ef8c167553ed88eb72"
+  },
+  "D:\\dev\\codex-select-ai\\scripts\\source_seed_values.py": {
+    "mtime": 1778203074.5637872,
+    "hash": "b1711040cd93204998f4a89620de1911"
+  },
+  "D:\\dev\\codex-select-ai\\AGENTS.md": {
+    "mtime": 1778535295.4366145,
+    "hash": "747e73a5e1af4b72c0d65c9169c23199"
+  },
+  "D:\\dev\\codex-select-ai\\README.md": {
+    "mtime": 1778532436.3709838,
+    "hash": "5107ac5c77f2dc03dfadf0e108f64a66"
+  },
+  "D:\\dev\\codex-select-ai\\RUN_LOG.md": {
+    "mtime": 1777047658.952931,
+    "hash": "381c81154c60487bcfa2fc912bf7a4b1"
+  },
+  "D:\\dev\\codex-select-ai\\apps\\backend\\README.md": {
+    "mtime": 1778532436.3744888,
+    "hash": "ff1af4da8d22126c262d4385171ef999"
+  },
+  "D:\\dev\\codex-select-ai\\apps\\backend\\requirements-dev.txt": {
+    "mtime": 1778532336.2613418,
+    "hash": "2dd23d1f6c8761d98182789641e12992"
+  },
+  "D:\\dev\\codex-select-ai\\apps\\backend\\requirements.txt": {
+    "mtime": 1777995085.3877296,
+    "hash": "4df22ef6aac165ff13d4c628f2f73a7e"
+  },
+  "D:\\dev\\codex-select-ai\\apps\\backend\\db\\bootstrap\\sql\\README.md": {
+    "mtime": 1778246241.6838415,
+    "hash": "0781e31e994ca100b62961c03098dac3"
+  },
+  "D:\\dev\\codex-select-ai\\apps\\frontend\\index.html": {
+    "mtime": 1778013985.4944654,
+    "hash": "948d0f01f32524ac2e31a4a71a4b5888"
+  },
+  "D:\\dev\\codex-select-ai\\apps\\frontend\\README.md": {
+    "mtime": 1778532436.3729837,
+    "hash": "c9225ca6a3458172f9d03cc4c85f3d0c"
+  },
+  "D:\\dev\\codex-select-ai\\apps\\frontend\\src\\assets\\oci\\autonomous-database.svg": {
+    "mtime": 1673617689.2623253,
+    "hash": "a68163fb1fa1812d62056a264fa4dfdb"
+  },
+  "D:\\dev\\codex-select-ai\\apps\\frontend\\src\\assets\\oci\\generative-ai.svg": {
+    "mtime": 1722543860.5727923,
+    "hash": "e05bb404a4dc99cf4e4e68195f4074c8"
+  },
+  "D:\\dev\\codex-select-ai\\apps\\frontend\\src\\assets\\oci\\object-storage.svg": {
+    "mtime": 1673617690.3049276,
+    "hash": "4346ec449d5f1f89613c7844d2c1b0d2"
+  }
+}

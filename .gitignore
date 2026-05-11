@@ -37,6 +37,7 @@ apps/frontend/dist/
 apps/frontend/logs/
 
 # Local scratch / reports
+.codex/
 .oci/
 .source/
 .data/
@@ -52,3 +53,8 @@ apps/backend/tests/reports/
 /oci/
 tests_docs/
 RUN_LOG.md
+
+# Graphify generated cache; keep graphify-out core artifacts versioned
+graphify-out/cache/
+graphify-out/.graphify_root
+graphify-out/.needs_update
