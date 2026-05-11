@@ -11,6 +11,7 @@ interface AnalyticsChatHeaderProps {
   renameDraft: string;
   isRenaming: boolean;
   isDeleting: boolean;
+  isProcessing: boolean;
   isGraphPanelOpen: boolean;
   hasLatestResult: boolean;
   dashboardDraftCount: number;
@@ -34,6 +35,7 @@ export function AnalyticsChatHeader({
   renameDraft,
   isRenaming,
   isDeleting,
+  isProcessing,
   isGraphPanelOpen,
   hasLatestResult,
   dashboardDraftCount,
@@ -140,7 +142,7 @@ export function AnalyticsChatHeader({
                 type="button"
                 role="menuitem"
                 className="flex w-full items-center gap-2 px-4 py-2 text-left text-sm text-red-600 hover:bg-red-50 disabled:cursor-not-allowed disabled:opacity-60"
-                disabled={!currentConversationId || isDeleting}
+                disabled={!currentConversationId || isDeleting || isProcessing}
                 onClick={onDeleteRequest}
               >
                 <TrashIcon />

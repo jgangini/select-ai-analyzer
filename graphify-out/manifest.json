@@ -540,16 +540,16 @@
     "hash": "b7b813caf4d713713318b8ade44b280c"
   },
   "D:\\dev\\codex-select-ai\\apps\\frontend\\src\\components\\pages\\analytics\\AnalyticsChatPanel.tsx": {
-    "mtime": 1778532336.2650397,
-    "hash": "8459e14bc642bceb0882d907b2795edc"
+    "mtime": 1778540330.7520297,
+    "hash": "b78180cc3b377b9341b95cca12f7426a"
   },
   "D:\\dev\\codex-select-ai\\apps\\frontend\\src\\components\\pages\\analytics\\AnalyticsChatPanelParts.test.tsx": {
-    "mtime": 1778537472.7452803,
-    "hash": "ed4bb286f09756925cc7c817e9d457e3"
+    "mtime": 1778540345.7676277,
+    "hash": "f4b2e5b3b25f06d223c0e0a2d9a358d1"
   },
   "D:\\dev\\codex-select-ai\\apps\\frontend\\src\\components\\pages\\analytics\\AnalyticsChatPanelParts.tsx": {
-    "mtime": 1778532706.6515815,
-    "hash": "4545e7df0d957123a058c9c2b372e359"
+    "mtime": 1778540326.1057222,
+    "hash": "09becf40f284c91758c07a7d9a317864"
   },
   "D:\\dev\\codex-select-ai\\apps\\frontend\\src\\components\\pages\\analytics\\analyticsChatPanelUtils.test.ts": {
     "mtime": 1778532856.8201492,
@@ -624,12 +624,12 @@
     "hash": "6235a6f3a366d9fbb5b7a8b48f57dd61"
   },
   "D:\\dev\\codex-select-ai\\apps\\frontend\\src\\components\\pages\\analytics\\SearchChatsModal.test.tsx": {
-    "mtime": 1778539852.0495975,
-    "hash": "400e42153c52975723bc7afd2a55146d"
+    "mtime": 1778540160.165239,
+    "hash": "6085d3742cef2f7d7d2ae90e36997ab6"
   },
   "D:\\dev\\codex-select-ai\\apps\\frontend\\src\\components\\pages\\analytics\\SearchChatsModal.tsx": {
-    "mtime": 1778539832.8234053,
-    "hash": "d36e2c32768c75c6aecc13285de8fc52"
+    "mtime": 1778540223.9368036,
+    "hash": "6cef3d84e6d3005af193368facbc6fc4"
   },
   "D:\\dev\\codex-select-ai\\apps\\frontend\\src\\components\\pages\\analytics\\searchChatsUtils.ts": {
     "mtime": 1778205556.4897554,

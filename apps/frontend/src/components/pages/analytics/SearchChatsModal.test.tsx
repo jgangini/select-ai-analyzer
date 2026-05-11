@@ -27,12 +27,17 @@ afterEach(() => {
   vi.clearAllMocks();
 });
 
-function OpenSearchButton() {
+function SearchChatsProbe() {
   const chat = useAnalyticsChat();
   return (
-    <button type="button" onClick={chat.openSearch}>
-      open search
-    </button>
+    <>
+      <button type="button" onClick={chat.openSearch}>
+        open search
+      </button>
+      <button type="button" onClick={() => chat.startConversationProcessing('conversation-1')}>
+        start processing first chat
+      </button>
+    </>
   );
 }
 
@@ -48,7 +53,7 @@ function renderSearchChatsModal() {
     <MemoryRouter future={{ v7_relativeSplatPath: true, v7_startTransition: true }}>
       <QueryClientProvider client={queryClient}>
         <AnalyticsChatProvider>
-          <OpenSearchButton />
+          <SearchChatsProbe />
           <SearchChatsModal isAuthenticated showToast={vi.fn()} userId={7} />
         </AnalyticsChatProvider>
       </QueryClientProvider>
@@ -57,28 +62,25 @@ function renderSearchChatsModal() {
 }
 
 describe('SearchChatsModal', () => {
+  const conversationTitle = 'Current balance by currency and branch';
+  const conversation = {
+    conversation_id: 'conversation-1',
+    title: conversationTitle,
+    turns: 1,
+    last_message_preview: conversationTitle,
+    created_at: '2026-05-11T22:43:59Z',
+    updated_at: '2026-05-11T22:43:59Z',
+  };
+
   it('shows delete confirmation above the search modal', async () => {
     analyticsApiMock.deleteConversation.mockResolvedValue({ data: { deleted: true } });
-    analyticsApiMock.listConversations.mockResolvedValue({
-      data: {
-        items: [
-          {
-            conversation_id: 'conversation-1',
-            title: '¿Cuál es el saldo actual por moneda y sucursal?',
-            turns: 1,
-            last_message_preview: '¿Cuál es el saldo actual por moneda y sucursal?',
-            created_at: '2026-05-11T22:43:59Z',
-            updated_at: '2026-05-11T22:43:59Z',
-          },
-        ],
-      },
-    });
+    analyticsApiMock.listConversations.mockResolvedValue({ data: { items: [conversation] } });
 
     renderSearchChatsModal();
 
     fireEvent.click(screen.getByRole('button', { name: 'open search' }));
     await waitFor(() => expect(screen.getByRole('heading', { name: 'Search Chats' })).toBeInTheDocument());
-    fireEvent.click(await screen.findByRole('button', { name: 'Delete ¿Cuál es el saldo actual por moneda y sucursal?' }));
+    fireEvent.click(await screen.findByRole('button', { name: `Delete ${conversationTitle}` }));
 
     const searchOverlay = screen.getByRole('heading', { name: 'Search Chats' }).closest('.fixed');
     const deleteOverlay = screen.getByRole('heading', { name: 'Delete chat' }).closest('.fixed');
@@ -88,5 +90,18 @@ describe('SearchChatsModal', () => {
 
     fireEvent.click(screen.getByRole('button', { name: 'Delete' }));
     await waitFor(() => expect(analyticsApiMock.deleteConversation).toHaveBeenCalledWith('conversation-1'));
+  });
+
+  it('shows processing status and prevents deleting a running chat', async () => {
+    analyticsApiMock.listConversations.mockResolvedValue({ data: { items: [conversation] } });
+
+    renderSearchChatsModal();
+
+    fireEvent.click(screen.getByRole('button', { name: 'start processing first chat' }));
+    fireEvent.click(screen.getByRole('button', { name: 'open search' }));
+
+    expect(await screen.findByRole('status', { name: `Processing ${conversationTitle}` })).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: `Delete ${conversationTitle}` })).not.toBeInTheDocument();
+    expect(analyticsApiMock.deleteConversation).not.toHaveBeenCalled();
   });
 });

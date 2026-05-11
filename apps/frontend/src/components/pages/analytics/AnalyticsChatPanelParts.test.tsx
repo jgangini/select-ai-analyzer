@@ -22,6 +22,7 @@ describe('AnalyticsChatPanelParts', () => {
         renameDraft="Daily balance"
         isRenaming={false}
         isDeleting={false}
+        isProcessing={false}
         isGraphPanelOpen={false}
         hasLatestResult
         dashboardDraftCount={1}
@@ -45,6 +46,41 @@ describe('AnalyticsChatPanelParts', () => {
     expect(screen.getByRole('menuitem', { name: /rename chat/i })).toBeDisabled();
     expect(onRenameDraftChange).toHaveBeenCalledWith('Updated balance');
     expect(onStartRename).not.toHaveBeenCalled();
+  });
+
+  it('disables chat deletion while the current chat is processing', () => {
+    const onDeleteRequest = vi.fn();
+
+    render(
+      <AnalyticsChatHeader
+        title="Daily balance"
+        currentConversationId="conversation-1"
+        isHeaderMenuOpen
+        isInlineRenaming={false}
+        renameDraft="Daily balance"
+        isRenaming={false}
+        isDeleting={false}
+        isProcessing
+        isGraphPanelOpen={false}
+        hasLatestResult
+        dashboardDraftCount={0}
+        headerMenuRef={createRef<HTMLDivElement>()}
+        titleInputRef={createRef<HTMLInputElement>()}
+        onRenameDraftChange={vi.fn()}
+        onRenameBlur={vi.fn()}
+        onRenameKeyDown={vi.fn()}
+        onStartRename={vi.fn()}
+        onToggleHeaderMenu={vi.fn()}
+        onToggleDashboardTray={vi.fn()}
+        onToggleGraphPanel={vi.fn()}
+        onDeleteRequest={onDeleteRequest}
+      />
+    );
+
+    fireEvent.click(screen.getByRole('menuitem', { name: /delete chat/i }));
+
+    expect(screen.getByRole('menuitem', { name: /delete chat/i })).toBeDisabled();
+    expect(onDeleteRequest).not.toHaveBeenCalled();
   });
 
   it('submits composer text from Enter and the send button only when text is present', () => {

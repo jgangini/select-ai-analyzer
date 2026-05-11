@@ -92,6 +92,7 @@ export function AnalyticsChatPanel({
             renameDraft={conversation.renameDraft}
             isRenaming={conversation.renameConversationMutation.isPending}
             isDeleting={conversation.deleteConversationMutation.isPending}
+            isProcessing={conversation.isAskPending}
             isGraphPanelOpen={conversation.isGraphPanelOpen}
             hasLatestResult={Boolean(conversation.latestResult)}
             dashboardDraftCount={dashboard.dashboardDraftItems.length}
