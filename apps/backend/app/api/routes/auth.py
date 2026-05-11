@@ -27,7 +27,7 @@ def get_auth_service():
 
 @router.post("/login")
 @trace
-async def login(request: LoginRequest):
+def login(request: LoginRequest):
     auth_service = get_auth_service()
     result = auth_service.login(request.username, request.password)
     if not result:
@@ -40,7 +40,7 @@ async def login(request: LoginRequest):
 
 @router.get("/me")
 @trace
-async def get_current_user_info(current_user: dict = Depends(get_current_user)):
+def get_current_user_info(current_user: dict = Depends(get_current_user)):
     auth_service = get_auth_service()
     user_info = auth_service.get_current_user_info(current_user.get("user_id"))
     if not user_info:
@@ -50,6 +50,5 @@ async def get_current_user_info(current_user: dict = Depends(get_current_user)):
 
 @router.post("/logout")
 @trace
-async def logout():
+def logout():
     return {"message": "Logout successful"}
-

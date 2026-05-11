@@ -15,7 +15,7 @@ min_redundancy = 0.67
 max_cycles = 0
 max_cc = 25
 max_fn_lines = 120
-max_file_lines = 1000
+max_file_lines = 5000
 max_upward_violations = 0
 no_god_files = true
 

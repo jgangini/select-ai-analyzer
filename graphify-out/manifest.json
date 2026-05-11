@@ -24,8 +24,8 @@
     "hash": "83d3879a065917e4435da0789d720cd4"
   },
   "D:\\dev\\codex-select-ai\\apps\\backend\\app\\api\\routes\\auth.py": {
-    "mtime": 1778190505.1318514,
-    "hash": "97721c36c4c9d9aeb1daac1e1aa07b68"
+    "mtime": 1778535830.714054,
+    "hash": "679cd4b3c75c0b9918d352a5839b9930"
   },
   "D:\\dev\\codex-select-ai\\apps\\backend\\app\\api\\routes\\dashboards.py": {
     "mtime": 1778213596.6540756,
@@ -310,6 +310,10 @@
   "D:\\dev\\codex-select-ai\\apps\\backend\\tests\\test_app_status_service.py": {
     "mtime": 1778195688.9383218,
     "hash": "0e214cabfab91e4e99312e911c29f09d"
+  },
+  "D:\\dev\\codex-select-ai\\apps\\backend\\tests\\test_auth_routes.py": {
+    "mtime": 1778535830.7155833,
+    "hash": "2586bec03a24373e20cc0c5904b7057d"
   },
   "D:\\dev\\codex-select-ai\\apps\\backend\\tests\\test_auth_service.py": {
     "mtime": 1778534623.4924214,
@@ -968,8 +972,8 @@
     "hash": "b1711040cd93204998f4a89620de1911"
   },
   "D:\\dev\\codex-select-ai\\AGENTS.md": {
-    "mtime": 1778535295.4366145,
-    "hash": "747e73a5e1af4b72c0d65c9169c23199"
+    "mtime": 1778535358.844563,
+    "hash": "de7e3c531a6065b4902862b1d0895be8"
   },
   "D:\\dev\\codex-select-ai\\README.md": {
     "mtime": 1778532436.3709838,
