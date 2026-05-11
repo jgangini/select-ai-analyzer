@@ -47,9 +47,11 @@ export const usersQueryKeys = {
   groups: ['users', 'groups'] as const,
 };
 
+export const LOGIN_REQUEST_TIMEOUT_MS = 8000;
+
 export const usersApi = {
   login: (username: string, password: string) =>
-    api.post<LoginResponse>('/auth/login', { username, password }),
+    api.post<LoginResponse>('/auth/login', { username, password }, { timeout: LOGIN_REQUEST_TIMEOUT_MS }),
   currentUser: () => api.get<UserAccount>('/user/me', { timeout: 10000 }),
   list: () => api.get<{ users?: UserAccount[] }>('/user/users'),
   groups: () => api.get<{ groups?: UserGroup[] }>('/user/groups'),

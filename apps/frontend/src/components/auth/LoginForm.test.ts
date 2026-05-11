@@ -16,6 +16,9 @@ describe('LoginForm helpers', () => {
     expect(getLoginErrorMessage({ response: { data: { detail: 'Invalid credentials' } } })).toBe(
       'Invalid credentials'
     );
+    expect(getLoginErrorMessage({ code: 'ECONNABORTED' })).toBe(
+      'Sign-in is taking too long. Please verify the backend is running and try again.'
+    );
     expect(getLoginErrorMessage(new Error('Network error'))).toBe(
       'Login failed. Please check your credentials.'
     );

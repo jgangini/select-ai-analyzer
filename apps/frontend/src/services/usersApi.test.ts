@@ -9,7 +9,7 @@ const apiMock = vi.hoisted(() => ({
 
 vi.mock('./httpClient', () => ({ default: apiMock }));
 
-import { usersApi } from './usersApi';
+import { LOGIN_REQUEST_TIMEOUT_MS, usersApi } from './usersApi';
 
 describe('usersApi', () => {
   beforeEach(() => {
@@ -22,10 +22,14 @@ describe('usersApi', () => {
   it('posts credentials to the auth login endpoint', () => {
     usersApi.login('nadia', 'secret');
 
-    expect(apiMock.post).toHaveBeenCalledWith('/auth/login', {
-      username: 'nadia',
-      password: 'secret',
-    });
+    expect(apiMock.post).toHaveBeenCalledWith(
+      '/auth/login',
+      {
+        username: 'nadia',
+        password: 'secret',
+      },
+      { timeout: LOGIN_REQUEST_TIMEOUT_MS }
+    );
   });
 
   it('uses the authenticated user and user-management endpoints', () => {

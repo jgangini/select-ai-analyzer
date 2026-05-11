@@ -19,7 +19,14 @@ export function makeMonochromeOracleSvg(svg: string) {
 }
 
 export function getLoginErrorMessage(error: unknown): string {
-  const maybeError = error as { response?: { data?: { detail?: string } } };
+  const maybeError = error as {
+    code?: string;
+    message?: string;
+    response?: { data?: { detail?: string } };
+  };
+  if (maybeError.code === 'ECONNABORTED' || maybeError.message?.toLowerCase().includes('timeout')) {
+    return 'Sign-in is taking too long. Please verify the backend is running and try again.';
+  }
   return maybeError.response?.data?.detail || 'Login failed. Please check your credentials.';
 }
 
