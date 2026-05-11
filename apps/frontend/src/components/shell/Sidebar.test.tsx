@@ -27,7 +27,9 @@ function renderSidebar({
     >
       <Sidebar
         activeConversationId={null}
+        activeDraftVersion={0}
         collapsed={false}
+        draftConversations={[]}
         isAuthenticated={true}
         processingConversationIds={processingConversationIds}
         unreadConversationIds={unreadConversationIds}
@@ -59,5 +61,45 @@ describe('Sidebar', () => {
 
     expect(screen.getByLabelText('Unread response')).toBeInTheDocument();
     expect(screen.queryByLabelText('Processing chat')).not.toBeInTheDocument();
+  });
+
+  it('shows a draft chat immediately while a new question is processing', () => {
+    render(
+      <MemoryRouter
+        initialEntries={['/chat']}
+        future={{ v7_relativeSplatPath: true, v7_startTransition: true }}
+      >
+        <Sidebar
+          activeConversationId={null}
+          activeDraftVersion={1}
+          collapsed={false}
+          draftConversations={[
+            {
+              draftVersion: 1,
+              title: '¿Qué cuentas tienen mayor saldo bloqueado?',
+              created_at: '2026-05-11T10:00:00Z',
+              updated_at: '2026-05-11T10:00:00Z',
+            },
+          ]}
+          isAuthenticated={true}
+          processingConversationIds={[]}
+          unreadConversationIds={[]}
+          user={{ groupId: 0, userId: 1 }}
+          onToggle={vi.fn()}
+          onOpenConversation={vi.fn()}
+          onOpenNewConversation={vi.fn()}
+          onOpenSearch={vi.fn()}
+          sidebarChats={{
+            recentConversations: [],
+            recentConversationsError: false,
+            recentConversationsLoading: false,
+          }}
+        />
+      </MemoryRouter>
+    );
+
+    expect(screen.getByText('¿Qué cuentas tienen mayor saldo bloqueado?')).toBeInTheDocument();
+    expect(screen.getByLabelText('Processing chat')).toBeInTheDocument();
+    expect(screen.queryByText('No chats yet')).not.toBeInTheDocument();
   });
 });

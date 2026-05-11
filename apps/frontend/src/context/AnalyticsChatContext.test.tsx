@@ -18,6 +18,7 @@ function AnalyticsChatProbe() {
       <span data-testid="new-version">{chat.newConversationVersion}</span>
       <span data-testid="processing">{chat.processingConversationIds.join(',') || 'none'}</span>
       <span data-testid="draft-processing">{chat.processingDraftVersions.join(',') || 'none'}</span>
+      <span data-testid="drafts">{chat.draftConversations.map((draft) => draft.title).join(',') || 'none'}</span>
       <span data-testid="unread">{chat.unreadConversationIds.join(',') || 'none'}</span>
       <button type="button" onClick={chat.openSearch}>
         search
@@ -34,7 +35,7 @@ function AnalyticsChatProbe() {
       <button type="button" onClick={() => chat.finishConversationProcessing('conv-1')}>
         finish processing
       </button>
-      <button type="button" onClick={() => chat.startDraftProcessing(chat.newConversationVersion)}>
+      <button type="button" onClick={() => chat.startDraftProcessing(chat.newConversationVersion, 'Balance analysis')}>
         start draft
       </button>
       <button type="button" onClick={() => chat.finishDraftProcessing(chat.newConversationVersion)}>
@@ -95,9 +96,11 @@ describe('AnalyticsChatContext', () => {
 
     fireEvent.click(screen.getByRole('button', { name: 'start draft' }));
     expect(screen.getByTestId('draft-processing')).toHaveTextContent('0');
+    expect(screen.getByTestId('drafts')).toHaveTextContent('Balance analysis');
 
     fireEvent.click(screen.getByRole('button', { name: 'finish draft' }));
     expect(screen.getByTestId('draft-processing')).toHaveTextContent('none');
+    expect(screen.getByTestId('drafts')).toHaveTextContent('none');
 
     fireEvent.click(screen.getByRole('button', { name: 'mark unread' }));
     expect(screen.getByTestId('unread')).toHaveTextContent('conv-1');

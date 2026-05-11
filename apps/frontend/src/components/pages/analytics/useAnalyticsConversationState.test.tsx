@@ -100,6 +100,7 @@ function ConversationStateProbe({
       <span data-testid="version">{chat.newConversationVersion}</span>
       <span data-testid="processing">{chat.processingConversationIds.join(',') || 'none'}</span>
       <span data-testid="drafts">{chat.processingDraftVersions.join(',') || 'none'}</span>
+      <span data-testid="draft-titles">{chat.draftConversations.map((draft) => draft.title).join('|') || 'none'}</span>
       <span data-testid="unread">{chat.unreadConversationIds.join(',') || 'none'}</span>
       <span data-testid="messages">
         {conversation.messages.map((message) => `${message.role}:${message.content}`).join('|') || 'none'}
@@ -245,6 +246,7 @@ describe('useAnalyticsConversationState', () => {
     fireEvent.click(screen.getByRole('button', { name: 'submit question' }));
 
     await waitFor(() => expect(screen.getByTestId('drafts')).toHaveTextContent('0'));
+    expect(screen.getByTestId('draft-titles')).toHaveTextContent('Which accounts have hidden statement transactions?');
     fireEvent.click(screen.getByRole('button', { name: 'new conversation' }));
     expect(screen.getByTestId('version')).toHaveTextContent('1');
 
@@ -254,6 +256,7 @@ describe('useAnalyticsConversationState', () => {
 
     await waitFor(() => expect(screen.getByTestId('unread')).toHaveTextContent('conversation-1'));
     expect(screen.getByTestId('drafts')).toHaveTextContent('none');
+    expect(screen.getByTestId('draft-titles')).toHaveTextContent('none');
     expect(screen.getByTestId('current')).toHaveTextContent('none');
     expect(screen.getByTestId('messages')).not.toHaveTextContent('assistant:Deposits increased in March.');
   });

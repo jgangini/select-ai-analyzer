@@ -1,9 +1,13 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 
+import type { DraftConversationPreview } from '../../context/AnalyticsChatContext';
+
 interface SidebarProps {
   activeConversationId: string | null;
+  activeDraftVersion: number;
   collapsed: boolean;
+  draftConversations: DraftConversationPreview[];
   isAuthenticated: boolean;
   processingConversationIds: string[];
   unreadConversationIds: string[];
@@ -191,7 +195,9 @@ function Icon({
 
 export function Sidebar({
   activeConversationId,
+  activeDraftVersion,
   collapsed,
+  draftConversations,
   isAuthenticated,
   processingConversationIds,
   unreadConversationIds,
@@ -233,7 +239,14 @@ export function Sidebar({
 
   useEffect(() => {
     updateChatScrollbar();
-  }, [collapsed, recentConversations.length, recentConversationsError, recentConversationsLoading, updateChatScrollbar]);
+  }, [
+    collapsed,
+    draftConversations.length,
+    recentConversations.length,
+    recentConversationsError,
+    recentConversationsLoading,
+    updateChatScrollbar,
+  ]);
 
   useEffect(() => {
     const scrollElement = chatScrollRef.current;
@@ -327,38 +340,66 @@ export function Sidebar({
             <div className="sidebar-chat-scroll-shell min-h-0 flex-1">
               <div ref={chatScrollRef} className="sidebar-chat-scroll h-full overflow-y-scroll px-2 pr-4">
                 <div className="space-y-0.5 pb-2">
-                  {recentConversationsLoading && isAuthenticated ? (
+                  {recentConversationsLoading && isAuthenticated && draftConversations.length === 0 ? (
                     <p className="px-2 py-2 text-xs text-gray-400">Loading chats...</p>
-                  ) : recentConversationsError ? (
+                  ) : recentConversationsError && draftConversations.length === 0 ? (
                     <p className="px-2 text-xs text-red-300">Could not load chats</p>
-                  ) : recentConversations.length === 0 ? (
+                  ) : recentConversations.length === 0 && draftConversations.length === 0 ? (
                     <p className="px-2 text-xs text-gray-400">No chats yet</p>
                   ) : (
-                    recentConversations.map((chat) => {
-                      const isActiveChat = location.pathname === '/chat' && activeConversationId === chat.conversation_id;
-                      const isProcessing = processingConversationIds.includes(chat.conversation_id);
-                      const hasUnreadResponse = unreadConversationIds.includes(chat.conversation_id);
-                      return (
-                        <button
-                          key={chat.conversation_id}
-                          type="button"
-                          className={`w-full rounded-xl px-3 py-2 text-left transition-colors ${
-                            isActiveChat ? 'bg-white/10 text-white' : 'text-gray-100 hover:bg-white/5'
-                          }`}
-                          onClick={() => onOpenConversation(chat.conversation_id, chat.title)}
-                          title={chat.title}
-                        >
-                          <span className="flex items-center gap-2">
-                            <span className="min-w-0 flex-1 truncate text-sm leading-5">{chat.title || 'Analytics chat'}</span>
-                            <ChatStatusIndicator
-                              hasUnreadResponse={hasUnreadResponse}
-                              isProcessing={isProcessing}
-                              updatedAt={chat.updated_at}
-                            />
-                          </span>
-                        </button>
-                      );
-                    })
+                    <>
+                      {draftConversations.map((draft) => {
+                        const isActiveDraft =
+                          location.pathname === '/chat' &&
+                          activeConversationId === null &&
+                          activeDraftVersion === draft.draftVersion;
+                        return (
+                          <button
+                            key={`draft-${draft.draftVersion}`}
+                            type="button"
+                            aria-disabled={!isActiveDraft}
+                            className={`w-full rounded-xl px-3 py-2 text-left transition-colors ${
+                              isActiveDraft ? 'bg-white/10 text-white' : 'text-gray-100 hover:bg-white/5'
+                            }`}
+                            title={draft.title}
+                          >
+                            <span className="flex items-center gap-2">
+                              <span className="min-w-0 flex-1 truncate text-sm leading-5">{draft.title}</span>
+                              <ChatStatusIndicator
+                                hasUnreadResponse={false}
+                                isProcessing={true}
+                                updatedAt={draft.updated_at}
+                              />
+                            </span>
+                          </button>
+                        );
+                      })}
+                      {recentConversations.map((chat) => {
+                        const isActiveChat = location.pathname === '/chat' && activeConversationId === chat.conversation_id;
+                        const isProcessing = processingConversationIds.includes(chat.conversation_id);
+                        const hasUnreadResponse = unreadConversationIds.includes(chat.conversation_id);
+                        return (
+                          <button
+                            key={chat.conversation_id}
+                            type="button"
+                            className={`w-full rounded-xl px-3 py-2 text-left transition-colors ${
+                              isActiveChat ? 'bg-white/10 text-white' : 'text-gray-100 hover:bg-white/5'
+                            }`}
+                            onClick={() => onOpenConversation(chat.conversation_id, chat.title)}
+                            title={chat.title}
+                          >
+                            <span className="flex items-center gap-2">
+                              <span className="min-w-0 flex-1 truncate text-sm leading-5">{chat.title || 'Analytics chat'}</span>
+                              <ChatStatusIndicator
+                                hasUnreadResponse={hasUnreadResponse}
+                                isProcessing={isProcessing}
+                                updatedAt={chat.updated_at}
+                              />
+                            </span>
+                          </button>
+                        );
+                      })}
+                    </>
                   )}
                 </div>
               </div>

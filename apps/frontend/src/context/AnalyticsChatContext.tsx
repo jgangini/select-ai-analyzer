@@ -1,11 +1,19 @@
 import { createContext, useCallback, useContext, useMemo, useState, type ReactNode } from 'react';
 import { useNavigate } from 'react-router-dom';
 
+export type DraftConversationPreview = {
+  draftVersion: number;
+  title: string;
+  created_at: string;
+  updated_at: string;
+};
+
 interface AnalyticsChatContextType {
   isSearchOpen: boolean;
   activeConversationId: string | null;
   activeConversationTitle: string | null;
   newConversationVersion: number;
+  draftConversations: DraftConversationPreview[];
   processingConversationIds: string[];
   processingDraftVersions: number[];
   unreadConversationIds: string[];
@@ -16,7 +24,7 @@ interface AnalyticsChatContextType {
   attachConversation: (conversationId: string, title?: string | null) => void;
   startConversationProcessing: (conversationId: string) => void;
   finishConversationProcessing: (conversationId: string) => void;
-  startDraftProcessing: (draftVersion: number) => void;
+  startDraftProcessing: (draftVersion: number, title?: string) => void;
   finishDraftProcessing: (draftVersion: number) => void;
   markConversationUnread: (conversationId: string) => void;
   markConversationRead: (conversationId: string) => void;
@@ -36,8 +44,28 @@ function removeItem<T>(items: T[], item: T): T[] {
   return items.filter((currentItem) => currentItem !== item);
 }
 
+function upsertDraftConversation(
+  drafts: DraftConversationPreview[],
+  draftVersion: number,
+  title?: string
+): DraftConversationPreview[] {
+  const timestamp = new Date().toISOString();
+  const draftTitle = String(title || 'New analytics chat').trim() || 'New analytics chat';
+  const nextDraft = {
+    draftVersion,
+    title: draftTitle,
+    created_at: timestamp,
+    updated_at: timestamp,
+  };
+  return [
+    nextDraft,
+    ...drafts.filter((draft) => draft.draftVersion !== draftVersion),
+  ];
+}
+
 function useConversationStatusState() {
   const [newConversationVersion, setNewConversationVersion] = useState(0);
+  const [draftConversations, setDraftConversations] = useState<DraftConversationPreview[]>([]);
   const [processingConversationIds, setProcessingConversationIds] = useState<string[]>([]);
   const [processingDraftVersions, setProcessingDraftVersions] = useState<number[]>([]);
   const [unreadConversationIds, setUnreadConversationIds] = useState<string[]>([]);
@@ -59,12 +87,16 @@ function useConversationStatusState() {
     setProcessingConversationIds((currentIds) => removeItem(currentIds, conversationId));
   }, []);
 
-  const startDraftProcessing = useCallback((draftVersion: number) => {
+  const startDraftProcessing = useCallback((draftVersion: number, title?: string) => {
     setProcessingDraftVersions((currentVersions) => addUnique(currentVersions, draftVersion));
+    setDraftConversations((currentDrafts) => upsertDraftConversation(currentDrafts, draftVersion, title));
   }, []);
 
   const finishDraftProcessing = useCallback((draftVersion: number) => {
     setProcessingDraftVersions((currentVersions) => removeItem(currentVersions, draftVersion));
+    setDraftConversations((currentDrafts) =>
+      currentDrafts.filter((draft) => draft.draftVersion !== draftVersion)
+    );
   }, []);
 
   const clearConversationStatus = useCallback((conversationId: string) => {
@@ -96,6 +128,7 @@ function useConversationStatusState() {
   return {
     advanceNewConversationVersion,
     clearConversationStatus,
+    draftConversations,
     finishConversationProcessing,
     finishDraftProcessing,
     hasUnreadResponse,
@@ -152,6 +185,7 @@ export function AnalyticsChatProvider({ children }: { children: ReactNode }) {
       activeConversationId,
       activeConversationTitle,
       newConversationVersion: status.newConversationVersion,
+      draftConversations: status.draftConversations,
       processingConversationIds: status.processingConversationIds,
       processingDraftVersions: status.processingDraftVersions,
       unreadConversationIds: status.unreadConversationIds,

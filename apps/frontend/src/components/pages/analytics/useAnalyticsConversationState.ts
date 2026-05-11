@@ -7,7 +7,7 @@ import {
   type KeyboardEvent,
   type SetStateAction,
 } from 'react';
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { useMutation, useQuery, useQueryClient, type QueryClient } from '@tanstack/react-query';
 
 import { useAnalyticsChat } from '../../../context/AnalyticsChatContext';
 import {
@@ -86,12 +86,43 @@ type UseAskQuestionOptions = {
   setErrorMessage: Dispatch<SetStateAction<string>>;
   setMessages: Dispatch<SetStateAction<AnalyticsChatMessage[]>>;
   startConversationProcessing: (conversationId: string) => void;
-  startDraftProcessing: (draftVersion: number) => void;
+  startDraftProcessing: (draftVersion: number, title?: string) => void;
 };
 
 const analyticsConversationQueryKey = (conversationId: string | null) =>
   ['analytics', 'conversation', conversationId] as const;
 const dataSourcesListQueryKey = ['data-sources', 'list'] as const;
+
+function upsertSidebarConversation(
+  queryClient: QueryClient,
+  conversation: AnalyticsConversationSummary
+) {
+  queryClient.setQueriesData<AnalyticsConversationSummary[]>(
+    { queryKey: ['analytics', 'sidebar-conversations'] },
+    (currentConversations) => {
+      if (!Array.isArray(currentConversations)) return currentConversations;
+      return [
+        conversation,
+        ...currentConversations.filter((current) => current.conversation_id !== conversation.conversation_id),
+      ];
+    }
+  );
+}
+
+function sidebarConversationFromResult(
+  result: AnalyticsAskResponse,
+  variables: AskQuestionVariables
+): AnalyticsConversationSummary {
+  const timestamp = new Date().toISOString();
+  return {
+    conversation_id: result.conversation_id,
+    title: variables.title,
+    turns: 1,
+    last_message_preview: variables.text,
+    created_at: timestamp,
+    updated_at: timestamp,
+  };
+}
 
 function useConversationMessages(activeConversationId: string | null, analyticsClient: AnalyticsConversationClient) {
   const listRef = useRef<HTMLDivElement>(null);
@@ -200,7 +231,7 @@ function useAskQuestion(options: UseAskQuestionOptions) {
       if (variables.conversationId) {
         startConversationProcessing(variables.conversationId);
       } else {
-        startDraftProcessing(variables.draftVersion);
+        startDraftProcessing(variables.draftVersion, variables.title);
       }
       setMessages((prev) => [
         ...prev,
@@ -214,6 +245,7 @@ function useAskQuestion(options: UseAskQuestionOptions) {
         finishDraftProcessing(variables.draftVersion);
       }
       finishConversationProcessing(result.conversation_id);
+      upsertSidebarConversation(queryClient, sidebarConversationFromResult(result, variables));
       queryClient.invalidateQueries({ queryKey: ['analytics'] });
       if (!shouldApplyResultToVisibleConversation(variables)) {
         markConversationUnread(result.conversation_id);

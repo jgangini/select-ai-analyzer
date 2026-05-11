@@ -58,7 +58,9 @@ export function Layout({
       <div className="app-content-layer flex flex-1 pt-14">
         <Sidebar
           activeConversationId={analyticsChat.activeConversationId}
+          activeDraftVersion={analyticsChat.newConversationVersion}
           collapsed={sidebarCollapsed}
+          draftConversations={analyticsChat.draftConversations}
           isAuthenticated={isAuthenticated}
           processingConversationIds={analyticsChat.processingConversationIds}
           unreadConversationIds={analyticsChat.unreadConversationIds}
