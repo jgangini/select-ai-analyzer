@@ -38,6 +38,7 @@ interface ConfirmModalProps {
   onCancel: () => void;
   loading?: boolean;
   loadingText?: string;
+  zIndex?: string;
 }
 
 export function ConfirmModal({
@@ -53,9 +54,10 @@ export function ConfirmModal({
   onCancel,
   loading = false,
   loadingText = 'Processing...',
+  zIndex,
 }: ConfirmModalProps) {
   return (
-    <ModalPortal>
+    <ModalPortal zIndex={zIndex}>
       <div className="bg-white rounded-2xl w-full max-w-sm shadow-2xl overflow-hidden">
         <div className="flex w-full min-w-0 flex-col items-center pt-8 pb-6 px-6 text-center">
           <div className={`w-20 h-20 rounded-full ${iconBg} flex items-center justify-center mb-5 ring-8 ${iconRing}`}>
@@ -100,6 +102,7 @@ interface ConfirmDeleteModalProps {
   onConfirm: () => void;
   onCancel: () => void;
   loading?: boolean;
+  zIndex?: string;
 }
 
 export function ConfirmDeleteModal({
@@ -109,6 +112,7 @@ export function ConfirmDeleteModal({
   onConfirm,
   onCancel,
   loading = false,
+  zIndex,
 }: ConfirmDeleteModalProps) {
   return (
     <ConfirmModal
@@ -128,6 +132,7 @@ export function ConfirmDeleteModal({
       onConfirm={onConfirm}
       onCancel={onCancel}
       loading={loading}
+      zIndex={zIndex}
     />
   );
 }
@@ -142,6 +147,7 @@ export function ConfirmQuestionModal({
   onCancel,
   loading = false,
   loadingText = 'Processing...',
+  zIndex,
 }: Omit<ConfirmModalProps, 'icon'>) {
   return (
     <ConfirmModal
@@ -161,6 +167,7 @@ export function ConfirmQuestionModal({
       onCancel={onCancel}
       loading={loading}
       loadingText={loadingText}
+      zIndex={zIndex}
     />
   );
 }

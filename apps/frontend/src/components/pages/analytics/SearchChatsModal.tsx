@@ -232,6 +232,7 @@ export function SearchChatsModal({
           onConfirm={() => deleteConversationMutation.mutate(deleteTarget.conversation_id)}
           onCancel={() => setDeleteTarget(null)}
           loading={deleteConversationMutation.isPending}
+          zIndex="z-[400]"
         />
       )}
     </>

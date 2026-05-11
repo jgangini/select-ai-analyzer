@@ -460,8 +460,8 @@
     "hash": "3db85f2e17bf75129b352ae7e15386c1"
   },
   "D:\\dev\\codex-select-ai\\apps\\frontend\\src\\components\\common\\Modal.tsx": {
-    "mtime": 1778266489.176619,
-    "hash": "e938fc15e7345b771d7dafd9b0ddd5b1"
+    "mtime": 1778539828.6468275,
+    "hash": "32f8bb3f71b57b8452d9c83553c69dc8"
   },
   "D:\\dev\\codex-select-ai\\apps\\frontend\\src\\components\\pages\\Analytics.tsx": {
     "mtime": 1778267404.2852037,
@@ -623,9 +623,13 @@
     "mtime": 1778223195.902794,
     "hash": "6235a6f3a366d9fbb5b7a8b48f57dd61"
   },
+  "D:\\dev\\codex-select-ai\\apps\\frontend\\src\\components\\pages\\analytics\\SearchChatsModal.test.tsx": {
+    "mtime": 1778539852.0495975,
+    "hash": "400e42153c52975723bc7afd2a55146d"
+  },
   "D:\\dev\\codex-select-ai\\apps\\frontend\\src\\components\\pages\\analytics\\SearchChatsModal.tsx": {
-    "mtime": 1778266679.9263206,
-    "hash": "74b407e173ed8d37b011299e203b14e4"
+    "mtime": 1778539832.8234053,
+    "hash": "d36e2c32768c75c6aecc13285de8fc52"
   },
   "D:\\dev\\codex-select-ai\\apps\\frontend\\src\\components\\pages\\analytics\\searchChatsUtils.ts": {
     "mtime": 1778205556.4897554,
