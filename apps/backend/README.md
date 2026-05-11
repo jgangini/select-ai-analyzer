@@ -1,7 +1,7 @@
 # Backend Select AI Analytics
 
-Estructura canonica del runtime:
+Canonical runtime structure:
 
-- `app/` capa FastAPI, servicios Select AI y wrappers de agentes Oracle.
-- `db/bootstrap/sql/` instalacion versionada para el esquema `APP_AGENT`.
-- `.data/` DDL, CSV ficticios y JSON sidecars generados desde `.source`.
+- `app/`: FastAPI layer, Select AI services, and Oracle agent wrappers.
+- `db/bootstrap/sql/`: versioned installation scripts for the `APP_AGENT` schema.
+- `.data/`: generated DDL, test CSV files, and JSON sidecars derived from `.source`.

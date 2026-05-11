@@ -75,9 +75,9 @@ def test_record_question_run_commits_conversation_before_insert() -> None:
     service = ConversationService(connection)
 
     run_id = service.record_question_run(
-        question="Saldo por cuenta",
+        question="Balance by account",
         sql="SELECT * FROM APP_AGENT_DATA.ACCOUNTS",
-        answer="Listo",
+        answer="Done",
         row_count=3,
         chart_spec={"type": "table", "title": "Accounts"},
         conversation_id="chat-1",
@@ -122,9 +122,9 @@ def test_record_question_run_rejects_other_users_conversation() -> None:
 
     with pytest.raises(ValueError, match="Conversation was not found"):
         service.record_question_run(
-            question="Saldo por cuenta",
+            question="Balance by account",
             sql="SELECT * FROM APP_AGENT_DATA.ACCOUNTS",
-            answer="Listo",
+            answer="Done",
             row_count=3,
             chart_spec={"type": "table", "title": "Accounts"},
             conversation_id="chat-1",

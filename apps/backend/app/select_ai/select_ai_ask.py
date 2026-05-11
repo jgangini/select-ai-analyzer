@@ -13,13 +13,13 @@ from apps.backend.app.select_ai.sql_validation import validate_read_only_select
 def _capacity_fallback_answer(rows: list[dict[str, Any]]) -> str:
     if rows:
         return (
-            "El servicio generativo está temporalmente saturado, pero ejecuté la consulta "
-            f"determinística disponible. Se encontraron {len(rows)} filas; revisa la tabla "
-            "para ver los clientes y porcentajes de crecimiento."
+            "The generative service is temporarily saturated, so the deterministic "
+            f"fallback query was executed. {len(rows)} rows were found; review the table "
+            "to inspect customers and growth percentages."
         )
     return (
-        "El servicio generativo está temporalmente saturado, pero ejecuté la consulta "
-        "determinística disponible. No se encontraron filas para la condición solicitada."
+        "The generative service is temporarily saturated, so the deterministic "
+        "fallback query was executed. No rows matched the requested condition."
     )
 
 

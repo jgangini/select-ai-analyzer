@@ -75,17 +75,17 @@ describe('AnalyticsChatPanelParts', () => {
     render(
       <AnalyticsSuggestedQuestionButtons
         questions={[
-          '¿Qué clientes crecieron más este mes?',
-          '¿Qué productos concentran más transacciones?',
-          '¿Qué transacciones están pendientes?',
+          'Which customers grew the most this month?',
+          'Which products concentrate the most transactions?',
+          'Which transactions are pending?',
         ]}
         onSelect={onSelect}
       />
     );
 
-    fireEvent.click(screen.getByRole('button', { name: '¿Qué productos concentran más transacciones?' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Which products concentrate the most transactions?' }));
 
-    expect(onSelect).toHaveBeenCalledWith('¿Qué productos concentran más transacciones?');
+    expect(onSelect).toHaveBeenCalledWith('Which products concentrate the most transactions?');
   });
 
   it('refreshes one suggested question without selecting it', () => {
@@ -95,16 +95,16 @@ describe('AnalyticsChatPanelParts', () => {
     render(
       <AnalyticsSuggestedQuestionButtons
         questions={[
-          '¿Cuál es el saldo actual por moneda y sucursal?',
-          '¿Qué cuentas concentran mayor saldo bloqueado?',
-          '¿Qué préstamos tienen mayor deuda pendiente?',
+          'What is the current balance by currency and branch?',
+          'Which accounts have the highest blocked balance?',
+          'Which loans have the highest pending debt?',
         ]}
         onSelect={onSelect}
         onRefreshQuestion={onRefreshQuestion}
       />
     );
 
-    fireEvent.click(screen.getByRole('button', { name: /cambiar pregunta sugerida 2/i }));
+    fireEvent.click(screen.getByRole('button', { name: /change suggested question 2/i }));
 
     expect(onRefreshQuestion).toHaveBeenCalledWith(1);
     expect(onSelect).not.toHaveBeenCalled();

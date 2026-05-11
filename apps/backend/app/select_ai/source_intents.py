@@ -6,18 +6,18 @@ import unicodedata
 QUESTION_SYNONYM_GROUPS = (
     (("ATM",), {"ATM"}),
     (("TELLER",), {"TELLER", "TL"}),
-    (("MONEDA",), {"CCY", "CURRENCY"}),
+    (("MONEDA",), {"CCY", "CURRENCY", "CURRENCIES"}),
     (("SALDO",), {"BAL", "BALANCE", "ACY", "LCY", "FCY"}),
     (("ACTUAL", "ACTUALES"), {"CURRENT", "CURR"}),
     (("BLOQUEADO", "BLOQUEADA", "BLOQUEADOS", "BLOQUEADAS"), {"BLOCKED", "ACY_BLOCKED_AMOUNT"}),
     (("PROMEDIO", "PROMEDIOS"), {"AVERAGE", "AVG"}),
-    (("SUCURSAL",), {"BRANCH", "BRN"}),
-    (("CLIENTE", "CLIENTES"), {"CUSTOMER", "CUST"}),
-    (("CUENTA",), {"ACCOUNT", "ACC", "AC"}),
-    (("TRANSACCION", "TRANSACCIONES", "MOVIMIENTO", "MOVIMIENTOS"), {"TRANSACTION", "TRANS", "TXN", "TRN"}),
+    (("SUCURSAL",), {"BRANCH", "BRANCHES", "BRN"}),
+    (("CLIENTE", "CLIENTES"), {"CUSTOMER", "CUSTOMERS", "CUST"}),
+    (("CUENTA",), {"ACCOUNT", "ACCOUNTS", "ACC", "AC"}),
+    (("TRANSACCION", "TRANSACCIONES", "MOVIMIENTO", "MOVIMIENTOS"), {"TRANSACTION", "TRANSACTIONS", "MOVEMENT", "MOVEMENTS", "TRANS", "TXN", "TRN"}),
     (("OPERACION", "OPERACIONES"), {"OPERATION", "TRANSACTION", "TXN", "TRN"}),
-    (("DEBITO", "DEBITOS"), {"DEBIT", "DR"}),
-    (("CREDITO", "CREDITOS"), {"CREDIT", "CR"}),
+    (("DEBITO", "DEBITOS"), {"DEBIT", "DEBITS", "DR"}),
+    (("CREDITO", "CREDITOS"), {"CREDIT", "CREDITS", "CR"}),
     (("EVOLUCION", "TENDENCIA"), {"TREND"}),
     (("DIARIO", "DIARIA"), {"DAILY"}),
     (("PORCENTAJE",), {"PERCENT", "RATIO", "COUNT"}),
@@ -25,7 +25,7 @@ QUESTION_SYNONYM_GROUPS = (
     (("INSTRUMENTO", "INSTRUMENTOS"), {"INSTRUMENT"}),
     (("CLEARING",), {"CLEARING", "CLG"}),
     (("CONCILIACION",), {"CLEARING", "CLG", "MATCH"}),
-    (("CHEQUE", "CHEQUES"), {"CHECK", "CHEQUE", "INSTRUMENT"}),
+    (("CHEQUE", "CHEQUES"), {"CHECK", "CHECKS", "CHEQUE", "INSTRUMENT"}),
     (("RECHAZADO", "RECHAZADOS"), {"REJECT", "REJECTED", "STATUS"}),
     (("PENDIENTE", "PENDIENTES"), {"PENDING", "STATUS", "AUTH"}),
     (("INTERES", "INTERESES"), {"INTEREST", "INT", "RATE"}),
@@ -39,51 +39,62 @@ QUESTION_SYNONYM_GROUPS = (
     (("FRAUDE", "ANOMALIA", "ANOMALIAS"), {"FAILED", "STATUS", "REVERSAL", "HIDE"}),
     (("OCULTA", "OCULTAS", "OCULTO", "OCULTOS"), {"HIDE", "HIDDEN", "TXN"}),
     (("REVERTIDA", "REVERTIDAS"), {"REVERSAL", "REVERSED", "REV"}),
-    (("AUTORIZO", "AUTORIZARON"), {"AUTH", "AUTH_ID", "USER"}),
-    (("AUTORIZADO", "AUTORIZADAS"), {"AUTH", "AUTH_STAT"}),
+    (("AUTORIZO", "AUTORIZARON"), {"AUTH", "AUTH_ID", "AUTHORIZED", "AUTHORIZER", "AUTHORIZERS", "USER", "USERS"}),
+    (("AUTORIZADO", "AUTORIZADAS"), {"AUTH", "AUTH_STAT", "AUTHORIZED"}),
     (("TRAZABILIDAD", "AUDITORIA"), {"LOG", "TRACE", "DAILY_LOG"}),
     (("CONTABLE", "CONTABLES"), {"ACCOUNTING", "DAILY_LOG", "LOG"}),
     (("INACTIVO", "INACTIVOS"), {"INACTIVE", "DORMANT", "DORMANCY"}),
-    (("PRODUCTO", "PRODUCTOS"), {"PRODUCT", "PROD"}),
+    (("PRODUCTO", "PRODUCTOS"), {"PRODUCT", "PRODUCTS", "PROD"}),
     (("COMISION", "COMISIONES"), {"FEE", "CHARGE", "COMMISSION"}),
     (("VOLUMEN",), {"VOLUME", "AMOUNT", "COUNT"}),
     (("AUMENTO", "AUMENTARON", "CRECIERON", "CRECIMIENTO"), {"INCREASE", "GROWTH"}),
     (("MES",), {"MONTH"}),
-    (("CANAL", "CANALES"), {"CHANNEL", "SOURCE", "ATM"}),
+    (("CANAL", "CANALES"), {"CHANNEL", "CHANNELS", "SOURCE", "ATM"}),
     (("CAJERO", "CAJEROS"), {"ATM", "TERM", "TERMINAL"}),
-    (("RETIRO", "RETIROS"), {"WITHDRAWAL", "WDR", "TRANS_AMOUNT"}),
-    (("TARJETA", "TARJETAS"), {"CARD", "CARD_NO"}),
+    (("RETIRO", "RETIROS"), {"WITHDRAWAL", "WITHDRAWALS", "WDR", "TRANS_AMOUNT"}),
+    (("TARJETA", "TARJETAS"), {"CARD", "CARDS", "CARD_NO"}),
     (("FALLIDA", "FALLIDAS"), {"FAILED", "STATUS"}),
     (("HORA", "HORAS"), {"HOUR", "TIME"}),
     (("HISTORICO", "HISTORICA"), {"HISTORICAL", "REAL_DT_TIME"}),
     (("SEMANA",), {"WEEK"}),
     (("PASADA",), {"PREVIOUS"}),
-    (("CONTRATO", "CONTRATOS"), {"CONTRACT", "REFERENCE", "REF"}),
-    (("DEPOSITO", "DEPOSITOS"), {"DEPOSIT", "TD"}),
-    (("VENCER", "VENCE", "VENCEN", "VENCIMIENTO"), {"MATURITY", "LIQD_DATE", "DUE"}),
-    (("PRESTAMO", "PRESTAMOS"), {"LOAN", "AMOUNT_FINANCED", "AMOUNT_DISBURSED", "EMI"}),
-    (("DEUDA", "DEUDAS"), {"LOAN", "DEBT", "AMOUNT_FINANCED", "AMOUNT_DISBURSED", "EMI"}),
+    (("CONTRATO", "CONTRATOS"), {"CONTRACT", "CONTRACTS", "REFERENCE", "REF"}),
+    (("DEPOSITO", "DEPOSITOS"), {"DEPOSIT", "DEPOSITS", "TD"}),
+    (("VENCER", "VENCE", "VENCEN", "VENCIMIENTO"), {"MATURITY", "MATURE", "MATURES", "LIQD_DATE", "DUE"}),
+    (("PRESTAMO", "PRESTAMOS"), {"LOAN", "LOANS", "AMOUNT_FINANCED", "AMOUNT_DISBURSED", "EMI"}),
+    (("DEUDA", "DEUDAS"), {"LOAN", "LOANS", "DEBT", "DEBTS", "AMOUNT_FINANCED", "AMOUNT_DISBURSED", "EMI"}),
 )
-QUESTION_SYNONYMS = {
-    token: synonyms
-    for tokens, synonyms in QUESTION_SYNONYM_GROUPS
-    for token in tokens
-}
+QUESTION_SYNONYMS: dict[str, set[str]] = {}
+for tokens, synonyms in QUESTION_SYNONYM_GROUPS:
+    canonical_tokens = set(tokens)
+    expanded_synonyms = set(synonyms)
+    for token in canonical_tokens:
+        QUESTION_SYNONYMS.setdefault(token, set()).update(expanded_synonyms)
+    for synonym in expanded_synonyms:
+        QUESTION_SYNONYMS.setdefault(synonym, set()).update(canonical_tokens)
 
 TRANSACTION_INTENT_TOKENS = {
     "TRANSACCION",
     "TRANSACCIONES",
     "MOVIMIENTO",
     "MOVIMIENTOS",
+    "TRANSACTION",
+    "TRANSACTIONS",
+    "MOVEMENT",
+    "MOVEMENTS",
     "DEBITO",
     "DEBITOS",
+    "DEBIT",
+    "DEBITS",
     "CREDITO",
     "CREDITOS",
+    "CREDIT",
+    "CREDITS",
     "DR",
     "CR",
     "DRCR",
 }
-DRCR_INTENT_TOKENS = {"DEBITO", "DEBITOS", "CREDITO", "CREDITOS", "DR", "CR", "DRCR"}
+DRCR_INTENT_TOKENS = {"DEBITO", "DEBITOS", "DEBIT", "DEBITS", "CREDITO", "CREDITOS", "CREDIT", "CREDITS", "DR", "CR", "DRCR"}
 
 
 def _question_has_any(question_tokens: set[str], *tokens: str) -> bool:
@@ -346,7 +357,7 @@ DEBIT_CREDIT_HINTS = (
 )
 AVERAGE_BALANCE_HINTS = (
     "For average balance by branch and currency, use FLEX_ACTB_ACCBAL_HISTORY with BRANCH_CODE, ACC_CCY, ACY_CLOSING_BAL, and BKG_DATE. "
-    "For 'este mes' or current month, filter BKG_DATE from TRUNC(SYSDATE,'MM') inclusive to ADD_MONTHS(TRUNC(SYSDATE,'MM'),1) exclusive; do not filter by account opening dates.",
+    "For current-month requests, filter BKG_DATE from TRUNC(SYSDATE,'MM') inclusive to ADD_MONTHS(TRUNC(SYSDATE,'MM'),1) exclusive; do not filter by account opening dates.",
 )
 CURRENT_BALANCE_HINTS = (
     "For current balance by branch and currency, use FLEX_STTM_CUST_ACCOUNT with BRANCH_CODE, CCY, CUST_AC_NO, LCY_CURR_BALANCE, and ACY_CURR_BALANCE.",
@@ -363,7 +374,7 @@ VELOCITY_WINDOW_HINTS = (
     "Use a grouped historical window shape: GROUP BY ACCOUNT_NO, TRUNC(REAL_DT_TIME) HAVING COUNT(*) > N AND (MAX(REAL_DT_TIME) - MIN(REAL_DT_TIME)) * 24 < 1.",
 )
 PREVIOUS_WEEK_HINTS = (
-    "For 'semana pasada', use the previous ISO calendar week: TRN_DT >= TRUNC(SYSDATE,'IW') - 7 and TRN_DT < TRUNC(SYSDATE,'IW').",
+    "For previous-week requests, use the previous ISO calendar week: TRN_DT >= TRUNC(SYSDATE,'IW') - 7 and TRN_DT < TRUNC(SYSDATE,'IW').",
 )
 AUTHORIZATION_AUDIT_HINTS = ("In accounting daily logs, AUTH_ID is the authorizer and TRN_REF_NO is the transaction reference.",)
 ATM_HINTS = ("In ATM logs, TRANS_STATUS='F' means failed, TRANS_CODE='WDR' means withdrawal, and CARD_NO stores the card number.",)

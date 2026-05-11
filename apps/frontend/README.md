@@ -1,9 +1,9 @@
 # Frontend App
 
-Proyecto frontend migrado al monorepo `apps/frontend`.
+Frontend project migrated into the `apps/frontend` monorepo package.
 
-Estado actual:
+Current state:
 
-- La configuración del proyecto vive ya en `apps/frontend`.
-- El entrypoint de Vite vive ya en `apps/frontend/src/main.tsx`.
-- Mientras termina la migración física completa de componentes, el entrypoint reusa temporalmente el árbol fuente existente.
+- Project configuration now lives in `apps/frontend`.
+- The Vite entrypoint now lives in `apps/frontend/src/main.tsx`.
+- The component tree is owned by this package and can be built or tested from this directory.

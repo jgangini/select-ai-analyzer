@@ -309,8 +309,8 @@ export function AnalyticsSuggestedQuestionButtons({
               type="button"
               disabled={disabled}
               className="chat-sample-question-refresh absolute bottom-2 right-2 flex h-6 w-6 items-center justify-center rounded-sm text-oracle-medium-gray transition hover:text-oracle-red focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-oracle-red focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
-              aria-label={`Cambiar pregunta sugerida ${index + 1}`}
-              title="Cambiar pregunta"
+              aria-label={`Change suggested question ${index + 1}`}
+              title="Change question"
               onClick={(event) => {
                 event.stopPropagation();
                 onRefreshQuestion(index);

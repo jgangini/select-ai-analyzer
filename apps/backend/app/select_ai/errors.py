@@ -4,9 +4,9 @@ import re
 
 
 GENAI_RESOURCE_EXHAUSTED_DETAIL = (
-    "El servicio de IA generativa está temporalmente saturado o sin cuota "
-    "(429 RESOURCE_EXHAUSTED). Espera unos minutos y vuelve a intentar, "
-    "o cambia el modelo configurado en Settings."
+    "The generative AI service is temporarily saturated or out of quota "
+    "(429 RESOURCE_EXHAUSTED). Wait a few minutes and try again, "
+    "or change the configured model in Settings."
 )
 
 

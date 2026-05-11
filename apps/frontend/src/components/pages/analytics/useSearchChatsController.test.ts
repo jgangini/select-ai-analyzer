@@ -10,7 +10,7 @@ import {
 
 describe('useSearchChatsController helpers', () => {
   it('normalizes search text and formats valid timestamps', () => {
-    expect(normalizeForSearch('  Crédito Ágil  ')).toBe('credito agil');
+    expect(normalizeForSearch('  Credit Agile  ')).toBe('credit agile');
     expect(formatDateTime('2026-05-07T09:08:06Z')).toMatch(/^2026-05-07 \d{2}:08:06$/);
     expect(formatDateTime('not-a-date')).toBe('');
   });

@@ -452,7 +452,7 @@ export function FinishSetupButton({
         onClick={onFinish}
         disabled={disabled}
         className="btn-primary"
-        title={disabled ? 'Guarda las tres configuraciones (API Key, Object Storage y Generative AI) para continuar' : undefined}
+        title={disabled ? 'Save all three configurations (API Key, Object Storage, and Generative AI) to continue' : undefined}
       >
         Finish Installation
       </button>

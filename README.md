@@ -1,10 +1,10 @@
 # Select AI Analytics
 
-Aplicacion full-stack para consultar esquemas Oracle con Select AI, cargar CSV de prueba y generar analitica gobernada sobre el usuario Oracle `APP_AGENT`.
+Full-stack application for querying Oracle schemas with Select AI, loading test CSV files, and generating governed analytics through the `APP_AGENT` Oracle user.
 
 ## Docker
 
-El contenedor sirve frontend estatico por `nginx`, backend FastAPI por `uvicorn` y proxy interno en `/api`.
+The container serves the static frontend through `nginx`, the FastAPI backend through `uvicorn`, and the internal API proxy under `/api`.
 
 ```bash
 docker run -d \
@@ -14,45 +14,45 @@ docker run -d \
   -v select_ai_analyzer_wallet:/app/apps/backend/wallet \
   -v select_ai_analyzer_keys:/app/apps/backend/keys \
   -v select_ai_analyzer_logs:/app/apps/backend/logs \
-  ghcr.io/<owner>/select-ai-analyzer:v0.1.0
+  ghcr.io/<owner>/select-ai-analyzer:v1.0.0
 ```
 
-Luego abre `http://localhost:8080`.
+Then open `http://localhost:8080`.
 
 ## CloudTechNext
 
-El repo mantiene la misma forma de despliegue que `doc_agent`: `Dockerfile` en la raiz, frontend en `apps/frontend`, backend en `apps/backend`, configuracion nginx en `docker/` y healthcheck en `/api/health`. CloudTechNext puede clonar `https://github.com/jgangini/select-ai-analyzer.git`, construir la imagen desde la raiz y montar los volumenes persistentes de `data`, `wallet`, `keys` y `logs`.
+The repository follows the same deployment shape as `doc_agent`: the `Dockerfile` lives at the repository root, the frontend lives in `apps/frontend`, the backend lives in `apps/backend`, nginx configuration lives in `docker/`, and `/api/health` exposes the health check. CloudTechNext can clone `https://github.com/jgangini/select-ai-analyzer.git`, build the image from the repository root, and mount persistent volumes for `data`, `wallet`, `keys`, and `logs`.
 
 ## Wizard
 
-1. Sube el `wallet.zip`.
-2. Selecciona el alias del `tnsnames.ora`.
-3. Prueba la conexion con el usuario `APP_AGENT`.
-4. Ejecuta la instalacion SQL.
-5. Sube el `key.pem` OCI.
-6. Guarda la credencial `APP_AGENT_OCI_CRED`.
-7. Prueba Generative AI y completa el setup.
+1. Upload `wallet.zip`.
+2. Select the `tnsnames.ora` alias.
+3. Test the connection with the `APP_AGENT` user.
+4. Run the SQL installation.
+5. Upload the OCI `key.pem` file.
+6. Save the `APP_AGENT_OCI_CRED` credential.
+7. Test Generative AI and complete setup.
 
 ## Runtime
 
-- `POST /api/data-sources/csv`: carga CSV y registra la tabla.
-- `POST /api/data-sources/table-access`: registra una tabla existente con permiso `SELECT`.
-- `POST /api/analytics/ask`: genera SQL con Select AI, valida solo lectura, ejecuta y devuelve respuesta, filas y grafico.
+- `POST /api/data-sources/csv`: loads a CSV file and registers the table.
+- `POST /api/data-sources/table-access`: registers an existing table with `SELECT` access.
+- `POST /api/analytics/ask`: generates SQL with Select AI, validates read-only execution, runs the query, and returns the answer, rows, and chart metadata.
 
-## Datos ficticios
+## Test Data
 
-El script siguiente parsea `.source/decoupling_tables_structures.sql`, omite objetos sin DDL real y genera DDL/CSV consistentes para pruebas:
+The following script parses `.source/decoupling_tables_structures.sql`, skips objects without real DDL, and generates consistent DDL/CSV fixtures for testing:
 
 ```powershell
 py -3 scripts\generate_source_seed.py --default-rows 365 --fact-rows 2000
 ```
 
-Salida esperada:
+Expected output:
 
 - `apps/backend/data/source_seed/ddl/app_agent_source_tables.sql`
 - `apps/backend/data/source_seed/csv/*.csv`
 
-## Desarrollo local
+## Local Development
 
 ```powershell
 .\scripts\dev.ps1
@@ -61,24 +61,24 @@ Salida esperada:
 - Backend: `http://127.0.0.1:8012/`
 - Frontend: `http://localhost:5174/`
 
-Para reinstalar dependencias del frontend:
+To reinstall frontend dependencies:
 
 ```powershell
 .\scripts\dev.ps1 -InstallFrontendDeps
 ```
 
-## Verificacion
+## Verification
 
-Primera vez, instala dependencias y ejecuta toda la validacion:
+The first run can install dependencies and execute the full validation flow:
 
 ```powershell
 .\scripts\check-project.ps1 -InstallDeps
 ```
 
-Luego, para correr la suite completa:
+After that, run the full suite with:
 
 ```powershell
 .\scripts\check-project.ps1
 ```
 
-El script valida la sintaxis del backend, ejecuta `pytest`, valida el import de FastAPI, corre `vitest` del frontend y compila el frontend.
+The script validates backend syntax, runs `pytest`, validates the FastAPI import, runs frontend `vitest`, and builds the frontend.

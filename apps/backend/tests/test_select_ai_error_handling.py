@@ -29,7 +29,7 @@ def test_genai_resource_exhausted_detection_sanitizes_oracle_stack() -> None:
 
 
 def test_customer_growth_question_has_deterministic_fallback_sql() -> None:
-    sql = _fallback_sql_for_question("¿Qué clientes aumentaron su volumen de transacciones más del 50% este mes?")
+    sql = _fallback_sql_for_question("Which customers increased transaction volume by more than 50% this month?")
 
     assert sql is not None
     assert "FLEX_EXT_ACCOUNT_TRANSACTIONS" in sql
@@ -90,11 +90,11 @@ class CapacityFallbackAskService(SelectAIAskMixin):
 def test_ask_uses_deterministic_sql_when_model_capacity_is_exhausted() -> None:
     service = CapacityFallbackAskService()
 
-    result = service.ask(question="¿Qué clientes aumentaron su volumen de transacciones más del 50% este mes?")
+    result = service.ask(question="Which customers increased transaction volume by more than 50% this month?")
 
     assert result["run_id"] == "run-1"
     assert result["row_count"] == 1
     assert "FLEX_EXT_ACCOUNT_TRANSACTIONS" in service.executed_sql
-    assert "servicio generativo" in result["answer"]
+    assert "generative service" in result["answer"]
     assert service.recorded_answer == result["answer"]
     assert service.dropped_profile == "SCOPED_PROFILE"

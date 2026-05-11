@@ -100,17 +100,17 @@ describe('analytics chat panel utilities', () => {
       messages: [
         {
           run_id: 'run-1',
-          question: 'Saldo por producto',
+          question: 'Balance by product',
           created_at: '2026-05-08T10:01:00Z',
           result: {
             run_id: 'run-1',
             conversation_id: 'chat-1',
-            answer: 'El saldo total es 1200.',
+            answer: 'The total balance is 1200.',
             sql: 'select 1200 as balance from dual',
             columns: ['BALANCE'],
             rows: [{ BALANCE: 1200 }],
             row_count: 1,
-            chart_spec: { type: 'metric' as const, title: 'Saldo' },
+            chart_spec: { type: 'metric' as const, title: 'Balance' },
             agent_trace: [],
           },
         },
@@ -118,12 +118,12 @@ describe('analytics chat panel utilities', () => {
     };
 
     expect(buildConversationMessages(conversation)).toMatchObject([
-      { id: 'run-1-user', role: 'user', content: 'Saldo por producto' },
+      { id: 'run-1-user', role: 'user', content: 'Balance by product' },
       {
         id: 'run-1-assistant',
         role: 'assistant',
-        content: 'El saldo total es 1200.',
-        question: 'Saldo por producto',
+        content: 'The total balance is 1200.',
+        question: 'Balance by product',
       },
     ]);
   });

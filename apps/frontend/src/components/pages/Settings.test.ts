@@ -42,12 +42,12 @@ describe('Settings helpers', () => {
   it('keeps configured suggested questions and fills missing items', () => {
     const payload = normalizeSettingsPayload({
       suggested_questions: {
-        question_1: '¿Qué clientes crecieron más este mes?',
+        question_1: 'Which customers grew the most this month?',
         question_2: '',
       },
     });
 
-    expect(payload.suggested_questions?.question_1).toBe('¿Qué clientes crecieron más este mes?');
+    expect(payload.suggested_questions?.question_1).toBe('Which customers grew the most this month?');
     expect(payload.suggested_questions?.question_2).toBe(DEFAULT_SUGGESTED_QUESTIONS[1]);
     expect(Object.keys(payload.suggested_questions || {})).toHaveLength(10);
   });

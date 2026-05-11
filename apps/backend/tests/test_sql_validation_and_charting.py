@@ -41,7 +41,7 @@ def test_validate_read_only_select_rejects_unsafe_sql(sql: str) -> None:
 
 def test_infer_chart_spec_prefers_bar_for_category_and_number() -> None:
     rows = [{"BRANCH_CODE": "001", "TOTAL_AMOUNT": 100.0}, {"BRANCH_CODE": "002", "TOTAL_AMOUNT": 50.0}]
-    spec = infer_chart_spec(rows, ["BRANCH_CODE", "TOTAL_AMOUNT"], title="Total por sucursal")
+    spec = infer_chart_spec(rows, ["BRANCH_CODE", "TOTAL_AMOUNT"], title="Total by branch")
 
     assert spec["type"] == "pie"
     assert spec["x"] == "BRANCH_CODE"

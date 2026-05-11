@@ -109,22 +109,22 @@ def test_synthetic_numbers_fit_declared_precision_and_scale() -> None:
     assert Decimal(row["INPUT_TAX_RATE"]) < Decimal("100")
 
 
-def test_source_match_scores_explicit_table_and_spanish_business_terms() -> None:
+def test_source_match_scores_explicit_table_and_business_terms() -> None:
     columns = ["ACC_CCY", "ACY_CLOSING_BAL", "BKG_DATE"]
 
     explicit = _score_source_match(
-        "saldo promedio por moneda en FLEX_ACTB_ACCBAL_HISTORY",
+        "average balance by currency in FLEX_ACTB_ACCBAL_HISTORY",
         "FLEX_ACTB_ACCBAL_HISTORY",
         columns,
     )
-    lexical = _score_source_match("saldo promedio por moneda", "FLEX_ACTB_ACCBAL_HISTORY", columns)
+    lexical = _score_source_match("average balance by currency", "FLEX_ACTB_ACCBAL_HISTORY", columns)
 
     assert explicit > lexical
     assert lexical > 0
 
 
 def test_average_balance_hint_targets_history_dates() -> None:
-    hints = _sql_generation_hints("Cual fue el saldo promedio por sucursal y moneda este mes?")
+    hints = _sql_generation_hints("What was the average balance by branch and currency this month?")
 
     assert "FLEX_ACTB_ACCBAL_HISTORY" in hints
     assert "BKG_DATE" in hints
@@ -132,7 +132,7 @@ def test_average_balance_hint_targets_history_dates() -> None:
 
 
 def test_velocity_window_guard_detects_current_clock_sql() -> None:
-    assert _is_velocity_window_intent("Detecta cuentas con mas de 10 transacciones en menos de 1 hora")
+    assert _is_velocity_window_intent("Detect accounts with more than 10 transactions in less than 1 hour")
     assert _uses_current_clock("SELECT * FROM T WHERE REAL_DT_TIME > SYSTIMESTAMP - INTERVAL '1' HOUR")
     assert _uses_current_clock_for_velocity_sql("SELECT * FROM T WHERE REAL_DT_TIME > SYSTIMESTAMP - INTERVAL '1' HOUR")
     assert not _uses_current_clock_for_velocity_sql("SELECT * FROM ATM WHERE TRANS_DATE = TRUNC(SYSDATE)")
@@ -142,8 +142,8 @@ def test_velocity_window_guard_detects_current_clock_sql() -> None:
 
 
 def test_operational_hints_cover_teller_and_term_deposit_questions() -> None:
-    teller_hints = _sql_generation_hints("Que transacciones estan pendientes de autorizacion en teller?")
-    deposit_hints = _sql_generation_hints("Cual es el proximo contrato de deposito a vencer?")
+    teller_hints = _sql_generation_hints("Which transactions are pending authorization in teller?")
+    deposit_hints = _sql_generation_hints("What is the next deposit contract to mature?")
 
     assert "FLEX_DETB_RTL_TELLER" in teller_hints
     assert "AUTH_STAT='U'" in teller_hints
@@ -152,7 +152,7 @@ def test_operational_hints_cover_teller_and_term_deposit_questions() -> None:
 
 
 def test_source_match_prioritizes_transaction_table_for_debit_credit_question() -> None:
-    question = "Cual es el total de debitos vs creditos de la cuenta 9988776655 en marzo?"
+    question = "What is the total debits vs credits for account 9988776655 in March?"
     transaction_score = _score_source_match(
         question,
         "FLEX_EXT_ACCOUNT_TRANSACTIONS",

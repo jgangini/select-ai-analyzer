@@ -1,4 +1,4 @@
-"""Persistencia de configuracion en tabla `config`."""
+"""Persist runtime configuration in the `config` table."""
 
 from __future__ import annotations
 
