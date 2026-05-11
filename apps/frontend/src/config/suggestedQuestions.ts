@@ -1,14 +1,14 @@
 export const DEFAULT_SUGGESTED_QUESTIONS = [
-  'What is the current balance by currency and branch?',
-  'Which accounts have the highest blocked balance?',
-  'Which products have the highest movement volume this month?',
-  'What is the daily debit and credit trend in March?',
-  'Which customers increased transaction volume by more than 50% this month?',
-  'Which accounts have the most ATM withdrawals?',
-  'Which loans have the highest pending debt?',
-  'Which deposit contracts mature in the next 30 days?',
-  'Which accounts have hidden movements on statements?',
-  'Which users authorized the most accounting movements?',
+  '¿Cuál es el saldo actual por moneda y sucursal?',
+  '¿Qué cuentas tienen mayor saldo bloqueado?',
+  '¿Qué productos tienen mayor volumen de transacciones este mes?',
+  '¿Cuál es la tendencia diaria de débitos vs créditos en marzo?',
+  '¿Qué clientes aumentaron su volumen de transacciones más del 50% este mes?',
+  '¿Qué cuentas tienen más retiros ATM?',
+  '¿Qué préstamos tienen mayor deuda pendiente?',
+  '¿Qué contratos de depósito vencen en los próximos 30 días?',
+  '¿Qué cuentas tienen transacciones ocultas en estados de cuenta?',
+  '¿Qué usuarios autorizaron más movimientos contables?',
 ] as const;
 
 export const SUGGESTED_QUESTION_KEYS = DEFAULT_SUGGESTED_QUESTIONS.map(

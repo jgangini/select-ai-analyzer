@@ -95,9 +95,9 @@ describe('AnalyticsChatPanelParts', () => {
     render(
       <AnalyticsSuggestedQuestionButtons
         questions={[
-          'What is the current balance by currency and branch?',
-          'Which accounts have the highest blocked balance?',
-          'Which loans have the highest pending debt?',
+          '¿Cuál es el saldo actual por moneda y sucursal?',
+          '¿Qué cuentas tienen mayor saldo bloqueado?',
+          '¿Qué préstamos tienen mayor deuda pendiente?',
         ]}
         onSelect={onSelect}
         onRefreshQuestion={onRefreshQuestion}

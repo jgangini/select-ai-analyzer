@@ -22,17 +22,18 @@ describe('settingsApi name resolvers', () => {
   it('resolves configured suggested questions with defaults when missing', () => {
     const payload = {
       suggested_questions: {
-        question_1: 'Which customers grew the most this month?',
-        question_2: 'Which products concentrate the most transactions?',
-        question_3: 'Which transactions are pending?',
+        question_1: '¿Qué clientes crecieron más este mes?',
+        question_2: '¿Qué productos concentran más transacciones?',
+        question_3: '¿Qué transacciones están pendientes?',
       },
     };
 
     expect(resolveSuggestedQuestions(payload)).toEqual([
-      'Which customers grew the most this month?',
-      'Which products concentrate the most transactions?',
-      'Which transactions are pending?',
+      '¿Qué clientes crecieron más este mes?',
+      '¿Qué productos concentran más transacciones?',
+      '¿Qué transacciones están pendientes?',
     ]);
     expect(resolveSuggestedQuestions(null)).toHaveLength(10);
   });
+
 });

@@ -106,7 +106,7 @@ export function Settings({ showToast }: { showToast: ShowToast }) {
     { id: 'app', name: 'Application' },
     { id: 'select_ai', name: 'Select AI' },
     { id: 'oci', name: 'OCI' },
-    { id: 'suggested_questions', name: 'Questions' },
+    { id: 'suggested_questions', name: 'Preguntas' },
   ];
 
   const confirmSave = () => {
@@ -296,23 +296,24 @@ export function Settings({ showToast }: { showToast: ShowToast }) {
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 10h8M8 14h5m-9 7V5a2 2 0 012-2h12a2 2 0 012 2v16l-4-3H6a2 2 0 01-2-2z" />
                 </svg>
                 <div>
-                  <p className="font-medium text-gray-800">Suggested Questions</p>
-                  <p className="text-sm text-gray-600">Maintain the representative prompts shown when a new chat starts</p>
+                  <p className="font-medium text-gray-800">Preguntas sugeridas</p>
+                  <p className="text-sm text-gray-600">Mantén los prompts representativos que aparecen al crear un chat</p>
                 </div>
               </div>
 
               <div className="overflow-hidden rounded-lg border border-gray-200 bg-white">
                 {SUGGESTED_QUESTION_KEYS.map((key, index) => (
-                  <div key={key} className="flex gap-3 border-b border-gray-200 bg-white p-3 last:border-b-0">
-                    <div className="mt-1 flex h-8 w-8 shrink-0 items-center justify-center rounded-md border border-gray-200 bg-gray-50 text-xs font-semibold text-oracle-medium-gray">
+                  <div key={key} className="flex gap-3 border-b border-gray-200 bg-white p-2.5 last:border-b-0">
+                    <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-md border border-gray-200 bg-gray-50 text-xs font-semibold text-oracle-medium-gray">
                       {String(index + 1).padStart(2, '0')}
                     </div>
-                    <div className="min-w-0 flex-1">
+                    <div className="min-w-0 flex-1 self-center">
                       <label className="sr-only" htmlFor={`suggested-question-${key}`}>
-                        Question {index + 1}
+                        Pregunta {index + 1}
                       </label>
-                      <textarea
+                      <input
                         id={`suggested-question-${key}`}
+                        type="text"
                         value={fieldValue(
                           formData,
                           'suggested_questions',
@@ -320,14 +321,19 @@ export function Settings({ showToast }: { showToast: ShowToast }) {
                           DEFAULT_SUGGESTED_QUESTIONS[index]
                         )}
                         onChange={(event) => updateField('suggested_questions', key, event.target.value)}
-                        rows={2}
-                        className="input-oracle min-h-[4rem] resize-y text-sm leading-5"
+                        className="input-oracle h-9 truncate text-sm"
+                        title={fieldValue(
+                          formData,
+                          'suggested_questions',
+                          key,
+                          DEFAULT_SUGGESTED_QUESTIONS[index]
+                        )}
                       />
                     </div>
                   </div>
                 ))}
               </div>
-              <FieldHint>New chats randomly show three prompts from this list.</FieldHint>
+              <FieldHint>Los nuevos chats muestran aleatoriamente tres preguntas de esta lista.</FieldHint>
             </div>
           )}
         </div>

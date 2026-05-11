@@ -1,9 +1,46 @@
-import { describe, expect, it } from 'vitest';
+import { createElement } from 'react';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { cleanup, fireEvent, render, screen } from '@testing-library/react';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 
 import { DEFAULT_SUGGESTED_QUESTIONS } from '../../config/suggestedQuestions';
+import { settingsApi } from '../../services/settingsApi';
 import { fieldValue, normalizeSettingsPayload } from './Settings';
+import { Settings } from './Settings';
+
+vi.mock('../../services/settingsApi', () => ({
+  settingsApi: {
+    get: vi.fn(),
+    update: vi.fn(),
+  },
+  settingsQueryKeys: {
+    publicBranding: ['settings', 'publicBranding'],
+  },
+}));
+
+function renderSettings() {
+  const queryClient = new QueryClient({
+    defaultOptions: {
+      queries: { retry: false },
+      mutations: { retry: false },
+    },
+  });
+
+  return render(
+    createElement(
+      QueryClientProvider,
+      { client: queryClient },
+      createElement(Settings, { showToast: vi.fn() })
+    )
+  );
+}
 
 describe('Settings helpers', () => {
+  afterEach(() => {
+    cleanup();
+    vi.clearAllMocks();
+  });
+
   it('normalizes missing settings to runtime defaults', () => {
     const payload = normalizeSettingsPayload({});
 
@@ -23,6 +60,7 @@ describe('Settings helpers', () => {
       question_1: DEFAULT_SUGGESTED_QUESTIONS[0],
       question_10: DEFAULT_SUGGESTED_QUESTIONS[9],
     });
+    expect(payload.suggested_questions?.question_1).toBe('¿Cuál es el saldo actual por moneda y sucursal?');
   });
 
   it('reads configured field values with string conversion and fallbacks', () => {
@@ -42,13 +80,27 @@ describe('Settings helpers', () => {
   it('keeps configured suggested questions and fills missing items', () => {
     const payload = normalizeSettingsPayload({
       suggested_questions: {
-        question_1: 'Which customers grew the most this month?',
+        question_1: '¿Qué clientes crecieron más este mes?',
         question_2: '',
       },
     });
 
-    expect(payload.suggested_questions?.question_1).toBe('Which customers grew the most this month?');
+    expect(payload.suggested_questions?.question_1).toBe('¿Qué clientes crecieron más este mes?');
     expect(payload.suggested_questions?.question_2).toBe(DEFAULT_SUGGESTED_QUESTIONS[1]);
     expect(Object.keys(payload.suggested_questions || {})).toHaveLength(10);
+  });
+
+  it('renders suggested questions as one-line Spanish inputs', async () => {
+    vi.mocked(settingsApi.get).mockResolvedValue({ data: {} } as never);
+
+    renderSettings();
+    fireEvent.click(await screen.findByRole('button', { name: 'Preguntas' }));
+
+    const questionInputs = screen.getAllByLabelText(/Pregunta \d+/i);
+
+    expect(questionInputs).toHaveLength(10);
+    expect(questionInputs[0].tagName).toBe('INPUT');
+    expect(questionInputs[0]).toHaveAttribute('type', 'text');
+    expect(questionInputs[0]).toHaveValue('¿Cuál es el saldo actual por moneda y sucursal?');
   });
 });

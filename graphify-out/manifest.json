@@ -260,8 +260,8 @@
     "hash": "a78c5e6566d9cc3c984ef508c68bd1b2"
   },
   "D:\\dev\\codex-select-ai\\apps\\backend\\app\\services\\settings_service.py": {
-    "mtime": 1778532678.4795456,
-    "hash": "62d11a82edb1c8808cbbae1afcf91db8"
+    "mtime": 1778537425.8028972,
+    "hash": "43699af6397ff6a1b86095d7c03d32b4"
   },
   "D:\\dev\\codex-select-ai\\apps\\backend\\app\\services\\user_service.py": {
     "mtime": 1778276120.5129137,
@@ -384,16 +384,16 @@
     "hash": "67899630f8b19a417e859299a877cc54"
   },
   "D:\\dev\\codex-select-ai\\apps\\backend\\tests\\test_select_ai_error_handling.py": {
-    "mtime": 1778532800.5354898,
-    "hash": "015c42f9127a472cbec9969b145e386e"
+    "mtime": 1778537607.0455835,
+    "hash": "be5467e0a64a53d28aa9e07f5b23ea67"
   },
   "D:\\dev\\codex-select-ai\\apps\\backend\\tests\\test_select_ai_scoring.py": {
     "mtime": 1778532772.7350092,
     "hash": "3e7d69f098264a4e59ea8809fcfcae33"
   },
   "D:\\dev\\codex-select-ai\\apps\\backend\\tests\\test_settings_service.py": {
-    "mtime": 1778532759.722641,
-    "hash": "2be6919e6514e0db415b609aabf2fdc7"
+    "mtime": 1778537449.8036354,
+    "hash": "69789aedb9eeeabcd81a341ffaa3b472"
   },
   "D:\\dev\\codex-select-ai\\apps\\backend\\tests\\test_source_metadata.py": {
     "mtime": 1778243449.1112309,
@@ -496,12 +496,12 @@
     "hash": "7bd16552c9bb4151ebaf3ebde11e08ec"
   },
   "D:\\dev\\codex-select-ai\\apps\\frontend\\src\\components\\pages\\Settings.test.ts": {
-    "mtime": 1778532759.72508,
-    "hash": "e167b462fa92f6fec990ec1004d07df0"
+    "mtime": 1778537466.9949658,
+    "hash": "9f329f26ba1f22ee565d0cfe2263d0cb"
   },
   "D:\\dev\\codex-select-ai\\apps\\frontend\\src\\components\\pages\\Settings.tsx": {
-    "mtime": 1778532336.2650397,
-    "hash": "514d05d12703871fe8398568618d2453"
+    "mtime": 1778537193.6563215,
+    "hash": "d263b49aba566f97415d1bff8ea5afb8"
   },
   "D:\\dev\\codex-select-ai\\apps\\frontend\\src\\components\\pages\\Users.tsx": {
     "mtime": 1778217890.6666763,
@@ -544,8 +544,8 @@
     "hash": "8459e14bc642bceb0882d907b2795edc"
   },
   "D:\\dev\\codex-select-ai\\apps\\frontend\\src\\components\\pages\\analytics\\AnalyticsChatPanelParts.test.tsx": {
-    "mtime": 1778532759.7260842,
-    "hash": "347967ef366a078ffbfa4ba0ab1b1c8a"
+    "mtime": 1778537472.7452803,
+    "hash": "ed4bb286f09756925cc7c817e9d457e3"
   },
   "D:\\dev\\codex-select-ai\\apps\\frontend\\src\\components\\pages\\analytics\\AnalyticsChatPanelParts.tsx": {
     "mtime": 1778532706.6515815,
@@ -808,8 +808,8 @@
     "hash": "e3e8a67daa5ed334a3c83c540ee90a5d"
   },
   "D:\\dev\\codex-select-ai\\apps\\frontend\\src\\config\\suggestedQuestions.ts": {
-    "mtime": 1778532678.4795456,
-    "hash": "4b6b62a263fcf93f0e0dae875d5e6dbf"
+    "mtime": 1778537413.3931837,
+    "hash": "4557647d535297dcbe84be68a3a89d15"
   },
   "D:\\dev\\codex-select-ai\\apps\\frontend\\src\\context\\AnalyticsChatContext.test.tsx": {
     "mtime": 1778215142.3179605,
@@ -868,8 +868,8 @@
     "hash": "05864162cc5c39af47695351c68e2ec8"
   },
   "D:\\dev\\codex-select-ai\\apps\\frontend\\src\\services\\settingsApi.test.ts": {
-    "mtime": 1778532759.7240682,
-    "hash": "7d20ec5584ea3942254757c71f1ac656"
+    "mtime": 1778537439.703793,
+    "hash": "8ff819e592d61bb9d35fc1af77ad3e82"
   },
   "D:\\dev\\codex-select-ai\\apps\\frontend\\src\\services\\settingsApi.ts": {
     "mtime": 1778532336.269041,
