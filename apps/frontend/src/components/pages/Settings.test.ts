@@ -90,14 +90,17 @@ describe('Settings helpers', () => {
     expect(Object.keys(payload.suggested_questions || {})).toHaveLength(10);
   });
 
-  it('renders suggested questions as one-line Spanish inputs', async () => {
+  it('renders suggested questions with English labels and one-line Spanish inputs', async () => {
     vi.mocked(settingsApi.get).mockResolvedValue({ data: {} } as never);
 
     renderSettings();
-    fireEvent.click(await screen.findByRole('button', { name: 'Preguntas' }));
+    fireEvent.click(await screen.findByRole('button', { name: 'Questions' }));
 
     const questionInputs = screen.getAllByLabelText(/Pregunta \d+/i);
 
+    expect(screen.getByText('Suggested Questions')).toBeInTheDocument();
+    expect(screen.getByText('Maintain the representative prompts shown when a new chat starts')).toBeInTheDocument();
+    expect(screen.queryByText('Los nuevos chats muestran aleatoriamente tres preguntas de esta lista.')).not.toBeInTheDocument();
     expect(questionInputs).toHaveLength(10);
     expect(questionInputs[0].tagName).toBe('INPUT');
     expect(questionInputs[0]).toHaveAttribute('type', 'text');

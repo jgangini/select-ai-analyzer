@@ -106,7 +106,7 @@ export function Settings({ showToast }: { showToast: ShowToast }) {
     { id: 'app', name: 'Application' },
     { id: 'select_ai', name: 'Select AI' },
     { id: 'oci', name: 'OCI' },
-    { id: 'suggested_questions', name: 'Preguntas' },
+    { id: 'suggested_questions', name: 'Questions' },
   ];
 
   const confirmSave = () => {
@@ -296,8 +296,8 @@ export function Settings({ showToast }: { showToast: ShowToast }) {
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 10h8M8 14h5m-9 7V5a2 2 0 012-2h12a2 2 0 012 2v16l-4-3H6a2 2 0 01-2-2z" />
                 </svg>
                 <div>
-                  <p className="font-medium text-gray-800">Preguntas sugeridas</p>
-                  <p className="text-sm text-gray-600">Mantén los prompts representativos que aparecen al crear un chat</p>
+                  <p className="font-medium text-gray-800">Suggested Questions</p>
+                  <p className="text-sm text-gray-600">Maintain the representative prompts shown when a new chat starts</p>
                 </div>
               </div>
 
@@ -333,7 +333,6 @@ export function Settings({ showToast }: { showToast: ShowToast }) {
                   </div>
                 ))}
               </div>
-              <FieldHint>Los nuevos chats muestran aleatoriamente tres preguntas de esta lista.</FieldHint>
             </div>
           )}
         </div>
