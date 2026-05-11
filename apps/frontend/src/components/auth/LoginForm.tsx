@@ -25,7 +25,7 @@ export function getLoginErrorMessage(error: unknown): string {
     response?: { data?: { detail?: string } };
   };
   if (maybeError.code === 'ECONNABORTED' || maybeError.message?.toLowerCase().includes('timeout')) {
-    return 'Sign-in is taking too long. Please verify the backend is running and try again.';
+    return 'The previous sign-in attempt took too long. Please try again.';
   }
   return maybeError.response?.data?.detail || 'Login failed. Please check your credentials.';
 }
@@ -65,6 +65,10 @@ export function LoginForm({
   const [showPassword, setShowPassword] = useState(false);
   const [rememberMe, setRememberMe] = useState(false);
   const [focusedField, setFocusedField] = useState<'email' | 'password' | null>(null);
+
+  const clearErrorOnEdit = () => {
+    if (error) setError('');
+  };
 
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
@@ -194,7 +198,10 @@ export function LoginForm({
                       id="login-email"
                       type="text"
                       value={username}
-                      onChange={(e) => setUsername(e.target.value)}
+                      onChange={(e) => {
+                        setUsername(e.target.value);
+                        clearErrorOnEdit();
+                      }}
                       onPointerDown={() => setFocusedField('email')}
                       onFocus={() => setFocusedField('email')}
                       onBlur={() => setFocusedField(null)}
@@ -213,7 +220,10 @@ export function LoginForm({
                         id="login-password"
                         type={showPassword ? 'text' : 'password'}
                         value={password}
-                        onChange={(e) => setPassword(e.target.value)}
+                        onChange={(e) => {
+                          setPassword(e.target.value);
+                          clearErrorOnEdit();
+                        }}
                         onPointerDown={() => setFocusedField('password')}
                         onFocus={() => setFocusedField('password')}
                         onBlur={() => setFocusedField(null)}

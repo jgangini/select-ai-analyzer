@@ -47,7 +47,7 @@ export const usersQueryKeys = {
   groups: ['users', 'groups'] as const,
 };
 
-export const LOGIN_REQUEST_TIMEOUT_MS = 8000;
+export const LOGIN_REQUEST_TIMEOUT_MS = 12000;
 
 export const usersApi = {
   login: (username: string, password: string) =>

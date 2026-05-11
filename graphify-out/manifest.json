@@ -447,13 +447,13 @@
     "mtime": 1773767276.3577106,
     "hash": "0352474ba2918efe13895edbc3780d94"
   },
-  "D:\\dev\\codex-select-ai\\apps\\frontend\\src\\components\\auth\\LoginForm.test.ts": {
-    "mtime": 1778534998.0457952,
-    "hash": "ac38915ad81373d254393c473b93515b"
+  "D:\\dev\\codex-select-ai\\apps\\frontend\\src\\components\\auth\\LoginForm.test.tsx": {
+    "mtime": 1778536819.0245972,
+    "hash": "ca7c56ce18d0359f17946c4c43e4b562"
   },
   "D:\\dev\\codex-select-ai\\apps\\frontend\\src\\components\\auth\\LoginForm.tsx": {
-    "mtime": 1778534998.043794,
-    "hash": "6e2d7fb42db94d607c01b47daed12571"
+    "mtime": 1778536585.1870196,
+    "hash": "220ecb78366339771b78f51fd4fbd4a7"
   },
   "D:\\dev\\codex-select-ai\\apps\\frontend\\src\\components\\common\\LoadingState.tsx": {
     "mtime": 1774372527.1233354,
@@ -880,8 +880,8 @@
     "hash": "8bbf71ad4a8f2b3abca43af2be5c1e62"
   },
   "D:\\dev\\codex-select-ai\\apps\\frontend\\src\\services\\usersApi.ts": {
-    "mtime": 1778534998.042793,
-    "hash": "26d70e50013b0d22e33bdd8f3d86a7c1"
+    "mtime": 1778536585.1870196,
+    "hash": "e323e25b9ec6a647d1027f70eb8ef4b7"
   },
   "D:\\dev\\codex-select-ai\\apps\\frontend\\src\\test\\setup.ts": {
     "mtime": 1778178367.9683971,
