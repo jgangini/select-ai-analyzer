@@ -632,12 +632,12 @@
     "hash": "9f256ddb629b7c27e848abea9ca46c87"
   },
   "D:\\dev\\codex-select-ai\\apps\\frontend\\src\\components\\pages\\analytics\\useAnalyticsConversationState.test.tsx": {
-    "mtime": 1778539191.6450925,
-    "hash": "84fb238d35ee6d8fa4aae6f3a0ec6cf9"
+    "mtime": 1778539515.332092,
+    "hash": "63a9ed12f152bcf2639812ddfbee1f09"
   },
   "D:\\dev\\codex-select-ai\\apps\\frontend\\src\\components\\pages\\analytics\\useAnalyticsConversationState.ts": {
-    "mtime": 1778539155.3993616,
-    "hash": "028c3d6ffe54524b653b251a6b50ffd4"
+    "mtime": 1778539524.998828,
+    "hash": "806ab29f62e5c66254d36ab8a9d59f7d"
   },
   "D:\\dev\\codex-select-ai\\apps\\frontend\\src\\components\\pages\\analytics\\useAnalyticsDashboardDraft.test.tsx": {
     "mtime": 1778261707.1706705,
@@ -752,8 +752,8 @@
     "hash": "9eb0292368c414dd0d45b2d776291ae0"
   },
   "D:\\dev\\codex-select-ai\\apps\\frontend\\src\\components\\shell\\Sidebar.tsx": {
-    "mtime": 1778539210.2518897,
-    "hash": "db60998c40e64483b483d6cd5d5aab7e"
+    "mtime": 1778539299.2122457,
+    "hash": "2235c7cec8cd5f8b47090a9eb7f6e1f0"
   },
   "D:\\dev\\codex-select-ai\\apps\\frontend\\src\\components\\wizard\\DatabaseConfigFields.tsx": {
     "mtime": 1778207743.4010177,

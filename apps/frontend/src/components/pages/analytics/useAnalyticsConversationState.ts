@@ -124,7 +124,11 @@ function sidebarConversationFromResult(
   };
 }
 
-function useConversationMessages(activeConversationId: string | null, analyticsClient: AnalyticsConversationClient) {
+function useConversationMessages(
+  activeConversationId: string | null,
+  newConversationVersion: number,
+  analyticsClient: AnalyticsConversationClient
+) {
   const listRef = useRef<HTMLDivElement>(null);
   const [messages, setMessages] = useState<AnalyticsChatMessage[]>([]);
   const [conversationId, setConversationId] = useState<string | null>(null);
@@ -146,7 +150,7 @@ function useConversationMessages(activeConversationId: string | null, analyticsC
       setMessages([]);
       setErrorMessage('');
     }
-  }, [activeConversationId]);
+  }, [activeConversationId, newConversationVersion]);
 
   useEffect(() => {
     const conversation = conversationQuery.data;
@@ -465,7 +469,7 @@ export function useAnalyticsConversationState({
   } = useAnalyticsChat();
   const [isGraphPanelOpen, setIsGraphPanelOpen] = useState(false);
   const { headerMenuRef, isHeaderMenuOpen, setIsHeaderMenuOpen } = useHeaderMenu();
-  const conversation = useConversationMessages(activeConversationId, analyticsClient);
+  const conversation = useConversationMessages(activeConversationId, newConversationVersion, analyticsClient);
   const currentConversationId = activeConversationId || conversation.conversationId;
   const conversationTitle = activeConversationTitle || conversation.conversationQuery.data?.title || 'New analytics chat';
   const latestResult = useMemo(() => findLatestAssistantMessage(conversation.messages)?.result, [conversation.messages]);

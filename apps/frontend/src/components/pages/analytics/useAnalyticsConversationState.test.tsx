@@ -248,7 +248,10 @@ describe('useAnalyticsConversationState', () => {
     await waitFor(() => expect(screen.getByTestId('drafts')).toHaveTextContent('0'));
     expect(screen.getByTestId('draft-titles')).toHaveTextContent('Which accounts have hidden statement transactions?');
     fireEvent.click(screen.getByRole('button', { name: 'new conversation' }));
-    expect(screen.getByTestId('version')).toHaveTextContent('1');
+    await waitFor(() => expect(screen.getByTestId('version')).toHaveTextContent('1'));
+    expect(screen.getByTestId('current')).toHaveTextContent('none');
+    expect(screen.getByTestId('messages')).toHaveTextContent('none');
+    expect(screen.getByTestId('drafts')).toHaveTextContent('0');
 
     act(() => {
       pendingAsk.resolve({ data: analyticsResult });
