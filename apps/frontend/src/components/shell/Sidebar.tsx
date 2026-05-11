@@ -331,7 +331,7 @@ export function Sidebar({
           </section>
         )}
 
-        <div className={`mt-auto pb-4 ${collapsed ? '' : 'border-t border-white/10 pt-2'}`}>
+        <div className={`mt-auto pb-2 ${collapsed ? '' : 'border-t border-white/10 pt-2'}`}>
           {bottomMenuItems.map((item) => renderMenuButton(item))}
         </div>
       </nav>
