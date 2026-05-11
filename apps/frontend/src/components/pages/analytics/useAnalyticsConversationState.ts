@@ -64,6 +64,30 @@ type AnalyticsConversationClient = {
 type DataSourcesClient = {
   list: () => ApiResponse<{ items: DataSourceSummary[] }>;
 };
+type AskQuestionVariables = {
+  conversationId: string | null;
+  draftVersion: number;
+  text: string;
+  title: string;
+};
+type UseAskQuestionOptions = {
+  activeConversationId: string | null;
+  activeConversationTitle: string | null;
+  attachConversation: (conversationId: string, title: string) => void;
+  analyticsClient: AnalyticsConversationClient;
+  conversationId: string | null;
+  newConversationVersion: number;
+  finishConversationProcessing: (conversationId: string) => void;
+  finishDraftProcessing: (draftVersion: number) => void;
+  isConversationProcessing: (conversationId: string | null | undefined) => boolean;
+  isDraftProcessing: (draftVersion: number) => boolean;
+  markConversationUnread: (conversationId: string) => void;
+  setConversationId: Dispatch<SetStateAction<string | null>>;
+  setErrorMessage: Dispatch<SetStateAction<string>>;
+  setMessages: Dispatch<SetStateAction<AnalyticsChatMessage[]>>;
+  startConversationProcessing: (conversationId: string) => void;
+  startDraftProcessing: (draftVersion: number) => void;
+};
 
 const analyticsConversationQueryKey = (conversationId: string | null) =>
   ['analytics', 'conversation', conversationId] as const;
@@ -126,57 +150,110 @@ function useHeaderMenu() {
   return { headerMenuRef, isHeaderMenuOpen, setIsHeaderMenuOpen };
 }
 
-function useAskQuestion({
-  activeConversationTitle,
-  attachConversation,
-  analyticsClient,
-  conversationId,
-  setConversationId,
-  setErrorMessage,
-  setMessages,
-}: {
-  activeConversationTitle: string | null;
-  attachConversation: (conversationId: string, title: string) => void;
-  analyticsClient: AnalyticsConversationClient;
-  conversationId: string | null;
-  setConversationId: Dispatch<SetStateAction<string | null>>;
-  setErrorMessage: Dispatch<SetStateAction<string>>;
-  setMessages: Dispatch<SetStateAction<AnalyticsChatMessage[]>>;
-}) {
+function useVisibleAskTarget(activeConversationId: string | null, newConversationVersion: number) {
+  const activeConversationIdRef = useRef(activeConversationId);
+  const newConversationVersionRef = useRef(newConversationVersion);
+  activeConversationIdRef.current = activeConversationId;
+  newConversationVersionRef.current = newConversationVersion;
+
+  return (variables: AskQuestionVariables) => {
+    if (variables.conversationId) {
+      return activeConversationIdRef.current === variables.conversationId;
+    }
+    return activeConversationIdRef.current === null && newConversationVersionRef.current === variables.draftVersion;
+  };
+}
+
+function useAskQuestion(options: UseAskQuestionOptions) {
+  const {
+    activeConversationId,
+    activeConversationTitle,
+    attachConversation,
+    analyticsClient,
+    conversationId,
+    finishConversationProcessing,
+    finishDraftProcessing,
+    isConversationProcessing,
+    isDraftProcessing,
+    markConversationUnread,
+    newConversationVersion,
+    setConversationId,
+    setErrorMessage,
+    setMessages,
+    startConversationProcessing,
+    startDraftProcessing,
+  } = options;
   const queryClient = useQueryClient();
   const [question, setQuestion] = useState('');
+  const shouldApplyResultToVisibleConversation = useVisibleAskTarget(activeConversationId, newConversationVersion);
 
   const askMutation = useMutation({
-    mutationFn: (text: string) =>
-      analyticsClient.ask({ question: text, max_rows: 500, conversation_id: conversationId || undefined }).then((response) => response.data),
-    onMutate: (text) => {
+    mutationFn: (variables: AskQuestionVariables) =>
+      analyticsClient.ask({
+        question: variables.text,
+        max_rows: 500,
+        conversation_id: variables.conversationId || undefined,
+      }).then((response) => response.data),
+    onMutate: (variables) => {
       setErrorMessage('');
       setQuestion('');
+      if (variables.conversationId) {
+        startConversationProcessing(variables.conversationId);
+      } else {
+        startDraftProcessing(variables.draftVersion);
+      }
       setMessages((prev) => [
         ...prev,
-        { id: crypto.randomUUID(), role: 'user', content: text, timestamp: new Date() },
+        { id: crypto.randomUUID(), role: 'user', content: variables.text, timestamp: new Date() },
       ]);
     },
-    onSuccess: (result, text) => {
-      setConversationId(result.conversation_id);
-      attachConversation(result.conversation_id, activeConversationTitle ?? text.slice(0, 120));
-      setMessages((prev) => [
-        ...prev,
-        { id: crypto.randomUUID(), role: 'assistant', content: result.answer, timestamp: new Date(), result, question: text },
-      ]);
+    onSuccess: (result, variables) => {
+      if (variables.conversationId) {
+        finishConversationProcessing(variables.conversationId);
+      } else {
+        finishDraftProcessing(variables.draftVersion);
+      }
+      finishConversationProcessing(result.conversation_id);
       queryClient.invalidateQueries({ queryKey: ['analytics'] });
+      if (!shouldApplyResultToVisibleConversation(variables)) {
+        markConversationUnread(result.conversation_id);
+        return;
+      }
+      setConversationId(result.conversation_id);
+      attachConversation(result.conversation_id, variables.title);
+      setMessages((prev) => [
+        ...prev,
+        { id: crypto.randomUUID(), role: 'assistant', content: result.answer, timestamp: new Date(), result, question: variables.text },
+      ]);
     },
-    onError: (error) => setErrorMessage(getAnalyticsErrorMessage(error)),
+    onError: (error, variables) => {
+      if (variables.conversationId) {
+        finishConversationProcessing(variables.conversationId);
+      } else {
+        finishDraftProcessing(variables.draftVersion);
+      }
+      if (shouldApplyResultToVisibleConversation(variables)) {
+        setErrorMessage(getAnalyticsErrorMessage(error));
+      }
+    },
   });
 
   const submitQuestion = () => {
     const normalized = question.trim();
-    if (!normalized || askMutation.isPending) return;
+    const currentDraftVersion = newConversationVersion;
+    if (!normalized || isConversationProcessing(conversationId) || (!conversationId && isDraftProcessing(currentDraftVersion))) return;
     setErrorMessage('');
-    askMutation.mutate(normalized);
+    askMutation.mutate({
+      conversationId,
+      draftVersion: currentDraftVersion,
+      text: normalized,
+      title: activeConversationTitle ?? normalized.slice(0, 120),
+    });
   };
 
-  return { isAskPending: askMutation.isPending, question, setQuestion, submitQuestion };
+  const isAskPending = conversationId ? isConversationProcessing(conversationId) : isDraftProcessing(newConversationVersion);
+
+  return { isAskPending, question, setQuestion, submitQuestion };
 }
 
 function useConversationDelete({
@@ -339,7 +416,21 @@ export function useAnalyticsConversationState({
   dataSourcesClient: DataSourcesClient;
   showToast: ShowToast;
 }) {
-  const { activeConversationId, activeConversationTitle, attachConversation, openNewConversation } = useAnalyticsChat();
+  const {
+    activeConversationId,
+    activeConversationTitle,
+    attachConversation,
+    clearConversationStatus,
+    finishConversationProcessing,
+    finishDraftProcessing,
+    isConversationProcessing,
+    isDraftProcessing,
+    markConversationUnread,
+    newConversationVersion,
+    openNewConversation,
+    startConversationProcessing,
+    startDraftProcessing,
+  } = useAnalyticsChat();
   const [isGraphPanelOpen, setIsGraphPanelOpen] = useState(false);
   const { headerMenuRef, isHeaderMenuOpen, setIsHeaderMenuOpen } = useHeaderMenu();
   const conversation = useConversationMessages(activeConversationId, analyticsClient);
@@ -348,16 +439,28 @@ export function useAnalyticsConversationState({
   const latestResult = useMemo(() => findLatestAssistantMessage(conversation.messages)?.result, [conversation.messages]);
   const latestQuestion = useMemo(() => findLatestUserQuestion(conversation.messages), [conversation.messages]);
   const ask = useAskQuestion({
+    activeConversationId,
     activeConversationTitle,
     attachConversation,
     analyticsClient,
-    conversationId: conversation.conversationId,
+    conversationId: currentConversationId,
+    finishConversationProcessing,
+    finishDraftProcessing,
+    isConversationProcessing,
+    isDraftProcessing,
+    markConversationUnread,
+    newConversationVersion,
     setConversationId: conversation.setConversationId,
     setErrorMessage: conversation.setErrorMessage,
     setMessages: conversation.setMessages,
+    startConversationProcessing,
+    startDraftProcessing,
   });
   const deletion = useConversationDelete({
-    openNewConversation,
+    openNewConversation: () => {
+      if (currentConversationId) clearConversationStatus(currentConversationId);
+      openNewConversation();
+    },
     analyticsClient,
     setConversationId: conversation.setConversationId,
     setIsGraphPanelOpen,

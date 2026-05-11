@@ -60,6 +60,8 @@ export function Layout({
           activeConversationId={analyticsChat.activeConversationId}
           collapsed={sidebarCollapsed}
           isAuthenticated={isAuthenticated}
+          processingConversationIds={analyticsChat.processingConversationIds}
+          unreadConversationIds={analyticsChat.unreadConversationIds}
           user={user ? { groupId: user.group_id, userId: user.user_id } : null}
           onToggle={handleSidebarToggle}
           onOpenConversation={analyticsChat.openConversation}

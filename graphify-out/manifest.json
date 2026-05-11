@@ -632,12 +632,12 @@
     "hash": "9f256ddb629b7c27e848abea9ca46c87"
   },
   "D:\\dev\\codex-select-ai\\apps\\frontend\\src\\components\\pages\\analytics\\useAnalyticsConversationState.test.tsx": {
-    "mtime": 1778261808.6195638,
-    "hash": "2004997044e02960278ef5f052103d43"
+    "mtime": 1778538619.3000302,
+    "hash": "a28b7bbf876384aa8a92fc7322c49bd4"
   },
   "D:\\dev\\codex-select-ai\\apps\\frontend\\src\\components\\pages\\analytics\\useAnalyticsConversationState.ts": {
-    "mtime": 1778275817.9982774,
-    "hash": "faf04c417ce612bf446121e6f4d360ff"
+    "mtime": 1778538806.341951,
+    "hash": "429ea5a28990e22693fc571343c823d4"
   },
   "D:\\dev\\codex-select-ai\\apps\\frontend\\src\\components\\pages\\analytics\\useAnalyticsDashboardDraft.test.tsx": {
     "mtime": 1778261707.1706705,
@@ -744,12 +744,16 @@
     "hash": "dfca04a2bf4d01cf023c1c5aea60cfdf"
   },
   "D:\\dev\\codex-select-ai\\apps\\frontend\\src\\components\\shell\\Layout.tsx": {
-    "mtime": 1778204549.2631176,
-    "hash": "0e0d281c58ac6f4111554e49a35afc79"
+    "mtime": 1778538528.8046,
+    "hash": "fea2d49f638ca5a6d262818c7760fdad"
+  },
+  "D:\\dev\\codex-select-ai\\apps\\frontend\\src\\components\\shell\\Sidebar.test.tsx": {
+    "mtime": 1778538614.9533436,
+    "hash": "7cd142b9c7b9dceaaae56d7a28ac221d"
   },
   "D:\\dev\\codex-select-ai\\apps\\frontend\\src\\components\\shell\\Sidebar.tsx": {
-    "mtime": 1778532336.2680423,
-    "hash": "4f02d20dd55da87f701f66c1134e77de"
+    "mtime": 1778538525.063194,
+    "hash": "56f8023372817b7599b2780ede50c745"
   },
   "D:\\dev\\codex-select-ai\\apps\\frontend\\src\\components\\wizard\\DatabaseConfigFields.tsx": {
     "mtime": 1778207743.4010177,
@@ -812,12 +816,12 @@
     "hash": "4557647d535297dcbe84be68a3a89d15"
   },
   "D:\\dev\\codex-select-ai\\apps\\frontend\\src\\context\\AnalyticsChatContext.test.tsx": {
-    "mtime": 1778215142.3179605,
-    "hash": "108fdb2e5d6a6e4303ac9acec6c3988f"
+    "mtime": 1778538610.933773,
+    "hash": "d795e4cdec4c68ef00ec595ba77543ef"
   },
   "D:\\dev\\codex-select-ai\\apps\\frontend\\src\\context\\AnalyticsChatContext.tsx": {
-    "mtime": 1778196043.9671433,
-    "hash": "4cf937fb9cbf4e112647b7fae3e85dd0"
+    "mtime": 1778538793.0455887,
+    "hash": "78cc94ac3e9a41e8c87d138ab46d4617"
   },
   "D:\\dev\\codex-select-ai\\apps\\frontend\\src\\context\\AuthContext.test.tsx": {
     "mtime": 1778215054.9098454,

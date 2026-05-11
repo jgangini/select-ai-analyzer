@@ -5,6 +5,8 @@ interface SidebarProps {
   activeConversationId: string | null;
   collapsed: boolean;
   isAuthenticated: boolean;
+  processingConversationIds: string[];
+  unreadConversationIds: string[];
   user: { groupId: number; userId: number } | null;
   onToggle: () => void;
   onOpenConversation: (conversationId: string, title?: string) => void;
@@ -93,6 +95,45 @@ function formatRelativeUpdatedAt(value: string): string {
   return `${month}/${day}`;
 }
 
+function ChatStatusIndicator({
+  hasUnreadResponse,
+  isProcessing,
+  updatedAt,
+}: {
+  hasUnreadResponse: boolean;
+  isProcessing: boolean;
+  updatedAt: string;
+}) {
+  if (isProcessing) {
+    return (
+      <span className="flex h-4 min-w-6 shrink-0 items-center justify-end" title="Processing chat">
+        <span
+          aria-label="Processing chat"
+          role="status"
+          className="h-3.5 w-3.5 animate-spin rounded-full border-2 border-sky-300 border-t-transparent"
+        />
+      </span>
+    );
+  }
+
+  if (hasUnreadResponse) {
+    return (
+      <span className="flex h-4 min-w-6 shrink-0 items-center justify-end" title="Unread response">
+        <span
+          aria-label="Unread response"
+          className="h-2.5 w-2.5 rounded-full bg-sky-400 shadow-[0_0_0_3px_rgba(56,189,248,0.22)]"
+        />
+      </span>
+    );
+  }
+
+  return (
+    <span className="min-w-6 shrink-0 text-right text-[11px] font-medium text-gray-400">
+      {formatRelativeUpdatedAt(updatedAt)}
+    </span>
+  );
+}
+
 function Icon({
   kind,
 }: {
@@ -152,6 +193,8 @@ export function Sidebar({
   activeConversationId,
   collapsed,
   isAuthenticated,
+  processingConversationIds,
+  unreadConversationIds,
   user,
   onToggle,
   onOpenConversation,
@@ -293,6 +336,8 @@ export function Sidebar({
                   ) : (
                     recentConversations.map((chat) => {
                       const isActiveChat = location.pathname === '/chat' && activeConversationId === chat.conversation_id;
+                      const isProcessing = processingConversationIds.includes(chat.conversation_id);
+                      const hasUnreadResponse = unreadConversationIds.includes(chat.conversation_id);
                       return (
                         <button
                           key={chat.conversation_id}
@@ -305,9 +350,11 @@ export function Sidebar({
                         >
                           <span className="flex items-center gap-2">
                             <span className="min-w-0 flex-1 truncate text-sm leading-5">{chat.title || 'Analytics chat'}</span>
-                            <span className="shrink-0 text-[11px] font-medium text-gray-400">
-                              {formatRelativeUpdatedAt(chat.updated_at)}
-                            </span>
+                            <ChatStatusIndicator
+                              hasUnreadResponse={hasUnreadResponse}
+                              isProcessing={isProcessing}
+                              updatedAt={chat.updated_at}
+                            />
                           </span>
                         </button>
                       );
