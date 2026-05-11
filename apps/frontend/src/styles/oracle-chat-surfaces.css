@@ -1,3 +1,16 @@
+.chat-sample-question-text {
+  display: -webkit-box;
+  min-height: 2.5rem;
+  overflow: hidden;
+  overflow-wrap: anywhere;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+}
+
+.chat-sample-question-refresh svg {
+  pointer-events: none;
+}
+
 .app-shell-dark .chat-suggestion-menu {
   background: #ffffff !important;
   border-color: #e7ddd6 !important;
@@ -227,6 +240,45 @@
 .app-shell-dark .app-light-surface .chat-start-surface .chat-suggestion-menu .text-oracle-light-gray {
   color: #6a5d55 !important;
   text-shadow: none !important;
+}
+
+.app-shell-dark .app-light-surface .chat-start-surface .chat-sample-question {
+  background:
+    linear-gradient(180deg, rgba(49, 45, 42, 0.86), rgba(23, 20, 18, 0.78)) !important;
+  border-color: rgba(255, 255, 255, 0.18) !important;
+  color: rgba(255, 255, 255, 0.9) !important;
+  text-shadow: 0 1px 1px rgba(0, 0, 0, 0.34) !important;
+  box-shadow:
+    0 14px 34px rgba(0, 0, 0, 0.26),
+    inset 0 1px 0 rgba(255, 255, 255, 0.1) !important;
+}
+
+.app-shell-dark .app-light-surface .chat-start-surface .chat-sample-question:hover,
+
+.app-shell-dark .app-light-surface .chat-start-surface .chat-sample-question:focus-visible {
+  background:
+    linear-gradient(180deg, rgba(70, 61, 57, 0.94), rgba(34, 30, 28, 0.86)) !important;
+  border-color: rgba(199, 70, 52, 0.82) !important;
+  color: #ffffff !important;
+  box-shadow:
+    0 16px 38px rgba(0, 0, 0, 0.3),
+    0 0 0 3px rgba(199, 70, 52, 0.16),
+    inset 0 1px 0 rgba(255, 255, 255, 0.14) !important;
+}
+
+.app-shell-dark .app-light-surface .chat-start-surface .chat-sample-question-refresh {
+  background: transparent !important;
+  border-color: transparent !important;
+  color: rgba(255, 255, 255, 0.8) !important;
+  box-shadow: none !important;
+}
+
+.app-shell-dark .app-light-surface .chat-start-surface .chat-sample-question-refresh:hover,
+
+.app-shell-dark .app-light-surface .chat-start-surface .chat-sample-question-refresh:focus-visible {
+  background: transparent !important;
+  border-color: transparent !important;
+  color: #ffffff !important;
 }
 
 .app-shell-dark .chat-conversation-header {

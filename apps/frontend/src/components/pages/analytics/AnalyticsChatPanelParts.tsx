@@ -1,7 +1,7 @@
 import { type FormEvent, type KeyboardEvent, type ReactNode, type RefObject, useEffect, useRef } from 'react';
 
 import { LoadingState } from '../../common/LoadingState';
-import { GraphIcon, MoreVerticalIcon, RenameIcon, TrashIcon } from './AnalyticsIcons';
+import { GraphIcon, MoreVerticalIcon, RefreshIcon, RenameIcon, TrashIcon } from './AnalyticsIcons';
 
 interface AnalyticsChatHeaderProps {
   title: string;
@@ -274,6 +274,53 @@ export function AnalyticsChatMessageList<TResult>({
           {isAssistantPending ? <AssistantTypingIndicator agentName={agentName} /> : null}
         </>
       )}
+    </div>
+  );
+}
+
+export function AnalyticsSuggestedQuestionButtons({
+  questions,
+  disabled = false,
+  onSelect,
+  onRefreshQuestion,
+}: {
+  questions: string[];
+  disabled?: boolean;
+  onSelect: (question: string) => void;
+  onRefreshQuestion?: (questionIndex: number) => void;
+}) {
+  if (!questions.length) return null;
+
+  return (
+    <div className="grid w-full gap-2 sm:grid-cols-3" aria-label="Suggested questions">
+      {questions.map((question, index) => (
+        <div key={question} className="relative h-14">
+          <button
+            type="button"
+            disabled={disabled}
+            onClick={() => onSelect(question)}
+            className="chat-sample-question flex h-14 w-full items-center rounded-lg border border-white/20 bg-white/95 px-3 py-2 text-left text-sm leading-5 text-oracle-dark-gray shadow-sm transition hover:-translate-y-0.5 hover:border-oracle-red hover:shadow-md disabled:cursor-not-allowed disabled:opacity-60"
+            title={question}
+          >
+            <span className="chat-sample-question-text pr-7">{question}</span>
+          </button>
+          {onRefreshQuestion ? (
+            <button
+              type="button"
+              disabled={disabled}
+              className="chat-sample-question-refresh absolute bottom-2 right-2 flex h-6 w-6 items-center justify-center rounded-sm text-oracle-medium-gray transition hover:text-oracle-red focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-oracle-red focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+              aria-label={`Cambiar pregunta sugerida ${index + 1}`}
+              title="Cambiar pregunta"
+              onClick={(event) => {
+                event.stopPropagation();
+                onRefreshQuestion(index);
+              }}
+            >
+              <RefreshIcon className="h-3.5 w-3.5" />
+            </button>
+          ) : null}
+        </div>
+      ))}
     </div>
   );
 }

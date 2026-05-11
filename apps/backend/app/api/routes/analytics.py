@@ -5,6 +5,11 @@ from pydantic import BaseModel, Field
 
 from apps.backend.app.api.setup_guard import require_setup_completed
 from apps.backend.app.core.security import get_current_user
+from apps.backend.app.select_ai.errors import (
+    GENAI_RESOURCE_EXHAUSTED_DETAIL,
+    SelectAIModelCapacityError,
+    is_genai_resource_exhausted,
+)
 from apps.backend.app.select_ai.service import SelectAIAnalyticsService
 
 
@@ -25,6 +30,12 @@ class RenameAnalyticsConversationRequest(BaseModel):
     title: str = Field(min_length=1, max_length=500)
 
 
+def _analytics_http_exception(exc: Exception) -> HTTPException:
+    if isinstance(exc, SelectAIModelCapacityError) or is_genai_resource_exhausted(exc):
+        return HTTPException(status_code=429, detail=GENAI_RESOURCE_EXHAUSTED_DETAIL)
+    return HTTPException(status_code=400, detail=str(exc))
+
+
 @router.post("/ask")
 def ask_analytics(
     request: AskAnalyticsRequest,
@@ -38,7 +49,7 @@ def ask_analytics(
             user_id=int(current_user.get("user_id") or 0),
         )
     except Exception as exc:
-        raise HTTPException(status_code=400, detail=str(exc)) from exc
+        raise _analytics_http_exception(exc) from exc
 
 
 @router.get("/conversations")
@@ -55,7 +66,7 @@ def list_analytics_conversations(
         )
         return {"items": items}
     except Exception as exc:
-        raise HTTPException(status_code=400, detail=str(exc)) from exc
+        raise _analytics_http_exception(exc) from exc
 
 
 @router.get("/conversations/{conversation_id}")
@@ -73,7 +84,7 @@ def get_analytics_conversation(
     except ValueError as exc:
         raise HTTPException(status_code=404, detail=str(exc)) from exc
     except Exception as exc:
-        raise HTTPException(status_code=400, detail=str(exc)) from exc
+        raise _analytics_http_exception(exc) from exc
 
 
 @router.put("/conversations/{conversation_id}")
@@ -91,7 +102,7 @@ def rename_analytics_conversation(
     except ValueError as exc:
         raise HTTPException(status_code=404, detail=str(exc)) from exc
     except Exception as exc:
-        raise HTTPException(status_code=400, detail=str(exc)) from exc
+        raise _analytics_http_exception(exc) from exc
 
 
 @router.delete("/conversations/{conversation_id}")
@@ -107,4 +118,4 @@ def delete_analytics_conversation(
     except ValueError as exc:
         raise HTTPException(status_code=404, detail=str(exc)) from exc
     except Exception as exc:
-        raise HTTPException(status_code=400, detail=str(exc)) from exc
+        raise _analytics_http_exception(exc) from exc

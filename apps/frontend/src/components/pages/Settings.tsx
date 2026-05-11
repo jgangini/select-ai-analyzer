@@ -5,12 +5,18 @@ import { LoadingState } from '../common/LoadingState';
 import { ConfirmQuestionModal } from '../common/Modal';
 import { settingsApi, settingsQueryKeys } from '../../services/settingsApi';
 import { DEFAULT_AGENT_DISPLAY_NAME, DEFAULT_APP_DISPLAY_NAME } from '../../config/branding';
+import {
+  DEFAULT_SUGGESTED_QUESTIONS,
+  SUGGESTED_QUESTION_KEYS,
+  normalizeSuggestedQuestionRecord,
+} from '../../config/suggestedQuestions';
 
 type SettingsPayload = {
   app?: Record<string, unknown>;
   select_ai?: Record<string, unknown>;
   genai?: Record<string, unknown>;
   oci?: Record<string, unknown>;
+  suggested_questions?: Record<string, unknown>;
 };
 
 type ShowToast = (message: string, type?: 'success' | 'error' | 'info' | 'warning') => void;
@@ -33,7 +39,13 @@ export function normalizeSettingsPayload(payload: SettingsPayload): SettingsPayl
   selectAi.profile_name = String(selectAi.profile_name || 'APP_AGENT_ANALYTICS');
   selectAi.credential_name = String(selectAi.credential_name || 'APP_AGENT_OCI_CRED');
   genai.model = String(genai.model || 'google.gemini-2.5-flash');
-  return { ...payload, app, select_ai: selectAi, genai };
+  return {
+    ...payload,
+    app,
+    select_ai: selectAi,
+    genai,
+    suggested_questions: normalizeSuggestedQuestionRecord(payload?.suggested_questions),
+  };
 }
 
 export function fieldValue(payload: SettingsPayload | null, category: string, field: string, defaultValue = ''): string {
@@ -94,10 +106,11 @@ export function Settings({ showToast }: { showToast: ShowToast }) {
     { id: 'app', name: 'Application' },
     { id: 'select_ai', name: 'Select AI' },
     { id: 'oci', name: 'OCI' },
+    { id: 'suggested_questions', name: 'Questions' },
   ];
 
   const confirmSave = () => {
-    updateMutation.mutate(formData);
+    updateMutation.mutate(normalizeSettingsPayload(formData));
     setShowSaveModal(false);
   };
 
@@ -273,6 +286,48 @@ export function Settings({ showToast }: { showToast: ShowToast }) {
                   </div>
                 ))}
               </div>
+            </div>
+          )}
+
+          {activeTab === 'suggested_questions' && (
+            <div className="space-y-4">
+              <div className="settings-section-card--neutral flex items-center gap-3 rounded-lg border border-gray-300 bg-gray-100 p-4">
+                <svg className="h-10 w-10 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 10h8M8 14h5m-9 7V5a2 2 0 012-2h12a2 2 0 012 2v16l-4-3H6a2 2 0 01-2-2z" />
+                </svg>
+                <div>
+                  <p className="font-medium text-gray-800">Suggested Questions</p>
+                  <p className="text-sm text-gray-600">Maintain the representative prompts shown when a new chat starts</p>
+                </div>
+              </div>
+
+              <div className="overflow-hidden rounded-lg border border-gray-200 bg-white">
+                {SUGGESTED_QUESTION_KEYS.map((key, index) => (
+                  <div key={key} className="flex gap-3 border-b border-gray-200 bg-white p-3 last:border-b-0">
+                    <div className="mt-1 flex h-8 w-8 shrink-0 items-center justify-center rounded-md border border-gray-200 bg-gray-50 text-xs font-semibold text-oracle-medium-gray">
+                      {String(index + 1).padStart(2, '0')}
+                    </div>
+                    <div className="min-w-0 flex-1">
+                      <label className="sr-only" htmlFor={`suggested-question-${key}`}>
+                        Question {index + 1}
+                      </label>
+                      <textarea
+                        id={`suggested-question-${key}`}
+                        value={fieldValue(
+                          formData,
+                          'suggested_questions',
+                          key,
+                          DEFAULT_SUGGESTED_QUESTIONS[index]
+                        )}
+                        onChange={(event) => updateField('suggested_questions', key, event.target.value)}
+                        rows={2}
+                        className="input-oracle min-h-[4rem] resize-y text-sm leading-5"
+                      />
+                    </div>
+                  </div>
+                ))}
+              </div>
+              <FieldHint>New chats randomly show three prompts from this list.</FieldHint>
             </div>
           )}
         </div>

@@ -97,5 +97,5 @@ Start-Process powershell -ArgumentList @(
 Write-Host ""
 Write-Host "Proyecto iniciado." -ForegroundColor Green
 Write-Host "Backend:  http://127.0.0.1:8012/"
-Write-Host "Frontend: http://localhost:5173/"
+Write-Host "Frontend: http://localhost:5174/"
 Write-Host "Si el frontend muestra errores proxy al inicio, revisa los logs del backend y recarga la pagina cuando el API quede disponible."

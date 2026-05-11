@@ -1,4 +1,5 @@
 import api from './httpClient';
+import { resolveSuggestedQuestions as resolveSuggestedQuestionList } from '../config/suggestedQuestions';
 
 export const settingsQueryKeys = {
   publicBranding: ['settings', 'public-branding'] as const,
@@ -25,6 +26,10 @@ export function resolveApplicationName(payload: unknown): string {
 export function resolveAgentName(payload: unknown): string {
   const configuredName = readAppSetting(payload, 'agent_name');
   return configuredName || DEFAULT_AGENT_DISPLAY_NAME;
+}
+
+export function resolveSuggestedQuestions(payload: unknown): string[] {
+  return resolveSuggestedQuestionList(payload);
 }
 
 export async function checkSetupComplete() {

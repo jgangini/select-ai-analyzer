@@ -22,6 +22,14 @@ export function RenameIcon({ className = 'h-4 w-4' }: { className?: string }) {
   );
 }
 
+export function RefreshIcon({ className = 'h-4 w-4' }: { className?: string }) {
+  return (
+    <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20 11a8.1 8.1 0 00-14.5-4.8L4 8m0 0V3m0 5h5m-5 5a8.1 8.1 0 0014.5 4.8L20 16m0 0v5m0-5h-5" />
+    </svg>
+  );
+}
+
 export function SqlIcon({ className = 'h-4 w-4' }: { className?: string }) {
   return (
     <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24">

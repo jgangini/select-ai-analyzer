@@ -1,4 +1,4 @@
-import { useEffect } from 'react';
+import { useEffect, useMemo } from 'react';
 import { BrowserRouter } from 'react-router-dom';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { AuthProvider, useAuth } from './context/AuthContext';
@@ -9,6 +9,7 @@ import {
   checkSetupComplete,
   resolveAgentName,
   resolveApplicationName,
+  resolveSuggestedQuestions,
   settingsQueryKeys,
   setupQueryKeys,
 } from './services/settingsApi';
@@ -21,6 +22,7 @@ type AppRoutesComponent = (props: {
   appName: string;
   showToast: ShowToast;
   sidebarChats: ReturnType<typeof useSidebarChats>;
+  suggestedQuestions: string[];
   setupGate: ReturnType<typeof useSetupGate>;
 }) => JSX.Element;
 
@@ -78,11 +80,13 @@ function useAppBranding() {
     staleTime: 60_000,
     retry: false,
   });
+  const suggestedQuestions = useMemo(() => resolveSuggestedQuestions(query.data), [query.data]);
 
   return {
     ...query,
     appName: resolveApplicationName(query.data),
     agentName: resolveAgentName(query.data),
+    suggestedQuestions,
   };
 }
 
@@ -90,7 +94,7 @@ function SessionScopedApp({ RoutesComponent }: { RoutesComponent: AppRoutesCompo
   const setupGate = useSetupGate();
   const { isAuthenticated, user, token } = setupGate;
   const { showToast } = useToast();
-  const { agentName, appName } = useAppBranding();
+  const { agentName, appName, suggestedQuestions } = useAppBranding();
   const sessionScope = user?.user_id ?? token ?? 'anonymous';
   const sidebarChats = useSidebarChats(isAuthenticated, user?.user_id ?? null);
 
@@ -105,6 +109,7 @@ function SessionScopedApp({ RoutesComponent }: { RoutesComponent: AppRoutesCompo
         appName={appName}
         showToast={showToast}
         sidebarChats={sidebarChats}
+        suggestedQuestions={suggestedQuestions}
         setupGate={setupGate}
       />
     </AnalyticsChatProvider>

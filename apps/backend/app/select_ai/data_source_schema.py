@@ -90,6 +90,14 @@ class SelectAIDataSourceSchemaMixin:
     def _schema_name_exists_in_list(schema_name: str, schemas: list[str]) -> bool:
         return schema_name in {schema.upper() for schema in schemas}
 
+    @staticmethod
+    def _grant_if_permitted(cursor, grant_sql: str) -> None:
+        try:
+            cursor.execute(grant_sql)
+        except Exception as exc:
+            if "ORA-01031" not in str(exc):
+                raise
+
     def create_data_schema(self, schema_name: str, *, include_password: bool = False) -> dict[str, Any]:
         owner_name = self._assert_data_schema(schema_name)
         if self.schema_exists(owner_name):
@@ -102,8 +110,8 @@ class SelectAIDataSourceSchemaMixin:
                 f"CREATE USER {owner_name} IDENTIFIED BY {_safe_password_literal(password)} "
                 "DEFAULT TABLESPACE USERS QUOTA UNLIMITED ON USERS"
             )
-            cursor.execute(f"GRANT CREATE SESSION TO {owner_name}")
-            cursor.execute(f"GRANT CREATE TABLE TO {owner_name}")
+            self._grant_if_permitted(cursor, f"GRANT CREATE SESSION TO {owner_name}")
+            self._grant_if_permitted(cursor, f"GRANT CREATE TABLE TO {owner_name}")
             conn.commit()
             result: dict[str, Any] = {"schema_name": owner_name, "created": True}
             if include_password:

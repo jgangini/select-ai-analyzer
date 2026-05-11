@@ -158,6 +158,29 @@ def test_source_seed_db_helpers_execute_expected_schema_statements() -> None:
     assert "DROP TABLE APP_AGENT_DATA.FLEX_ACCOUNT PURGE" in executed_sql
 
 
+def test_source_seed_data_schema_ignores_unavailable_grant_privilege() -> None:
+    class Cursor:
+        def __init__(self) -> None:
+            self.statements: list[str] = []
+
+        def execute(self, statement: str, **_params) -> None:
+            self.statements.append(statement)
+            if statement.startswith("GRANT "):
+                raise RuntimeError("ORA-01031: insufficient privileges")
+
+        def fetchone(self) -> tuple[int]:
+            return (0,)
+
+    cursor = Cursor()
+
+    ensure_data_schema(cursor, "APP_AGENT_DATA")
+
+    executed_sql = "\n".join(cursor.statements)
+    assert "CREATE USER APP_AGENT_DATA" in executed_sql
+    assert "GRANT CREATE SESSION TO APP_AGENT_DATA" in executed_sql
+    assert "GRANT CREATE TABLE TO APP_AGENT_DATA" in executed_sql
+
+
 def test_source_seed_table_io_reads_typed_csv_rows(tmp_path) -> None:
     assert column_type_label(("AMOUNT", "NUMBER", 0, 12, 2, "Y", 1)) == "NUMBER(12,2)"
     assert column_type_label(("NAME", "VARCHAR2", 64, None, None, "Y", 1)) == "VARCHAR2(64)"

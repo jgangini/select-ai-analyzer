@@ -1,9 +1,17 @@
+import { useCallback, useEffect, useState } from 'react';
+
+import { replaceSuggestedQuestionAt, selectRandomSuggestedQuestions } from '../../../config/suggestedQuestions';
 import { analyticsApi } from '../../../services/analyticsApi';
 import { dashboardsApi } from '../../../services/dashboardsApi';
 import { dataSourcesApi } from '../../../services/dataSourcesApi';
 import { OracleAgentGraphPanel } from './OracleAgentGraphPanel';
 import { ChartPreview } from './AnalyticsChartPreview';
-import { AnalyticsChatComposer, AnalyticsChatHeader, AnalyticsChatMessageList } from './AnalyticsChatPanelParts';
+import {
+  AnalyticsChatComposer,
+  AnalyticsChatHeader,
+  AnalyticsChatMessageList,
+  AnalyticsSuggestedQuestionButtons,
+} from './AnalyticsChatPanelParts';
 import { AssistantResult } from './AnalyticsChatResult';
 import { ResultTable } from './AnalyticsResultTable';
 import { useAnalyticsConversationState } from './useAnalyticsConversationState';
@@ -16,10 +24,12 @@ type ShowToast = (message: string, type?: 'success' | 'error' | 'info' | 'warnin
 export function AnalyticsChatPanel({
   agentName,
   showToast,
+  suggestedQuestions = [],
   userName = 'You',
 }: {
   agentName: string;
   showToast: ShowToast;
+  suggestedQuestions?: string[];
   userName?: string;
 }) {
   const conversation = useAnalyticsConversationState({ agentName, analyticsClient: analyticsApi, dataSourcesClient: dataSourcesApi, showToast });
@@ -37,6 +47,19 @@ export function AnalyticsChatPanel({
   };
   const renderComposer = (placeholder: string) => <AnalyticsChatComposer {...composerProps} placeholder={placeholder} />;
   const userInitials = getUserInitials(userName || 'You');
+  const [startQuestions, setStartQuestions] = useState<string[]>(() => selectRandomSuggestedQuestions(suggestedQuestions, 3));
+
+  useEffect(() => {
+    if (!conversation.isInitialCentered) return;
+    setStartQuestions(selectRandomSuggestedQuestions(suggestedQuestions, 3));
+  }, [conversation.currentConversationId, conversation.isInitialCentered, suggestedQuestions]);
+
+  const handleRefreshSuggestedQuestion = useCallback(
+    (questionIndex: number) => {
+      setStartQuestions((currentQuestions) => replaceSuggestedQuestionAt(suggestedQuestions, currentQuestions, questionIndex));
+    },
+    [suggestedQuestions]
+  );
 
   return (
     <div
@@ -50,6 +73,12 @@ export function AnalyticsChatPanel({
             <h2 className="text-center text-4xl font-semibold text-oracle-dark-gray">
               What are you working on?
             </h2>
+            <AnalyticsSuggestedQuestionButtons
+              questions={startQuestions}
+              disabled={conversation.isAskPending}
+              onSelect={conversation.setQuestion}
+              onRefreshQuestion={handleRefreshSuggestedQuestion}
+            />
             {renderComposer('Ask about balances, debits, credits, customers, products, fraud, or operating dates...')}
           </div>
         </div>

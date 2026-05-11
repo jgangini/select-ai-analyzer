@@ -12,6 +12,18 @@ _HIDDEN_CONFIG_CATEGORIES: set[str] = set()
 _RETIRED_CONFIG_KEYS: set[str] = set()
 DEFAULT_APP_NAME = "Select AI Analytics"
 DEFAULT_AGENT_NAME = "Nadia Analytics"
+DEFAULT_SUGGESTED_QUESTIONS = (
+    "¿Cuál es el saldo actual por moneda y sucursal?",
+    "¿Qué cuentas concentran mayor saldo bloqueado?",
+    "¿Cuáles son los productos con mayor volumen de movimientos este mes?",
+    "¿Cuál es la evolución diaria de débitos y créditos en marzo?",
+    "¿Qué clientes aumentaron su volumen de transacciones más del 50% este mes?",
+    "¿Qué cuentas tienen más retiros por ATM?",
+    "¿Qué préstamos tienen mayor deuda pendiente?",
+    "¿Qué contratos de depósito vencen en los próximos 30 días?",
+    "¿Qué cuentas tienen movimientos ocultos en el estado de cuenta?",
+    "¿Qué usuarios autorizaron más movimientos contables?",
+)
 
 
 class SetupStatusChecker(Protocol):
@@ -50,6 +62,24 @@ def _default_payload() -> dict[str, Any]:
         "genai": {
             "model": "google.gemini-2.5-flash",
         },
+        "suggested_questions": _default_suggested_questions_payload(),
+    }
+
+
+def _default_suggested_questions_payload() -> dict[str, str]:
+    return {
+        f"question_{index}": question
+        for index, question in enumerate(DEFAULT_SUGGESTED_QUESTIONS, start=1)
+    }
+
+
+def _public_suggested_questions(payload: dict[str, Any]) -> dict[str, str]:
+    configured = payload.get("suggested_questions") if isinstance(payload, dict) else {}
+    configured = configured if isinstance(configured, dict) else {}
+    defaults = _default_suggested_questions_payload()
+    return {
+        key: str(configured.get(key) or defaults[key]).strip() or defaults[key]
+        for key in defaults
     }
 
 
@@ -103,7 +133,8 @@ class SettingsService:
                 "agent_name": str(app_payload.get("agent_name") or DEFAULT_AGENT_NAME).strip() or DEFAULT_AGENT_NAME,
                 "avatar_url": str(app_payload.get("avatar_url") or "").strip(),
                 "avatar_updated_at": int(app_payload.get("avatar_updated_at") or 0),
-            }
+            },
+            "suggested_questions": _public_suggested_questions(payload),
         }
 
     def update(self, updates: dict[str, Any]) -> dict[str, Any]:

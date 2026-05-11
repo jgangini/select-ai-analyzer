@@ -5,6 +5,11 @@ import json
 import oracledb
 
 from apps.backend.app.select_ai.conversations import normalize_conversation_id
+from apps.backend.app.select_ai.errors import (
+    GENAI_RESOURCE_EXHAUSTED_DETAIL,
+    SelectAIModelCapacityError,
+    is_genai_resource_exhausted,
+)
 from apps.backend.app.select_ai.source_intents import (
     _fallback_sql_for_question,
     _is_velocity_window_intent,
@@ -52,23 +57,28 @@ class SelectAIGenerationMixin:
         with self._cursor() as (_, cursor):
             output_var = cursor.var(oracledb.CLOB)
             params = json.dumps({"conversation_id": conversation_id}, ensure_ascii=False) if conversation_id else None
-            cursor.execute(
-                """
-                BEGIN
-                    :out_value := DBMS_CLOUD_AI.GENERATE(
-                        prompt       => :prompt,
-                        profile_name => :profile_name,
-                        action       => :action,
-                        params       => :params_json
-                    );
-                END;
-                """,
-                out_value=output_var,
-                prompt=str(prompt or "").strip(),
-                profile_name=profile_name or self._profile_name(),
-                action=action,
-                params_json=params,
-            )
+            try:
+                cursor.execute(
+                    """
+                    BEGIN
+                        :out_value := DBMS_CLOUD_AI.GENERATE(
+                            prompt       => :prompt,
+                            profile_name => :profile_name,
+                            action       => :action,
+                            params       => :params_json
+                        );
+                    END;
+                    """,
+                    out_value=output_var,
+                    prompt=str(prompt or "").strip(),
+                    profile_name=profile_name or self._profile_name(),
+                    action=action,
+                    params_json=params,
+                )
+            except Exception as exc:
+                if is_genai_resource_exhausted(exc):
+                    raise SelectAIModelCapacityError(GENAI_RESOURCE_EXHAUSTED_DETAIL) from exc
+                raise
             return str(_read_lob(output_var.getvalue()) or "").strip()
 
     def generate_sql(

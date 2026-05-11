@@ -5,6 +5,7 @@ import {
   buildDashboardDraftItem,
   findLatestAssistantMessage,
   findLatestUserQuestion,
+  GENAI_RESOURCE_EXHAUSTED_MESSAGE,
   getAnalyticsErrorMessage,
   getDefaultDashboardName,
   getUserInitials,
@@ -23,6 +24,19 @@ describe('analytics chat panel utilities', () => {
   it('falls back to error message and default copy', () => {
     expect(getAnalyticsErrorMessage(new Error('Request failed.'))).toBe('Request failed.');
     expect(getAnalyticsErrorMessage(null)).toBe('The question could not be executed.');
+  });
+
+  it('replaces raw Oracle model capacity stacks with actionable copy', () => {
+    const error = {
+      response: {
+        data: {
+          detail:
+            'ORA-20400: Request failed with status HTTP 400 - https://inference.generativeai.us-chicago-1.oci.example/actions/chat Error response - { "code": "400", "message": "{ \\"error\\": { \\"code\\": 429, \\"status\\": \\"RESOURCE_EXHAUSTED\\" } }" } ORA-06512: at "C##CLOUD$SERVICE.DBMS_CLOUD_AI", line 19576',
+        },
+      },
+    };
+
+    expect(getAnalyticsErrorMessage(error)).toBe(GENAI_RESOURCE_EXHAUSTED_MESSAGE);
   });
 
   it('normalizes default dashboard names from chat titles', () => {

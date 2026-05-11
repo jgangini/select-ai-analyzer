@@ -51,6 +51,8 @@ def test_get_payload_returns_defaults_when_config_table_is_missing(tmp_path) -> 
     assert payload["app"]["agent_name"] == "Nadia Analytics"
     assert payload["app"]["avatar_url"] == ""
     assert payload["select_ai"]["profile_name"] == "APP_AGENT_ANALYTICS"
+    assert len(payload["suggested_questions"]) == 10
+    assert payload["suggested_questions"]["question_1"].startswith("¿Cuál es el saldo")
 
 
 def test_public_payload_uses_grouped_config_values_and_runtime_avatar(tmp_path) -> None:
@@ -61,6 +63,9 @@ def test_public_payload_uses_grouped_config_values_and_runtime_avatar(tmp_path) 
                 {"key": "app.agent_name", "value": "  Ada  "},
                 {"key": "app.session_timeout_minutes", "value": "60"},
                 {"key": "app.avatar_url", "value": "stale"},
+            ],
+            "suggested_questions": [
+                {"key": "suggested_questions.question_1", "value": "  ¿Qué clientes crecieron?  "},
             ],
             "genai": [{"key": "genai.model", "value": "cohere.command-r-plus"}],
         }
@@ -74,6 +79,8 @@ def test_public_payload_uses_grouped_config_values_and_runtime_avatar(tmp_path) 
     assert public_payload["app"]["agent_name"] == "Ada"
     assert public_payload["app"]["avatar_url"].startswith("/api/settings/agent-avatar?v=")
     assert public_payload["app"]["avatar_updated_at"] > 0
+    assert public_payload["suggested_questions"]["question_1"] == "¿Qué clientes crecieron?"
+    assert public_payload["suggested_questions"]["question_10"]
 
 
 def test_update_skips_dynamic_avatar_fields_and_writes_config_entries(tmp_path) -> None:
@@ -88,11 +95,14 @@ def test_update_skips_dynamic_avatar_fields_and_writes_config_entries(tmp_path) 
                 "avatar_updated_at": 123,
             },
             "custom.flag": True,
+            "suggested_questions": {
+                "question_1": "¿Qué clientes aumentaron su volumen?",
+            },
         }
     )
 
     written_keys = [entry["key"] for entry in config.upserts[0]]
-    assert written_keys == ["app.name", "custom.flag"]
+    assert written_keys == ["app.name", "custom.flag", "suggested_questions.question_1"]
     assert config.deleted_keys == [[]]
     assert result["success"] is True
     assert result["settings"]["app"]["name"] == "Portal"

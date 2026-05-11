@@ -14,6 +14,12 @@ class FakeAnalyticsService(SelectAIAnalyticsService):
             {"owner": "APP_AGENT_DATA", "name": "FLEX_CSTB_CLEARING_MASTER", "columns": ["REFERENCE_NO", "STATUS"]},
             {"owner": "APP_AGENT_DATA", "name": "FLEX_STTM_DATES", "columns": ["BRANCH_CODE", "TODAY"]},
             {"owner": "APP_AGENT_DATA", "name": "FLEX_ICTB_ACC_PR", "columns": ["ACCOUNT", "INT_RATE"]},
+            {
+                "owner": "APP_AGENT_DATA",
+                "name": "FLEX_CLTC_ACCOUNT_MASTER",
+                "columns": ["ACCOUNT_NUMBER", "CUSTOMER_ID", "AMOUNT_FINANCED", "AMOUNT_DISBURSED", "EMI_AMOUNT"],
+            },
+            {"owner": "APP_AGENT_DATA", "name": "FLEX_ACTB_DAILY_LOG_1", "columns": ["TRN_REF_NO", "AUTH_ID", "LCY_AMOUNT"]},
             {"owner": "APP_AGENT_DATA", "name": "FLEX_EXT_ACCOUNT_STATEMENT", "columns": ["ACCOUNT_NO", "HIDE_TXN_IN_STMT"]},
             {
                 "owner": "APP_AGENT_DATA",
@@ -153,7 +159,11 @@ def test_resolve_scoped_objects_uses_preferred_domain_tables() -> None:
         ("cheques rechazados en clearing", "FLEX_CSTB_CLEARING_MASTER"),
         ("fecha habil por sucursal", "FLEX_STTM_DATES"),
         ("interes por cuenta", "FLEX_ICTB_ACC_PR"),
+        ("saldo actual por moneda y sucursal", "FLEX_STTM_CUST_ACCOUNT"),
+        ("cuentas con mayor saldo bloqueado", "FLEX_STTM_CUST_ACCOUNT"),
+        ("prestamos con mayor deuda pendiente", "FLEX_CLTC_ACCOUNT_MASTER"),
         ("transacciones ocultas en estado de cuenta", "FLEX_EXT_ACCOUNT_STATEMENT"),
+        ("usuarios autorizaron movimientos contables", "FLEX_ACTB_DAILY_LOG_1"),
         ("volumen de transacciones por producto", "FLEX_EXT_ACCOUNT_TRANSACTIONS"),
     ]
 

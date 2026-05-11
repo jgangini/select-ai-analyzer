@@ -59,7 +59,7 @@ Salida esperada:
 ```
 
 - Backend: `http://127.0.0.1:8012/`
-- Frontend: `http://localhost:5173/`
+- Frontend: `http://localhost:5174/`
 
 Para reinstalar dependencias del frontend:
 
@@ -69,7 +69,16 @@ Para reinstalar dependencias del frontend:
 
 ## Verificacion
 
+Primera vez, instala dependencias y ejecuta toda la validacion:
+
 ```powershell
-py -3 -m compileall apps\backend\app
-npm run build --prefix apps\frontend
+.\scripts\check-project.ps1 -InstallDeps
 ```
+
+Luego, para correr la suite completa:
+
+```powershell
+.\scripts\check-project.ps1
+```
+
+El script valida la sintaxis del backend, ejecuta `pytest`, valida el import de FastAPI, corre `vitest` del frontend y compila el frontend.

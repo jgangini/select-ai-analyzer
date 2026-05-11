@@ -2,7 +2,7 @@ import { createRef } from 'react';
 import { cleanup, fireEvent, render, screen } from '@testing-library/react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
-import { AnalyticsChatComposer, AnalyticsChatHeader } from './AnalyticsChatPanelParts';
+import { AnalyticsChatComposer, AnalyticsChatHeader, AnalyticsSuggestedQuestionButtons } from './AnalyticsChatPanelParts';
 
 describe('AnalyticsChatPanelParts', () => {
   afterEach(() => {
@@ -67,5 +67,46 @@ describe('AnalyticsChatPanelParts', () => {
 
     expect(onChange).toHaveBeenCalledWith('Show accounts');
     expect(onSubmit).toHaveBeenCalledTimes(2);
+  });
+
+  it('renders suggested question buttons that populate the composer', () => {
+    const onSelect = vi.fn();
+
+    render(
+      <AnalyticsSuggestedQuestionButtons
+        questions={[
+          '¿Qué clientes crecieron más este mes?',
+          '¿Qué productos concentran más transacciones?',
+          '¿Qué transacciones están pendientes?',
+        ]}
+        onSelect={onSelect}
+      />
+    );
+
+    fireEvent.click(screen.getByRole('button', { name: '¿Qué productos concentran más transacciones?' }));
+
+    expect(onSelect).toHaveBeenCalledWith('¿Qué productos concentran más transacciones?');
+  });
+
+  it('refreshes one suggested question without selecting it', () => {
+    const onSelect = vi.fn();
+    const onRefreshQuestion = vi.fn();
+
+    render(
+      <AnalyticsSuggestedQuestionButtons
+        questions={[
+          '¿Cuál es el saldo actual por moneda y sucursal?',
+          '¿Qué cuentas concentran mayor saldo bloqueado?',
+          '¿Qué préstamos tienen mayor deuda pendiente?',
+        ]}
+        onSelect={onSelect}
+        onRefreshQuestion={onRefreshQuestion}
+      />
+    );
+
+    fireEvent.click(screen.getByRole('button', { name: /cambiar pregunta sugerida 2/i }));
+
+    expect(onRefreshQuestion).toHaveBeenCalledWith(1);
+    expect(onSelect).not.toHaveBeenCalled();
   });
 });

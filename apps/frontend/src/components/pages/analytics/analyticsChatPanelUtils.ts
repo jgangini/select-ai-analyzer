@@ -35,12 +35,31 @@ export type AnalyticsChatMessage =
   | { id: string; role: 'user'; content: string; timestamp: Date }
   | { id: string; role: 'assistant'; content: string; timestamp: Date; result: AnalyticsChatResult; question: string };
 
+export const GENAI_RESOURCE_EXHAUSTED_MESSAGE =
+  'El servicio de IA generativa está temporalmente saturado o sin cuota (429 RESOURCE_EXHAUSTED). Espera unos minutos y vuelve a intentar, o cambia el modelo configurado en Settings.';
+
+function isGenAiResourceExhaustedMessage(message: string): boolean {
+  const normalized = message.toLowerCase();
+  const hasCapacitySignal =
+    normalized.includes('resource_exhausted') ||
+    normalized.includes('resource exhausted') ||
+    normalized.includes('too many requests') ||
+    /"code"\s*:\s*"?429"?/.test(message);
+  const hasGenAiSignal =
+    normalized.includes('dbms_cloud_ai') ||
+    normalized.includes('generativeai') ||
+    normalized.includes('vertex-ai') ||
+    normalized.includes('ora-20400');
+  return hasCapacitySignal && hasGenAiSignal;
+}
+
 export function getAnalyticsErrorMessage(error: unknown): string {
   const maybeError =
     error && typeof error === 'object'
       ? (error as { response?: { data?: { detail?: string } }; message?: string })
       : {};
-  return maybeError.response?.data?.detail || maybeError.message || 'The question could not be executed.';
+  const message = maybeError.response?.data?.detail || maybeError.message || 'The question could not be executed.';
+  return isGenAiResourceExhaustedMessage(message) ? GENAI_RESOURCE_EXHAUSTED_MESSAGE : message;
 }
 
 export function getDefaultDashboardName(conversationTitle: string): string {

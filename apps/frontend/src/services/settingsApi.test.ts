@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
-import { resolveAgentName, resolveApplicationName } from './settingsApi';
+import { resolveAgentName, resolveApplicationName, resolveSuggestedQuestions } from './settingsApi';
 
 describe('settingsApi name resolvers', () => {
   it('uses configured branding names when present', () => {
@@ -17,5 +17,22 @@ describe('settingsApi name resolvers', () => {
     expect(resolveAgentName(payload)).toBe('Nadia Analytics');
     expect(resolveApplicationName(null)).toBe('Select AI Analytics');
     expect(resolveAgentName(undefined)).toBe('Nadia Analytics');
+  });
+
+  it('resolves configured suggested questions with defaults when missing', () => {
+    const payload = {
+      suggested_questions: {
+        question_1: '¿Qué clientes crecieron más este mes?',
+        question_2: '¿Qué productos concentran más transacciones?',
+        question_3: '¿Qué transacciones están pendientes?',
+      },
+    };
+
+    expect(resolveSuggestedQuestions(payload)).toEqual([
+      '¿Qué clientes crecieron más este mes?',
+      '¿Qué productos concentran más transacciones?',
+      '¿Qué transacciones están pendientes?',
+    ]);
+    expect(resolveSuggestedQuestions(null)).toHaveLength(10);
   });
 });

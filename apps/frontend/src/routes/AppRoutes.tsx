@@ -101,6 +101,7 @@ function authenticatedRoutes(
   onLogin: (username: string, password: string) => Promise<void>,
   onLogout: () => void,
   sidebarChats: SidebarChatState,
+  suggestedQuestions: string[],
   showToast: ShowToast
 ) {
   return (
@@ -116,7 +117,12 @@ function authenticatedRoutes(
           appName,
           sidebarChats,
           <div className="h-full">
-            <AnalyticsChatPanel agentName={agentName} showToast={showToast} userName={user?.name || 'You'} />
+            <AnalyticsChatPanel
+              agentName={agentName}
+              showToast={showToast}
+              suggestedQuestions={suggestedQuestions}
+              userName={user?.name || 'You'}
+            />
           </div>,
           'h-[calc(100vh-90px)] max-w-none px-0 py-0'
         )}
@@ -149,12 +155,14 @@ export function AppRoutes({
   appName,
   showToast,
   sidebarChats,
+  suggestedQuestions,
   setupGate,
 }: {
   agentName: string;
   appName: string;
   showToast: ShowToast;
   sidebarChats: SidebarChatState;
+  suggestedQuestions: string[];
   setupGate: SetupGateState;
 }) {
   const { isAuthenticated, login, logout, setupDone, showSpinner, completeSetup, user } = setupGate;
@@ -164,7 +172,7 @@ export function AppRoutes({
 
   return (
     <>
-      {authenticatedRoutes(agentName, appName, isAuthenticated, user, login, logout, sidebarChats, showToast)}
+      {authenticatedRoutes(agentName, appName, isAuthenticated, user, login, logout, sidebarChats, suggestedQuestions, showToast)}
       {suspensePage(
         <SearchChatsModal
           isAuthenticated={isAuthenticated}

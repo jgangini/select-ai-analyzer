@@ -26,7 +26,7 @@ export function getLoginErrorMessage(error: unknown): string {
 const oracleServices = [
   {
     name: 'Autonomous Database',
-    description: 'Select AI profiles, APP_AGENT registry, and analytical tables.',
+    description: 'Managed database service for governed Select AI analytics.',
     iconSvg: makeMonochromeOracleSvg(autonomousDatabaseSvg),
   },
   {

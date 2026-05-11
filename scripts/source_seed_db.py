@@ -16,6 +16,14 @@ def schema_exists(cursor, schema_name: str) -> bool:
     return bool(row and int(row[0] or 0) > 0)
 
 
+def grant_if_permitted(cursor, grant_sql: str) -> None:
+    try:
+        cursor.execute(grant_sql)
+    except Exception as exc:
+        if "ORA-01031" not in str(exc):
+            raise
+
+
 def ensure_data_schema(cursor, data_schema: str) -> None:
     if schema_exists(cursor, data_schema):
         return
@@ -23,8 +31,8 @@ def ensure_data_schema(cursor, data_schema: str) -> None:
     cursor.execute(
         f'CREATE USER {data_schema} IDENTIFIED BY "{password}" DEFAULT TABLESPACE USERS QUOTA UNLIMITED ON USERS'
     )
-    cursor.execute(f"GRANT CREATE SESSION TO {data_schema}")
-    cursor.execute(f"GRANT CREATE TABLE TO {data_schema}")
+    grant_if_permitted(cursor, f"GRANT CREATE SESSION TO {data_schema}")
+    grant_if_permitted(cursor, f"GRANT CREATE TABLE TO {data_schema}")
 
 
 def drop_table_if_exists(cursor, table_name: str, data_schema: str) -> None:

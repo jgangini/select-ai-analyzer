@@ -256,6 +256,53 @@ def test_data_schema_assertion_blocks_app_and_system_schemas() -> None:
         SelectAIDataSourceMixin._assert_data_schema("SYS")
 
 
+def test_create_data_schema_allows_dev_runtime_without_grant_any_privilege() -> None:
+    class SchemaCursor:
+        def __init__(self) -> None:
+            self.executed: list[str] = []
+
+        def execute(self, statement: str, **_params) -> None:
+            self.executed.append(statement)
+            if statement.startswith("GRANT "):
+                raise RuntimeError("ORA-01031: insufficient privileges")
+
+        def fetchone(self) -> tuple[int]:
+            return (0,)
+
+        def close(self) -> None:
+            return None
+
+    class SchemaConnection:
+        def __init__(self, cursor: SchemaCursor) -> None:
+            self._cursor = cursor
+            self.commits = 0
+            self.rollbacks = 0
+
+        def cursor(self) -> SchemaCursor:
+            return self._cursor
+
+        def commit(self) -> None:
+            self.commits += 1
+
+        def rollback(self) -> None:
+            self.rollbacks += 1
+
+        def close(self) -> None:
+            return None
+
+    cursor = SchemaCursor()
+    connection = SchemaConnection(cursor)
+    service = CatalogService(connection)  # type: ignore[arg-type]
+
+    result = service.create_data_schema("APP_AGENT_DATA")
+
+    assert result == {"schema_name": "APP_AGENT_DATA", "created": True}
+    assert any(statement.startswith("CREATE USER APP_AGENT_DATA") for statement in cursor.executed)
+    assert "GRANT CREATE TABLE TO APP_AGENT_DATA" in cursor.executed
+    assert connection.commits == 1
+    assert connection.rollbacks == 0
+
+
 def test_list_schemas_includes_default_schema_and_source_counts() -> None:
     cursor = CatalogCursor()
     connection = CatalogConnection(cursor)
