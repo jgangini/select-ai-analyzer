@@ -267,54 +267,58 @@ export function DataSourceObjectModal({
         {objectMode === 'csv' ? (
           <>
             <p className="text-sm text-oracle-medium-gray">Load a CSV into a data schema.</p>
-            <DataSourceFilePicker
-              id="data-source-csv-file"
-              label="CSV file"
-              accept=".csv,text/csv"
-              fileName={csvFile?.name}
-              onFileChange={onCsvFileChange}
-            />
-            <DataSourceFilePicker
-              id="data-source-metadata-json-file"
-              label="Metadata JSON"
-              accept=".json,application/json"
-              fileName={metadataJsonFile?.name}
-              onFileChange={onMetadataJsonFileChange}
-            />
-            <div>
-              <label htmlFor="data-source-csv-schema" className="block text-sm font-medium text-oracle-dark-gray">Target schema</label>
-              <input
-                id="data-source-csv-schema"
-                value={csvSchemaName}
-                onChange={(event) => onCsvSchemaNameChange(normalizeIdentifier(event.target.value))}
-                className="input-oracle mt-1 font-mono uppercase"
-                placeholder={DEFAULT_DATA_SCHEMA}
-                list="data-source-schema-options"
+            <div className="grid gap-4 sm:grid-cols-2">
+              <DataSourceFilePicker
+                id="data-source-csv-file"
+                label="CSV file"
+                accept=".csv,text/csv"
+                fileName={csvFile?.name}
+                onFileChange={onCsvFileChange}
               />
-              <datalist id="data-source-schema-options">
-                {userSchemaOptions(schemaOptions).map((schema) => (
-                  <option key={schema.schema_name} value={schema.schema_name}>
-                    {schema.exists ? `${schema.source_count} source(s)` : 'Create on upload'}
-                  </option>
-                ))}
-              </datalist>
-              {normalizedCsvSchema === 'APP_AGENT' ? (
-                <p className="mt-1 text-xs text-red-600">APP_AGENT is reserved for application tables.</p>
-              ) : schemaNeedsCreation ? (
-                <p className="mt-1 text-xs text-amber-700">This schema does not exist yet. You will be asked to confirm creation.</p>
-              ) : (
-                <p className="mt-1 text-xs text-oracle-light-gray">Use an existing schema or type a new one.</p>
-              )}
+              <DataSourceFilePicker
+                id="data-source-metadata-json-file"
+                label="Metadata JSON"
+                accept=".json,application/json"
+                fileName={metadataJsonFile?.name}
+                onFileChange={onMetadataJsonFileChange}
+              />
             </div>
-            <div>
-              <label htmlFor="data-source-csv-table-name" className="block text-sm font-medium text-oracle-dark-gray">Optional table name</label>
-              <input
-                id="data-source-csv-table-name"
-                value={csvTableName}
-                onChange={(event) => onCsvTableNameChange(event.target.value)}
-                className="input-oracle mt-1 font-mono uppercase"
-                placeholder="FLEX_TRANSACTIONS_TEST"
-              />
+            <div className="grid gap-4 sm:grid-cols-2">
+              <div>
+                <label htmlFor="data-source-csv-schema" className="block text-sm font-medium text-oracle-dark-gray">Target schema</label>
+                <input
+                  id="data-source-csv-schema"
+                  value={csvSchemaName}
+                  onChange={(event) => onCsvSchemaNameChange(normalizeIdentifier(event.target.value))}
+                  className="input-oracle mt-1 font-mono uppercase"
+                  placeholder={DEFAULT_DATA_SCHEMA}
+                  list="data-source-schema-options"
+                />
+                <datalist id="data-source-schema-options">
+                  {userSchemaOptions(schemaOptions).map((schema) => (
+                    <option key={schema.schema_name} value={schema.schema_name}>
+                      {schema.exists ? `${schema.source_count} source(s)` : 'Create on upload'}
+                    </option>
+                  ))}
+                </datalist>
+                {normalizedCsvSchema === 'APP_AGENT' ? (
+                  <p className="mt-1 text-xs text-red-600">APP_AGENT is reserved for application tables.</p>
+                ) : schemaNeedsCreation ? (
+                  <p className="mt-1 text-xs text-amber-700">This schema does not exist yet. You will be asked to confirm creation.</p>
+                ) : (
+                  <p className="mt-1 text-xs text-oracle-light-gray">Use an existing schema or type a new one.</p>
+                )}
+              </div>
+              <div>
+                <label htmlFor="data-source-csv-table-name" className="block text-sm font-medium text-oracle-dark-gray">Optional table name</label>
+                <input
+                  id="data-source-csv-table-name"
+                  value={csvTableName}
+                  onChange={(event) => onCsvTableNameChange(event.target.value)}
+                  className="input-oracle mt-1 font-mono uppercase"
+                  placeholder="FLEX_TRANSACTIONS_TEST"
+                />
+              </div>
             </div>
           </>
         ) : (

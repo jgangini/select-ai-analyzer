@@ -61,6 +61,25 @@ describe('DataSourceObjectModal', () => {
     expect(screen.getByText(/reserved for application tables/i)).toBeInTheDocument();
   });
 
+  it('keeps paired CSV fields in shared responsive rows', () => {
+    render(<DataSourceObjectModal {...modalProps()} />);
+
+    const csvField = screen.getByLabelText('CSV file');
+    const metadataJsonField = screen.getByLabelText('Metadata JSON');
+    const targetSchemaField = screen.getByLabelText('Target schema');
+    const tableNameField = screen.getByLabelText('Optional table name');
+
+    const csvFieldWrapper = csvField.closest('div');
+    const metadataJsonFieldWrapper = metadataJsonField.closest('div');
+    const targetSchemaWrapper = targetSchemaField.closest('div');
+    const tableNameWrapper = tableNameField.closest('div');
+
+    expect(csvFieldWrapper?.parentElement).toBe(metadataJsonFieldWrapper?.parentElement);
+    expect(csvFieldWrapper?.parentElement).toHaveClass('sm:grid-cols-2');
+    expect(targetSchemaWrapper?.parentElement).toBe(tableNameWrapper?.parentElement);
+    expect(targetSchemaWrapper?.parentElement).toHaveClass('sm:grid-cols-2');
+  });
+
   it('switches object mode through the source selector', () => {
     const onObjectModeChange = vi.fn();
 
