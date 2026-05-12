@@ -301,6 +301,38 @@ export function DataSourceObjectModal({
     </div>
   );
 
+  const targetSchemaFeedback = normalizedCsvSchema === 'APP_AGENT'
+    ? 'APP_AGENT is reserved for application tables.'
+    : schemaNeedsCreation
+      ? 'This schema does not exist yet. You will be asked to confirm creation.'
+      : '';
+
+  const targetSchemaField = (
+    <div>
+      <label htmlFor="data-source-csv-schema" className="block text-sm font-medium text-oracle-dark-gray">Target schema</label>
+      <input
+        id="data-source-csv-schema"
+        value={csvSchemaName}
+        onChange={(event) => onCsvSchemaNameChange(normalizeIdentifier(event.target.value))}
+        className="input-oracle mt-1 font-mono uppercase"
+        placeholder={DEFAULT_DATA_SCHEMA}
+        list="data-source-schema-options"
+      />
+      <datalist id="data-source-schema-options">
+        {userSchemaOptions(schemaOptions).map((schema) => (
+          <option key={schema.schema_name} value={schema.schema_name}>
+            {schema.exists ? `${schema.source_count} source(s)` : 'Create on upload'}
+          </option>
+        ))}
+      </datalist>
+      {targetSchemaFeedback ? (
+        <p className={`mt-1 text-xs ${normalizedCsvSchema === 'APP_AGENT' ? 'text-red-600' : 'text-amber-700'}`}>
+          {targetSchemaFeedback}
+        </p>
+      ) : null}
+    </div>
+  );
+
   return (
     <GlassModal
       open={open}
@@ -325,7 +357,10 @@ export function DataSourceObjectModal({
       <form onSubmit={onSubmit} className="space-y-4 overflow-y-auto bg-white/90 p-5">
         {objectMode === 'csv' ? (
           <>
-            {objectSourceField}
+            <div className="grid gap-4 md:grid-cols-2">
+              {objectSourceField}
+              {targetSchemaField}
+            </div>
             <input
               id="data-source-csv-batch-files"
               type="file"
@@ -334,31 +369,6 @@ export function DataSourceObjectModal({
               onChange={handleCsvFilesChange}
               className="hidden"
             />
-            <div>
-              <label htmlFor="data-source-csv-schema" className="block text-sm font-medium text-oracle-dark-gray">Target schema</label>
-              <input
-                id="data-source-csv-schema"
-                value={csvSchemaName}
-                onChange={(event) => onCsvSchemaNameChange(normalizeIdentifier(event.target.value))}
-                className="input-oracle mt-1 font-mono uppercase"
-                placeholder={DEFAULT_DATA_SCHEMA}
-                list="data-source-schema-options"
-              />
-              <datalist id="data-source-schema-options">
-                {userSchemaOptions(schemaOptions).map((schema) => (
-                  <option key={schema.schema_name} value={schema.schema_name}>
-                    {schema.exists ? `${schema.source_count} source(s)` : 'Create on upload'}
-                  </option>
-                ))}
-              </datalist>
-              {normalizedCsvSchema === 'APP_AGENT' ? (
-                <p className="mt-1 text-xs text-red-600">APP_AGENT is reserved for application tables.</p>
-              ) : schemaNeedsCreation ? (
-                <p className="mt-1 text-xs text-amber-700">This schema does not exist yet. You will be asked to confirm creation.</p>
-              ) : (
-                <p className="mt-1 text-xs text-oracle-light-gray">Use an existing schema or type a new one.</p>
-              )}
-            </div>
             <div className="space-y-3">
               <div className="flex flex-col gap-3 border-y border-gray-200 bg-gray-50 px-4 py-3 sm:flex-row sm:items-center sm:justify-between">
                 <label htmlFor="data-source-csv-batch-files" className="btn-secondary cursor-pointer">

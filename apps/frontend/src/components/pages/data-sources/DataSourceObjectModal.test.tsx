@@ -55,6 +55,7 @@ describe('DataSourceObjectModal', () => {
     expect(screen.getByLabelText('Target schema')).toBeInTheDocument();
     expect(screen.getByLabelText(/add files/i)).toBeInTheDocument();
     expect(screen.queryByRole('textbox', { name: /table comment/i })).not.toBeInTheDocument();
+    expect(screen.queryByText(/use an existing schema or type a new one/i)).not.toBeInTheDocument();
     expect(screen.getByText(/reserved for application tables/i)).toBeInTheDocument();
   });
 
