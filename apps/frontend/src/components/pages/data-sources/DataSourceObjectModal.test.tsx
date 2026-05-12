@@ -61,8 +61,10 @@ describe('DataSourceObjectModal', () => {
   it('omits optional display name for existing tables', () => {
     render(<DataSourceObjectModal {...modalProps({ objectMode: 'existing_table' })} />);
 
+    expect(screen.getByRole('combobox', { name: /object source/i })).toBeInTheDocument();
     expect(screen.getByRole('combobox', { name: /owner/i })).toBeInTheDocument();
     expect(screen.getByRole('combobox', { name: /table/i })).toBeInTheDocument();
+    expect(screen.queryByText(/register a table that app_agent can read/i)).not.toBeInTheDocument();
     expect(screen.queryByRole('textbox', { name: /optional display name/i })).not.toBeInTheDocument();
   });
 

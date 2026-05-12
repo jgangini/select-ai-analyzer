@@ -285,6 +285,22 @@ export function DataSourceObjectModal({
     event.preventDefault();
   };
 
+  const objectSourceField = (
+    <div>
+      <label htmlFor="data-source-object-mode" className="block text-sm font-medium text-oracle-dark-gray">Object source</label>
+      <select
+        id="data-source-object-mode"
+        value={objectMode}
+        onChange={(event) => onObjectModeChange(event.target.value as DataSourceObjectMode)}
+        className="input-oracle mt-1"
+        disabled={isUploadPending || isRegisterPending}
+      >
+        <option value="csv">CSV file</option>
+        <option value="existing_table">Existing table</option>
+      </select>
+    </div>
+  );
+
   return (
     <GlassModal
       open={open}
@@ -307,22 +323,9 @@ export function DataSourceObjectModal({
         </button>
       </div>
       <form onSubmit={onSubmit} className="space-y-4 overflow-y-auto bg-white/90 p-5">
-        <div>
-          <label htmlFor="data-source-object-mode" className="block text-sm font-medium text-oracle-dark-gray">Object source</label>
-          <select
-            id="data-source-object-mode"
-            value={objectMode}
-            onChange={(event) => onObjectModeChange(event.target.value as DataSourceObjectMode)}
-            className="input-oracle mt-1"
-            disabled={isUploadPending || isRegisterPending}
-          >
-            <option value="csv">CSV file</option>
-            <option value="existing_table">Existing table</option>
-          </select>
-        </div>
-
         {objectMode === 'csv' ? (
           <>
+            {objectSourceField}
             <input
               id="data-source-csv-batch-files"
               type="file"
@@ -421,8 +424,8 @@ export function DataSourceObjectModal({
           </>
         ) : (
           <>
-            <p className="text-sm text-oracle-medium-gray">Register a table that APP_AGENT can read.</p>
-            <div className="grid gap-4 sm:grid-cols-2">
+            <div className="grid gap-4 lg:grid-cols-3">
+              {objectSourceField}
               <div>
                 <label htmlFor="data-source-table-owner" className="block text-sm font-medium text-oracle-dark-gray">Owner</label>
                 <select
