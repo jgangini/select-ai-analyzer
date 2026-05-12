@@ -6,7 +6,9 @@ import pytest
 from scripts.load_source_seed import _runtime_db_config_path, convert_csv_value
 from scripts.source_seed_db import assert_connected_schema, drop_table_if_exists, ensure_data_schema
 from scripts.source_seed_metadata import apply_metadata, metadata_by_column, safe_constraint_name, sql_string_literal
+from scripts.source_seed_parser import SourceColumn, SourceTable
 from scripts.source_seed_registry import replace_data_source
+from scripts.source_seed_sidecar import build_source_table_metadata
 from scripts.source_seed_runtime import runtime_connection_config
 from scripts.source_seed_table_io import column_type_label, read_csv_rows, table_columns
 from scripts.source_seed_values import ColumnMetadata, convert_csv_value as convert_seed_value
@@ -93,6 +95,35 @@ def test_source_seed_metadata_helpers_normalize_sql_values() -> None:
             {"not_a_column": "ignored"},
         ]
     ) == {"AMOUNT": {"column_name": "amount", "comment": "Ledger amount"}}
+
+
+def test_source_seed_sidecar_translates_business_content_only() -> None:
+    table = SourceTable(
+        owner="APP_AGENT_DATA",
+        name="FLEX_EXT_ACCOUNT_TRANSACTIONS",
+        columns=(
+            SourceColumn(name="DRCR_IND", data_type="VARCHAR2(1)", nullable=True),
+            SourceColumn(name="ACCOUNT_NO", data_type="VARCHAR2(20)", nullable=True),
+            SourceColumn(name="BOOK_DT", data_type="DATE", nullable=True),
+        ),
+    )
+
+    payload = build_source_table_metadata(table)
+
+    assert payload["table_name"] == "FLEX_EXT_ACCOUNT_TRANSACTIONS"
+    assert "débitos" in payload["table_comment"]
+    first_column = payload["columns"][0]
+    assert first_column["column_name"] == "DRCR_IND"
+    assert first_column["ui_display"] == "Drcr Ind"
+    assert first_column["classification"] == "status"
+    assert first_column["comment"] == "Indicador de débito/crédito. D significa débito y C significa crédito."
+    generic_column = payload["columns"][2]
+    assert generic_column["column_name"] == "BOOK_DT"
+    assert generic_column["ui_display"] == "Book Dt"
+    assert generic_column["classification"] == "date"
+    assert generic_column["comment"] == (
+        "Fecha operativa o marca de tiempo usada por la tabla FLEX_EXT_ACCOUNT_TRANSACTIONS."
+    )
 
 
 def test_apply_metadata_collects_nonfatal_ddl_warnings() -> None:
