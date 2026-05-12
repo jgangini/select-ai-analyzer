@@ -3,7 +3,7 @@ export const STARTER_SUGGESTED_QUESTIONS = [
   '¿Qué cuentas tienen mayor saldo bloqueado?',
   '¿Qué productos tienen mayor volumen de transacciones este mes?',
   '¿Cuál es la tendencia diaria de débitos vs créditos en marzo?',
-  '¿Qué clientes aumentaron su volumen de transacciones más del 50% este mes?',
+  '¿Qué clientes tienen mayor volumen de transacciones este mes?',
   '¿Qué cuentas tienen más retiros ATM?',
   '¿Qué préstamos tienen mayor deuda pendiente?',
   '¿Qué contratos de depósito vencen en los próximos 30 días?',

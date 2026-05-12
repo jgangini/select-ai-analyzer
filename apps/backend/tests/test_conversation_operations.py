@@ -3,6 +3,7 @@ import json
 import pytest
 
 from apps.backend.app.select_ai.conversation_operations import SelectAIConversationMixin, _materialize_stored_result
+from apps.backend.app.select_ai.conversation_store import _select_user_question_usage
 from apps.backend.app.select_ai.conversations import ensure_conversation, normalize_conversation_id
 
 
@@ -135,6 +136,16 @@ def test_record_question_run_rejects_other_users_conversation() -> None:
 
     assert len(cursor.execute_calls) == 1
     assert connection.rollback_count == 1
+
+
+def test_question_usage_counts_only_successful_data_results() -> None:
+    cursor = RecordingCursor()
+
+    _select_user_question_usage(cursor, user_id=7)
+
+    statement, params = cursor.execute_calls[0]
+    assert "qr.row_count > 0" in statement
+    assert params == {"user_id": 7}
 
 
 def test_materialize_stored_conversation_result_validates_sql_and_chart_spec() -> None:

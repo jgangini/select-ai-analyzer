@@ -41,6 +41,16 @@ def test_customer_growth_question_has_deterministic_fallback_sql() -> None:
     assert "TRANSACTION_GROWTH_PCT" in sql
 
 
+def test_customer_volume_question_has_deterministic_fallback_sql() -> None:
+    sql = _fallback_sql_for_question("¿Qué clientes tienen mayor volumen de transacciones este mes?")
+
+    assert sql is not None
+    assert "FLEX_EXT_ACCOUNT_TRANSACTIONS" in sql
+    assert "RELATED_CUSTOMER" in sql
+    assert "TRANSACTION_COUNT" in sql
+    assert "TRANSACTION_GROWTH_PCT" not in sql
+
+
 def test_starter_suggested_questions_have_deterministic_fallback_sql() -> None:
     for question in STARTER_SUGGESTED_QUESTIONS:
         assert _fallback_sql_for_question(question), question
@@ -81,10 +91,10 @@ CHARTABLE_STARTER_QUESTION_SAMPLES = (
     ),
     (
         STARTER_SUGGESTED_QUESTIONS[4],
-        ["RELATED_CUSTOMER", "CURRENT_TRANSACTION_COUNT", "TRANSACTION_GROWTH_PCT"],
+        ["RELATED_CUSTOMER", "TRANSACTION_COUNT", "TOTAL_LCY_AMOUNT"],
         [
-            {"RELATED_CUSTOMER": "CUST000123", "CURRENT_TRANSACTION_COUNT": 18, "TRANSACTION_GROWTH_PCT": 80},
-            {"RELATED_CUSTOMER": "CUST009999", "CURRENT_TRANSACTION_COUNT": 12, "TRANSACTION_GROWTH_PCT": 55},
+            {"RELATED_CUSTOMER": "CUST000123", "TRANSACTION_COUNT": 18, "TOTAL_LCY_AMOUNT": 45200},
+            {"RELATED_CUSTOMER": "CUST009999", "TRANSACTION_COUNT": 12, "TOTAL_LCY_AMOUNT": 31800},
         ],
     ),
     (

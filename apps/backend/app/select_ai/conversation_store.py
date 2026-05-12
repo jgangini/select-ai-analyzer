@@ -228,6 +228,7 @@ def _select_user_question_usage(cursor, *, user_id: int) -> None:
           ON c.conversation_id = qr.conversation_id
         WHERE c.conversation_type = 'analytics'
           AND (:user_id = 0 OR c.created_by_user_id = :user_id)
+          AND qr.row_count > 0
         GROUP BY DBMS_LOB.SUBSTR(qr.question_text, 1000, 1)
         ORDER BY COUNT(*) DESC, MAX(qr.created_at) DESC
         """,

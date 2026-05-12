@@ -309,7 +309,15 @@ def _is_customer_transaction_growth_intent(question_tokens: set[str]) -> bool:
     return (
         _is_customer_intent(question_tokens)
         and _question_has_any(question_tokens, "TRANSACCION", "TRANSACCIONES", "TXN", "TRN")
-        and _question_has_any(question_tokens, "VOLUMEN", "VOLUME", "COUNT", "AUMENTO", "INCREASE", "GROWTH")
+        and _question_has_any(question_tokens, "AUMENTO", "AUMENTARON", "CRECIERON", "CRECIMIENTO", "INCREASE", "GROWTH")
+    )
+
+
+def _is_customer_transaction_volume_intent(question_tokens: set[str]) -> bool:
+    return (
+        _is_customer_intent(question_tokens)
+        and _question_has_any(question_tokens, "TRANSACCION", "TRANSACCIONES", "TXN", "TRN")
+        and _question_has_any(question_tokens, "VOLUMEN", "VOLUME", "COUNT")
     )
 
 
@@ -395,6 +403,10 @@ TERM_DEPOSIT_MATURITY_HINTS = (
 INTEREST_HINTS = ("For account interest processing, FLEX_ICTB_ACC_PR.ACC is the account and LAST_LIQ_DT is the last liquidation date.",)
 OPERATING_DATE_HINTS = ("For operating dates, FLEX_STTM_DATES.NEXT_WORKING_DAY is the next business day.",)
 CUSTOMER_HINTS = ("For external account transactions, RELATED_CUSTOMER stores the customer id.",)
+CUSTOMER_VOLUME_HINTS = (
+    "For customer transaction volume this month, aggregate FLEX_EXT_ACCOUNT_TRANSACTIONS by RELATED_CUSTOMER "
+    "between TRUNC(SYSDATE,'MM') and ADD_MONTHS(TRUNC(SYSDATE,'MM'),1), then rank by COUNT(TXN_ID) and SUM(LCY_AMOUNT).",
+)
 CUSTOMER_GROWTH_HINTS = (
     "For customers whose transaction volume increased more than 50% this month, compare COUNT(TXN_ID) by RELATED_CUSTOMER "
     "between TRUNC(SYSDATE,'MM') and ADD_MONTHS(TRUNC(SYSDATE,'MM'), -1) in FLEX_EXT_ACCOUNT_TRANSACTIONS.",
@@ -490,6 +502,22 @@ CUSTOMER_GROWTH_FALLBACK_SQL = """
       AND previous_month.TRANSACTION_COUNT > 0
       AND current_month.TRANSACTION_COUNT > previous_month.TRANSACTION_COUNT * 1.5
     ORDER BY TRANSACTION_GROWTH_PCT DESC, current_month.TRANSACTION_COUNT DESC
+    FETCH FIRST 50 ROWS ONLY
+"""
+CUSTOMER_VOLUME_FALLBACK_SQL = """
+    SELECT
+        RELATED_CUSTOMER,
+        COUNT(TXN_ID) AS TRANSACTION_COUNT,
+        SUM(NVL(LCY_AMOUNT, 0)) AS TOTAL_LCY_AMOUNT,
+        COUNT(DISTINCT ACCOUNT_NO) AS ACCOUNT_COUNT,
+        MIN(TRN_DT) AS FIRST_TRANSACTION_DATE,
+        MAX(TRN_DT) AS LAST_TRANSACTION_DATE
+    FROM APP_AGENT_DATA.FLEX_EXT_ACCOUNT_TRANSACTIONS
+    WHERE RELATED_CUSTOMER IS NOT NULL
+      AND TRN_DT >= TRUNC(SYSDATE, 'MM')
+      AND TRN_DT < ADD_MONTHS(TRUNC(SYSDATE, 'MM'), 1)
+    GROUP BY RELATED_CUSTOMER
+    ORDER BY TRANSACTION_COUNT DESC, TOTAL_LCY_AMOUNT DESC
     FETCH FIRST 50 ROWS ONLY
 """
 ATM_WITHDRAWAL_FALLBACK_SQL = """
@@ -596,6 +624,7 @@ def _sql_generation_hints(question: str) -> str:
         (_is_operating_date_hint_intent(question_tokens), OPERATING_DATE_HINTS),
         (_is_customer_intent(question_tokens), CUSTOMER_HINTS),
         (_is_customer_transaction_growth_intent(question_tokens), CUSTOMER_GROWTH_HINTS),
+        (_is_customer_transaction_volume_intent(question_tokens), CUSTOMER_VOLUME_HINTS),
         (_is_product_transaction_volume_intent(question_tokens), PRODUCT_VOLUME_HINTS),
         (_is_loan_debt_intent(question_tokens), LOAN_DEBT_HINTS),
     )
@@ -613,6 +642,7 @@ def _fallback_sql_for_question(question: str) -> str | None:
         (_is_product_transaction_volume_intent(question_tokens), PRODUCT_VOLUME_FALLBACK_SQL),
         (_is_daily_debit_credit_trend_intent(question_tokens), DAILY_DEBIT_CREDIT_TREND_FALLBACK_SQL),
         (_is_customer_transaction_growth_intent(question_tokens), CUSTOMER_GROWTH_FALLBACK_SQL),
+        (_is_customer_transaction_volume_intent(question_tokens), CUSTOMER_VOLUME_FALLBACK_SQL),
         (_is_atm_intent(question_tokens), ATM_WITHDRAWAL_FALLBACK_SQL),
         (_is_loan_debt_intent(question_tokens), LOAN_DEBT_FALLBACK_SQL),
         (_is_teller_intent(question_tokens), TELLER_FALLBACK_SQL),
