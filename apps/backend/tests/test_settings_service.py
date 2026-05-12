@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+import json
+
 import pytest
 
 from apps.backend.app.services.settings_service import AvatarValidationError, SettingsService
@@ -42,7 +44,7 @@ def make_service(tmp_path, *, config: FakeConfigService | None = None, setup: Fa
     )
 
 
-def test_get_payload_returns_defaults_when_config_table_is_missing(tmp_path) -> None:
+def test_get_payload_returns_starter_seed_when_config_table_is_missing(tmp_path) -> None:
     service = make_service(tmp_path, config=FakeConfigService(exists=False))
 
     payload = service.get_payload()
@@ -51,8 +53,8 @@ def test_get_payload_returns_defaults_when_config_table_is_missing(tmp_path) -> 
     assert payload["app"]["agent_name"] == "Nadia Analytics"
     assert payload["app"]["avatar_url"] == ""
     assert payload["select_ai"]["profile_name"] == "APP_AGENT_ANALYTICS"
-    assert len(payload["suggested_questions"]) == 10
-    assert payload["suggested_questions"]["question_1"] == "¿Cuál es el saldo actual por moneda y sucursal?"
+    assert len(payload["suggested_questions"]["items"]) == 10
+    assert payload["suggested_questions"]["items"][0] == "¿Cuál es el saldo actual por moneda y sucursal?"
 
 
 def test_public_payload_uses_grouped_config_values_and_runtime_avatar(tmp_path) -> None:
@@ -65,7 +67,10 @@ def test_public_payload_uses_grouped_config_values_and_runtime_avatar(tmp_path) 
                 {"key": "app.avatar_url", "value": "stale"},
             ],
             "suggested_questions": [
-                {"key": "suggested_questions.question_1", "value": "  ¿Qué clientes crecieron?  "},
+                {
+                    "key": "suggested_questions.items",
+                    "value": json.dumps(["  ¿Qué clientes crecieron?  "], ensure_ascii=False),
+                },
             ],
             "genai": [{"key": "genai.model", "value": "cohere.command-r-plus"}],
         }
@@ -79,12 +84,20 @@ def test_public_payload_uses_grouped_config_values_and_runtime_avatar(tmp_path) 
     assert public_payload["app"]["agent_name"] == "Ada"
     assert public_payload["app"]["avatar_url"].startswith("/api/settings/agent-avatar?v=")
     assert public_payload["app"]["avatar_updated_at"] > 0
-    assert public_payload["suggested_questions"]["question_1"] == "¿Qué clientes crecieron?"
-    assert public_payload["suggested_questions"]["question_10"]
+    assert public_payload["suggested_questions"]["items"][0] == "¿Qué clientes crecieron?"
+    assert public_payload["suggested_questions"]["items"] == ["¿Qué clientes crecieron?"]
 
 
 def test_update_skips_dynamic_avatar_fields_and_writes_config_entries(tmp_path) -> None:
-    config = FakeConfigService(groups={"app": [{"key": "app.name", "value": "Portal"}]})
+    config = FakeConfigService(
+        groups={
+            "app": [{"key": "app.name", "value": "Portal"}],
+            "suggested_questions": [
+                {"key": "suggested_questions.question_1", "value": "Old one"},
+                {"key": "suggested_questions.question_2", "value": "Old two"},
+            ],
+        }
+    )
     service = make_service(tmp_path, config=config)
 
     result = service.update(
@@ -96,16 +109,38 @@ def test_update_skips_dynamic_avatar_fields_and_writes_config_entries(tmp_path) 
             },
             "custom.flag": True,
             "suggested_questions": {
-                "question_1": "Which customers increased volume?",
+                "items": [
+                    "Which customers increased volume?",
+                    "Which accounts are inactive?",
+                    "Which products lead transaction volume?",
+                ],
             },
         }
     )
 
     written_keys = [entry["key"] for entry in config.upserts[0]]
-    assert written_keys == ["app.name", "custom.flag", "suggested_questions.question_1"]
-    assert config.deleted_keys == [[]]
+    assert written_keys == [
+        "app.name",
+        "custom.flag",
+        "suggested_questions.items",
+    ]
+    question_entry = config.upserts[0][-1]
+    assert question_entry["type"] == "json"
+    assert json.loads(question_entry["value"]) == [
+        "Which customers increased volume?",
+        "Which accounts are inactive?",
+        "Which products lead transaction volume?",
+    ]
+    assert config.deleted_keys == [["suggested_questions.question_1", "suggested_questions.question_2"]]
     assert result["success"] is True
     assert result["settings"]["app"]["name"] == "Portal"
+
+
+def test_update_requires_at_least_three_starter_questions(tmp_path) -> None:
+    service = make_service(tmp_path)
+
+    with pytest.raises(ValueError, match="At least 3 starter questions"):
+        service.update({"suggested_questions": {"items": ["One", "Two"]}})
 
 
 def test_avatar_upload_replaces_existing_file_and_reports_media_type(tmp_path) -> None:

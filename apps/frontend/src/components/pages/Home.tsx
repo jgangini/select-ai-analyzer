@@ -1,5 +1,7 @@
 import { useQuery } from '@tanstack/react-query';
+import { useNavigate } from 'react-router-dom';
 
+import { analyticsApi, analyticsQueryKeys } from '../../services/analyticsApi';
 import { dataSourcesApi, dataSourcesQueryKeys } from '../../services/dataSourcesApi';
 import { buildHomeStatCards, buildReadinessSummary, formatNumber, type StatKind } from './homeStats';
 
@@ -28,15 +30,25 @@ function StatIcon({ kind }: { kind: StatKind }) {
   );
 }
 
-export function Home({ appName }: { appName: string }) {
+export function Home({ appName, currentUserId }: { appName: string; currentUserId: number | string }) {
+  const navigate = useNavigate();
   const sourcesQuery = useQuery({
     queryKey: dataSourcesQueryKeys.list,
     queryFn: () => dataSourcesApi.list().then((response) => response.data.items),
+  });
+  const recommendationsQuery = useQuery({
+    queryKey: analyticsQueryKeys.questionRecommendations(currentUserId, 6),
+    queryFn: () => analyticsApi.getQuestionRecommendations(6).then((response) => response.data),
+    staleTime: 30_000,
   });
 
   const sources = sourcesQuery.data ?? [];
   const statCards = buildHomeStatCards(sources);
   const { readinessRate, readinessSummary } = buildReadinessSummary(sources, sourcesQuery.isLoading);
+  const frequentQuestions = recommendationsQuery.data?.frequent || [];
+  const openQuestion = (question: string) => {
+    navigate(`/chat?question=${encodeURIComponent(question)}`);
+  };
 
   return (
     <div className="space-y-6">
@@ -70,6 +82,35 @@ export function Home({ appName }: { appName: string }) {
           </div>
         </div>
       </section>
+
+      {frequentQuestions.length > 0 ? (
+        <section className="home-light-card rounded-3xl p-6 sm:p-7">
+          <div className="flex flex-col gap-2">
+            <p className="text-[11px] font-bold uppercase tracking-[0.18em] text-oracle-red">
+              Your frequent questions
+            </p>
+            <h2 className="home-light-title text-2xl font-semibold">
+              Continue with what you ask most
+            </h2>
+          </div>
+          <div className="mt-5 grid gap-2 md:grid-cols-2">
+            {frequentQuestions.map((item) => (
+              <button
+                key={item.question}
+                type="button"
+                onClick={() => openQuestion(item.question)}
+                className="rounded-lg border border-oracle-border bg-white px-4 py-3 text-left text-sm font-medium text-oracle-dark-gray shadow-sm transition hover:border-oracle-red hover:shadow-md"
+                title={item.question}
+              >
+                <span className="block leading-5">{item.question}</span>
+                <span className="mt-2 block text-xs font-semibold text-oracle-light-gray">
+                  Used {item.usage_count} time{item.usage_count === 1 ? '' : 's'}
+                </span>
+              </button>
+            ))}
+          </div>
+        </section>
+      ) : null}
 
       <section className="home-light-card home-ingestion-card rounded-3xl p-6 sm:p-7">
         <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">

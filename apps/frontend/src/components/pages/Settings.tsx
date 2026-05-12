@@ -6,9 +6,9 @@ import { ConfirmQuestionModal } from '../common/Modal';
 import { settingsApi, settingsQueryKeys } from '../../services/settingsApi';
 import { DEFAULT_AGENT_DISPLAY_NAME, DEFAULT_APP_DISPLAY_NAME } from '../../config/branding';
 import {
-  DEFAULT_SUGGESTED_QUESTIONS,
-  SUGGESTED_QUESTION_KEYS,
-  normalizeSuggestedQuestionRecord,
+  STARTER_SUGGESTED_QUESTIONS,
+  compactQuestions,
+  normalizeSuggestedQuestions,
 } from '../../config/suggestedQuestions';
 
 type SettingsPayload = {
@@ -16,7 +16,7 @@ type SettingsPayload = {
   select_ai?: Record<string, unknown>;
   genai?: Record<string, unknown>;
   oci?: Record<string, unknown>;
-  suggested_questions?: Record<string, unknown>;
+  suggested_questions?: Record<string, unknown> | { items?: string[] };
 };
 
 type ShowToast = (message: string, type?: 'success' | 'error' | 'info' | 'warning') => void;
@@ -44,13 +44,21 @@ export function normalizeSettingsPayload(payload: SettingsPayload): SettingsPayl
     app,
     select_ai: selectAi,
     genai,
-    suggested_questions: normalizeSuggestedQuestionRecord(payload?.suggested_questions),
+    suggested_questions: { items: normalizeSuggestedQuestions(payload?.suggested_questions) },
   };
 }
 
 export function fieldValue(payload: SettingsPayload | null, category: string, field: string, defaultValue = ''): string {
-  const value = payload?.[category as keyof SettingsPayload]?.[field];
+  const group = payload?.[category as keyof SettingsPayload];
+  const value = group && typeof group === 'object' ? (group as Record<string, unknown>)[field] : undefined;
   return value === undefined || value === null ? defaultValue : String(value);
+}
+
+function suggestedQuestionItems(value: unknown): string[] {
+  if (value && typeof value === 'object' && Array.isArray((value as { items?: unknown }).items)) {
+    return ((value as { items: unknown[] }).items).map((item) => String(item ?? ''));
+  }
+  return normalizeSuggestedQuestions(value);
 }
 
 export function Settings({ showToast }: { showToast: ShowToast }) {
@@ -93,6 +101,39 @@ export function Settings({ showToast }: { showToast: ShowToast }) {
     }));
   };
 
+  const updateSuggestedQuestion = (index: number, value: string) => {
+    setFormData((prev) => {
+      const items = suggestedQuestionItems(prev?.suggested_questions);
+      return {
+        ...(prev || {}),
+        suggested_questions: {
+          items: items.map((question, itemIndex) => (itemIndex === index ? value : question)),
+        },
+      };
+    });
+  };
+
+  const addSuggestedQuestion = () => {
+    setFormData((prev) => {
+      const items = suggestedQuestionItems(prev?.suggested_questions);
+      return {
+        ...(prev || {}),
+        suggested_questions: { items: [...items, ''] },
+      };
+    });
+  };
+
+  const removeSuggestedQuestion = (index: number) => {
+    setFormData((prev) => {
+      const items = suggestedQuestionItems(prev?.suggested_questions);
+      if (compactQuestions(items).length <= 3) return prev;
+      return {
+        ...(prev || {}),
+        suggested_questions: { items: items.filter((_question, itemIndex) => itemIndex !== index) },
+      };
+    });
+  };
+
   const applicationDisplayName = useMemo(
     () => fieldValue(formData, 'app', 'name', DEFAULT_APP_DISPLAY_NAME),
     [formData]
@@ -110,7 +151,16 @@ export function Settings({ showToast }: { showToast: ShowToast }) {
   ];
 
   const confirmSave = () => {
-    updateMutation.mutate(normalizeSettingsPayload(formData));
+    const questions = compactQuestions(suggestedQuestionItems(formData.suggested_questions));
+    if (questions.length < 3) {
+      showToast('Keep at least three starter questions.', 'error');
+      setShowSaveModal(false);
+      return;
+    }
+    updateMutation.mutate({
+      ...normalizeSettingsPayload(formData),
+      suggested_questions: { items: questions },
+    });
     setShowSaveModal(false);
   };
 
@@ -296,43 +346,50 @@ export function Settings({ showToast }: { showToast: ShowToast }) {
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 10h8M8 14h5m-9 7V5a2 2 0 012-2h12a2 2 0 012 2v16l-4-3H6a2 2 0 01-2-2z" />
                 </svg>
                 <div>
-                  <p className="font-medium text-gray-800">Suggested Questions</p>
-                  <p className="text-sm text-gray-600">Maintain the representative prompts shown when a new chat starts</p>
+                  <p className="font-medium text-gray-800">Starter Questions</p>
+                  <p className="text-sm text-gray-600">Global question library for all users</p>
                 </div>
               </div>
 
               <div className="overflow-hidden rounded-lg border border-gray-200 bg-white">
-                {SUGGESTED_QUESTION_KEYS.map((key, index) => (
-                  <div key={key} className="flex gap-3 border-b border-gray-200 bg-white p-2.5 last:border-b-0">
+                {suggestedQuestionItems(formData.suggested_questions).map((question, index) => (
+                  <div key={`starter-question-${index}`} className="flex gap-3 border-b border-gray-200 bg-white p-2.5 last:border-b-0">
                     <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-md border border-gray-200 bg-gray-50 text-xs font-semibold text-oracle-medium-gray">
                       {String(index + 1).padStart(2, '0')}
                     </div>
                     <div className="min-w-0 flex-1 self-center">
-                      <label className="sr-only" htmlFor={`suggested-question-${key}`}>
-                        Pregunta {index + 1}
+                      <label className="sr-only" htmlFor={`suggested-question-${index}`}>
+                        Starter question {index + 1}
                       </label>
                       <input
-                        id={`suggested-question-${key}`}
+                        id={`suggested-question-${index}`}
                         type="text"
-                        value={fieldValue(
-                          formData,
-                          'suggested_questions',
-                          key,
-                          DEFAULT_SUGGESTED_QUESTIONS[index]
-                        )}
-                        onChange={(event) => updateField('suggested_questions', key, event.target.value)}
+                        value={question}
+                        onChange={(event) => updateSuggestedQuestion(index, event.target.value)}
                         className="input-oracle h-9 truncate text-sm"
-                        title={fieldValue(
-                          formData,
-                          'suggested_questions',
-                          key,
-                          DEFAULT_SUGGESTED_QUESTIONS[index]
-                        )}
+                        placeholder={STARTER_SUGGESTED_QUESTIONS[index % STARTER_SUGGESTED_QUESTIONS.length]}
+                        title={question}
                       />
                     </div>
+                    <button
+                      type="button"
+                      aria-label={`Remove starter question ${index + 1}`}
+                      onClick={() => removeSuggestedQuestion(index)}
+                      disabled={compactQuestions(suggestedQuestionItems(formData.suggested_questions)).length <= 3}
+                      className="flex h-9 w-9 shrink-0 items-center justify-center rounded-md border border-gray-200 text-oracle-light-gray transition hover:border-oracle-red hover:text-oracle-red disabled:cursor-not-allowed disabled:opacity-40"
+                    >
+                      ×
+                    </button>
                   </div>
                 ))}
               </div>
+              <button
+                type="button"
+                onClick={addSuggestedQuestion}
+                className="rounded-md border border-oracle-border px-3 py-2 text-sm font-medium text-oracle-dark-gray transition hover:border-oracle-red hover:text-oracle-red"
+              >
+                Add question
+              </button>
             </div>
           )}
         </div>

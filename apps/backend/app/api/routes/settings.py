@@ -35,7 +35,10 @@ def get_public_settings_payload() -> dict:
 
 @router.put("", dependencies=[Depends(get_current_user)])
 def update_settings(request: SettingsUpdateRequest) -> dict:
-    return get_settings_service().update(request.updates)
+    try:
+        return get_settings_service().update(request.updates)
+    except ValueError as exc:
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
 
 
 @router.get("/status", dependencies=[Depends(get_current_user)])
@@ -45,7 +48,10 @@ def settings_status() -> dict:
 
 @router.post("/reset", dependencies=[Depends(get_current_user)])
 def reset_settings() -> dict:
-    return get_settings_service().reset()
+    try:
+        return get_settings_service().reset()
+    except ValueError as exc:
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
 
 
 @router.get("/agent-avatar")

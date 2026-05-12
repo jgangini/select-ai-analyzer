@@ -18,8 +18,10 @@ from apps.backend.app.select_ai.conversation_store import (
     _select_conversation_owner,
     _select_conversation_summary,
     _select_question_runs,
+    _select_user_question_usage,
 )
 from apps.backend.app.select_ai.charting import validate_chart_spec
+from apps.backend.app.select_ai.question_recommendations import build_question_recommendations
 from apps.backend.app.select_ai.sql_validation import validate_read_only_select
 from apps.backend.app.select_ai.value_serialization import _json_loads
 from apps.backend.app.select_ai.value_serialization import _json_safe, _rows_as_dicts
@@ -242,6 +244,22 @@ class SelectAIConversationMixin(SelectAIConversationMutationMixin):
                 limit_value=safe_limit,
             )
             return _rows_as_dicts(cursor)
+
+    def question_recommendations(
+        self,
+        *,
+        catalog_questions: list[str],
+        user_id: int = 0,
+        limit: int = 12,
+    ) -> dict[str, Any]:
+        with _open_cursor(self) as (_conn, cursor):
+            _select_user_question_usage(cursor, user_id=int(user_id or 0))
+            usage_rows = _rows_as_dicts(cursor)
+        return build_question_recommendations(
+            catalog_questions=catalog_questions,
+            usage_rows=usage_rows,
+            limit=limit,
+        )
 
     def get_conversation(
         self,

@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import json
 from pathlib import Path
 from typing import Any, Protocol
 
@@ -10,9 +11,11 @@ from apps.backend.app.services.runtime_config_service import ConfigService
 _DYNAMIC_APP_FIELDS = {"avatar_url", "avatar_updated_at"}
 _HIDDEN_CONFIG_CATEGORIES: set[str] = set()
 _RETIRED_CONFIG_KEYS: set[str] = set()
+SUGGESTED_QUESTIONS_CONFIG_KEY = "suggested_questions.items"
+RETIRED_SUGGESTED_QUESTION_PREFIX = "suggested_questions.question_"
 DEFAULT_APP_NAME = "Select AI Analytics"
 DEFAULT_AGENT_NAME = "Nadia Analytics"
-DEFAULT_SUGGESTED_QUESTIONS = (
+STARTER_SUGGESTED_QUESTIONS = (
     "¿Cuál es el saldo actual por moneda y sucursal?",
     "¿Qué cuentas tienen mayor saldo bloqueado?",
     "¿Qué productos tienen mayor volumen de transacciones este mes?",
@@ -62,25 +65,78 @@ def _default_payload() -> dict[str, Any]:
         "genai": {
             "model": "google.gemini-2.5-flash",
         },
-        "suggested_questions": _default_suggested_questions_payload(),
+        "suggested_questions": _starter_suggested_questions_payload(),
     }
 
 
-def _default_suggested_questions_payload() -> dict[str, str]:
-    return {
-        f"question_{index}": question
-        for index, question in enumerate(DEFAULT_SUGGESTED_QUESTIONS, start=1)
-    }
+def _compact_suggested_questions(values: list[Any] | tuple[Any, ...]) -> list[str]:
+    seen: set[str] = set()
+    questions: list[str] = []
+    for value in values:
+        question = str(value or "").strip()
+        normalized = " ".join(question.lower().split()).strip(" ?¿!¡.")
+        if not question or not normalized or normalized in seen:
+            continue
+        seen.add(normalized)
+        questions.append(question)
+    return questions
 
 
-def _public_suggested_questions(payload: dict[str, Any]) -> dict[str, str]:
-    configured = payload.get("suggested_questions") if isinstance(payload, dict) else {}
-    configured = configured if isinstance(configured, dict) else {}
-    defaults = _default_suggested_questions_payload()
-    return {
-        key: str(configured.get(key) or defaults[key]).strip() or defaults[key]
-        for key in defaults
-    }
+def _starter_suggested_questions_payload() -> dict[str, list[str]]:
+    return {"items": list(STARTER_SUGGESTED_QUESTIONS)}
+
+
+def _coerce_suggested_questions(value: Any, *, minimum: int) -> list[str]:
+    if isinstance(value, dict):
+        if isinstance(value.get("items"), list):
+            questions = _compact_suggested_questions(value.get("items") or [])
+        else:
+            raise ValueError("Starter questions must be submitted as an items list.")
+    elif isinstance(value, list):
+        questions = _compact_suggested_questions(value)
+    else:
+        raise ValueError("Starter questions must be submitted as an items list.")
+    if len(questions) < minimum:
+        raise ValueError(f"At least {minimum} starter questions are required.")
+    return questions
+
+
+def _stored_suggested_questions(value: Any) -> list[str]:
+    try:
+        parsed = json.loads(str(value or ""))
+    except json.JSONDecodeError as exc:
+        raise ValueError("Stored starter questions are not valid JSON.") from exc
+    return _coerce_suggested_questions({"items": parsed}, minimum=1)
+
+
+def _suggested_questions_from_config_groups(groups: dict[str, list[dict[str, Any]]]) -> list[str]:
+    entries = groups.get("suggested_questions") or []
+    for entry in entries:
+        key = str(entry.get("key") or "")
+        if key == SUGGESTED_QUESTIONS_CONFIG_KEY:
+            return _stored_suggested_questions(entry.get("value"))
+    return list(STARTER_SUGGESTED_QUESTIONS)
+
+
+def _suggested_question_entries(values: Any) -> list[dict[str, Any]]:
+    questions = _coerce_suggested_questions(values, minimum=3)
+    return [
+        {
+            "key": SUGGESTED_QUESTIONS_CONFIG_KEY,
+            "value": json.dumps(questions, ensure_ascii=False),
+            "category": "suggested_questions",
+            "type": "json",
+            "description": "Global starter question library",
+        }
+    ]
+
+
+def _retired_suggested_question_keys_from_config(groups: dict[str, list[dict[str, Any]]]) -> list[str]:
+    return sorted(
+        str(entry.get("key") or "")
+        for entry in groups.get("suggested_questions", [])
+        if str(entry.get("key") or "").startswith(RETIRED_SUGGESTED_QUESTION_PREFIX)
+    )
 
 
 def _entry_from_setting(category: str, field: str, value: Any) -> dict[str, Any]:
@@ -89,7 +145,7 @@ def _entry_from_setting(category: str, field: str, value: Any) -> dict[str, Any]
         "key": key,
         "value": value,
         "category": category,
-        "description": f"Actualizado desde settings UI: {key}",
+        "description": f"Updated from settings UI: {key}",
     }
 
 
@@ -134,14 +190,20 @@ class SettingsService:
                 "avatar_url": str(app_payload.get("avatar_url") or "").strip(),
                 "avatar_updated_at": int(app_payload.get("avatar_updated_at") or 0),
             },
-            "suggested_questions": _public_suggested_questions(payload),
+            "suggested_questions": payload.get("suggested_questions") or _starter_suggested_questions_payload(),
         }
 
     def update(self, updates: dict[str, Any]) -> dict[str, Any]:
         entries = []
+        deleted_keys = set(_RETIRED_CONFIG_KEYS)
+        current_groups = self.config_service.list_grouped()
+        deleted_keys.update(_retired_suggested_question_keys_from_config(current_groups))
         for category, values in updates.items():
             category_key = str(category)
             if category_key in _HIDDEN_CONFIG_CATEGORIES:
+                continue
+            if category_key == "suggested_questions":
+                entries.extend(_suggested_question_entries(values))
                 continue
             if isinstance(values, dict):
                 for field, value in values.items():
@@ -161,12 +223,12 @@ class SettingsService:
                         "key": key,
                         "value": values,
                         "category": key.split(".", 1)[0] if "." in key else "general",
-                        "description": f"Actualizado desde settings UI: {key}",
+                        "description": f"Updated from settings UI: {key}",
                     }
                 )
         if entries:
             self.config_service.upsert_many(entries)
-        self.config_service.delete_keys(sorted(_RETIRED_CONFIG_KEYS))
+        self.config_service.delete_keys(sorted(deleted_keys))
         return {"success": True, "settings": self._build_payload()}
 
     def is_setup_complete(self) -> bool:
@@ -177,6 +239,9 @@ class SettingsService:
         for category, values in _default_payload().items():
             if not isinstance(values, dict):
                 continue
+            if category == "suggested_questions":
+                entries.extend(_suggested_question_entries(values))
+                continue
             for field, value in values.items():
                 key = f"{category}.{field}"
                 entries.append(
@@ -184,11 +249,14 @@ class SettingsService:
                         "key": key,
                         "value": value,
                         "category": category,
-                        "description": f"Valor por defecto: {key}",
+                        "description": f"Seed value: {key}",
                     }
                 )
         self.config_service.upsert_many(entries)
-        self.config_service.delete_keys(sorted(_RETIRED_CONFIG_KEYS))
+        current_groups = self.config_service.list_grouped()
+        retired_keys = set(_RETIRED_CONFIG_KEYS)
+        retired_keys.update(_retired_suggested_question_keys_from_config(current_groups))
+        self.config_service.delete_keys(sorted(retired_keys))
         return {"success": True, "settings": self._build_payload()}
 
     def get_avatar_file(self) -> AvatarFile | None:
@@ -214,12 +282,15 @@ class SettingsService:
                 category, field = key.split(".", 1)
                 if not category or not field:
                     continue
+                if category == "suggested_questions":
+                    continue
                 if category in _HIDDEN_CONFIG_CATEGORIES:
                     continue
                 if category == "app" and field in _DYNAMIC_APP_FIELDS:
                     continue
                 payload.setdefault(category, {})
                 payload[category][field] = value
+        payload["suggested_questions"] = {"items": _suggested_questions_from_config_groups(groups)}
         avatar_path = self.avatar_storage.resolve_file()
         payload.setdefault("app", {})
         payload["app"]["avatar_url"] = self.avatar_storage.url(avatar_path)

@@ -12,7 +12,7 @@ from apps.backend.app.select_ai.errors import (
 from apps.backend.app.select_ai.select_ai_ask import SelectAIAskMixin
 from apps.backend.app.select_ai.service import _fallback_sql_for_question
 from apps.backend.app.select_ai.sql_validation import validate_read_only_select
-from apps.backend.app.services.settings_service import DEFAULT_SUGGESTED_QUESTIONS
+from apps.backend.app.services.settings_service import STARTER_SUGGESTED_QUESTIONS
 
 
 RESOURCE_EXHAUSTED_ORA = """
@@ -41,14 +41,14 @@ def test_customer_growth_question_has_deterministic_fallback_sql() -> None:
     assert "TRANSACTION_GROWTH_PCT" in sql
 
 
-def test_default_suggested_questions_have_deterministic_fallback_sql() -> None:
-    for question in DEFAULT_SUGGESTED_QUESTIONS:
+def test_starter_suggested_questions_have_deterministic_fallback_sql() -> None:
+    for question in STARTER_SUGGESTED_QUESTIONS:
         assert _fallback_sql_for_question(question), question
 
 
-CHARTABLE_DEFAULT_QUESTION_SAMPLES = (
+CHARTABLE_STARTER_QUESTION_SAMPLES = (
     (
-        DEFAULT_SUGGESTED_QUESTIONS[0],
+        STARTER_SUGGESTED_QUESTIONS[0],
         ["BRANCH_CODE", "CCY", "ACCOUNT_COUNT", "TOTAL_LCY_BALANCE"],
         [
             {"BRANCH_CODE": "001", "CCY": "USD", "ACCOUNT_COUNT": 18, "TOTAL_LCY_BALANCE": 45200},
@@ -56,7 +56,7 @@ CHARTABLE_DEFAULT_QUESTION_SAMPLES = (
         ],
     ),
     (
-        DEFAULT_SUGGESTED_QUESTIONS[1],
+        STARTER_SUGGESTED_QUESTIONS[1],
         ["CUST_AC_NO", "CUST_NO", "ACY_BLOCKED_AMOUNT", "LCY_CURR_BALANCE"],
         [
             {"CUST_AC_NO": "001234567890", "CUST_NO": "CUST000123", "ACY_BLOCKED_AMOUNT": 12000, "LCY_CURR_BALANCE": 90000},
@@ -64,7 +64,7 @@ CHARTABLE_DEFAULT_QUESTION_SAMPLES = (
         ],
     ),
     (
-        DEFAULT_SUGGESTED_QUESTIONS[2],
+        STARTER_SUGGESTED_QUESTIONS[2],
         ["PRODUCT_CODE", "TRANSACTION_COUNT", "TOTAL_LCY_AMOUNT"],
         [
             {"PRODUCT_CODE": "SAV", "TRANSACTION_COUNT": 180, "TOTAL_LCY_AMOUNT": 850000},
@@ -72,7 +72,7 @@ CHARTABLE_DEFAULT_QUESTION_SAMPLES = (
         ],
     ),
     (
-        DEFAULT_SUGGESTED_QUESTIONS[3],
+        STARTER_SUGGESTED_QUESTIONS[3],
         ["TRANSACTION_DATE", "DEBIT_LCY_AMOUNT", "CREDIT_LCY_AMOUNT"],
         [
             {"TRANSACTION_DATE": f"2026-03-{day:02d}", "DEBIT_LCY_AMOUNT": 10000 + day, "CREDIT_LCY_AMOUNT": 8000 + day}
@@ -80,7 +80,7 @@ CHARTABLE_DEFAULT_QUESTION_SAMPLES = (
         ],
     ),
     (
-        DEFAULT_SUGGESTED_QUESTIONS[4],
+        STARTER_SUGGESTED_QUESTIONS[4],
         ["RELATED_CUSTOMER", "CURRENT_TRANSACTION_COUNT", "TRANSACTION_GROWTH_PCT"],
         [
             {"RELATED_CUSTOMER": "CUST000123", "CURRENT_TRANSACTION_COUNT": 18, "TRANSACTION_GROWTH_PCT": 80},
@@ -88,7 +88,7 @@ CHARTABLE_DEFAULT_QUESTION_SAMPLES = (
         ],
     ),
     (
-        DEFAULT_SUGGESTED_QUESTIONS[5],
+        STARTER_SUGGESTED_QUESTIONS[5],
         ["TRANS_AC_NO", "WITHDRAWAL_COUNT", "TOTAL_WITHDRAWAL_AMOUNT"],
         [
             {"TRANS_AC_NO": "4455667788", "WITHDRAWAL_COUNT": 7, "TOTAL_WITHDRAWAL_AMOUNT": 9500},
@@ -96,7 +96,7 @@ CHARTABLE_DEFAULT_QUESTION_SAMPLES = (
         ],
     ),
     (
-        DEFAULT_SUGGESTED_QUESTIONS[6],
+        STARTER_SUGGESTED_QUESTIONS[6],
         ["ACCOUNT_NUMBER", "CUSTOMER_ID", "ESTIMATED_PENDING_DEBT"],
         [
             {"ACCOUNT_NUMBER": "LN001", "CUSTOMER_ID": "CUST000123", "ESTIMATED_PENDING_DEBT": 180000},
@@ -104,7 +104,7 @@ CHARTABLE_DEFAULT_QUESTION_SAMPLES = (
         ],
     ),
     (
-        DEFAULT_SUGGESTED_QUESTIONS[7],
+        STARTER_SUGGESTED_QUESTIONS[7],
         ["REFERENCE_NO", "ACC", "TD_AMOUNT", "TD_MATURITY_AMT"],
         [
             {"REFERENCE_NO": "TD001", "ACC": "112233", "TD_AMOUNT": 25000, "TD_MATURITY_AMT": 26300},
@@ -112,7 +112,7 @@ CHARTABLE_DEFAULT_QUESTION_SAMPLES = (
         ],
     ),
     (
-        DEFAULT_SUGGESTED_QUESTIONS[8],
+        STARTER_SUGGESTED_QUESTIONS[8],
         ["ACCOUNT_NO", "TRN_REF_NO", "LCY_AMOUNT"],
         [
             {"ACCOUNT_NO": "4455667788", "TRN_REF_NO": "TRN123", "LCY_AMOUNT": 7200},
@@ -120,7 +120,7 @@ CHARTABLE_DEFAULT_QUESTION_SAMPLES = (
         ],
     ),
     (
-        DEFAULT_SUGGESTED_QUESTIONS[9],
+        STARTER_SUGGESTED_QUESTIONS[9],
         ["AUTH_ID", "AUTHORIZED_MOVEMENT_COUNT", "TOTAL_LCY_AMOUNT"],
         [
             {"AUTH_ID": "USER_A01", "AUTHORIZED_MOVEMENT_COUNT": 42, "TOTAL_LCY_AMOUNT": 125000},
@@ -130,8 +130,8 @@ CHARTABLE_DEFAULT_QUESTION_SAMPLES = (
 )
 
 
-@pytest.mark.parametrize("question,columns,rows", CHARTABLE_DEFAULT_QUESTION_SAMPLES)
-def test_default_suggested_questions_have_chartable_results(question, columns, rows) -> None:
+@pytest.mark.parametrize("question,columns,rows", CHARTABLE_STARTER_QUESTION_SAMPLES)
+def test_starter_suggested_questions_have_chartable_results(question, columns, rows) -> None:
     sql = _fallback_sql_for_question(question)
 
     assert sql is not None

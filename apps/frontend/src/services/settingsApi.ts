@@ -1,5 +1,5 @@
 import api from './httpClient';
-import { resolveSuggestedQuestions as resolveSuggestedQuestionList } from '../config/suggestedQuestions';
+import { normalizeSuggestedQuestions } from '../config/suggestedQuestions';
 
 export const settingsQueryKeys = {
   publicBranding: ['settings', 'public-branding'] as const,
@@ -29,7 +29,7 @@ export function resolveAgentName(payload: unknown): string {
 }
 
 export function resolveSuggestedQuestions(payload: unknown): string[] {
-  return resolveSuggestedQuestionList(payload);
+  return normalizeSuggestedQuestions(payload);
 }
 
 export async function checkSetupComplete() {

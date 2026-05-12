@@ -1,4 +1,4 @@
-export const DEFAULT_SUGGESTED_QUESTIONS = [
+export const STARTER_SUGGESTED_QUESTIONS = [
   '¿Cuál es el saldo actual por moneda y sucursal?',
   '¿Qué cuentas tienen mayor saldo bloqueado?',
   '¿Qué productos tienen mayor volumen de transacciones este mes?',
@@ -11,76 +11,60 @@ export const DEFAULT_SUGGESTED_QUESTIONS = [
   '¿Qué usuarios autorizaron más movimientos contables?',
 ] as const;
 
-export const SUGGESTED_QUESTION_KEYS = DEFAULT_SUGGESTED_QUESTIONS.map(
-  (_question, index) => `question_${index + 1}`
-);
-
-function compactQuestions(values: unknown[]): string[] {
+export function compactQuestions(values: unknown[]): string[] {
   const seen = new Set<string>();
   return values
     .map((value) => String(value || '').trim())
     .filter((value) => {
-      if (!value || seen.has(value)) return false;
-      seen.add(value);
+      const normalized = value.toLowerCase().replace(/\s+/g, ' ').replace(/^[¿?¡!\s.]+|[¿?¡!\s.]+$/g, '');
+      if (!value || !normalized || seen.has(normalized)) return false;
+      seen.add(normalized);
       return true;
     });
 }
 
-export function normalizeSuggestedQuestionRecord(value: unknown): Record<string, string> {
-  const source = value && typeof value === 'object' ? (value as Record<string, unknown>) : {};
-  return SUGGESTED_QUESTION_KEYS.reduce<Record<string, string>>((acc, key, index) => {
-    const configured = String(source[key] || '').trim();
-    acc[key] = configured || DEFAULT_SUGGESTED_QUESTIONS[index];
-    return acc;
-  }, {});
-}
+export function normalizeSuggestedQuestions(value: unknown): string[] {
+  const container =
+    value && typeof value === 'object' && 'suggested_questions' in value
+      ? (value as { suggested_questions?: unknown }).suggested_questions
+      : value;
 
-export function resolveSuggestedQuestions(payload: unknown): string[] {
-  const container = payload && typeof payload === 'object' ? (payload as { suggested_questions?: unknown }).suggested_questions : null;
   if (Array.isArray(container)) {
     const questions = compactQuestions(container);
-    return questions.length >= 3 ? questions : [...DEFAULT_SUGGESTED_QUESTIONS];
+    return questions.length ? questions : [...STARTER_SUGGESTED_QUESTIONS];
   }
+
   if (container && typeof container === 'object') {
     const record = container as Record<string, unknown>;
-    const itemValues = Array.isArray(record.items) ? record.items : SUGGESTED_QUESTION_KEYS.map((key) => record[key]);
-    const questions = compactQuestions(itemValues);
-    return questions.length >= 3 ? questions : [...DEFAULT_SUGGESTED_QUESTIONS];
+    if (Array.isArray(record.items)) {
+      const questions = compactQuestions(record.items);
+      return questions.length ? questions : [...STARTER_SUGGESTED_QUESTIONS];
+    }
   }
-  return [...DEFAULT_SUGGESTED_QUESTIONS];
+
+  return [...STARTER_SUGGESTED_QUESTIONS];
 }
 
-export function selectRandomSuggestedQuestions(
-  questions: string[],
-  count = 3,
-  random: () => number = Math.random
-): string[] {
-  const pool = compactQuestions(questions);
-  if (pool.length <= count) return pool;
-
-  const selected: string[] = [];
-  while (selected.length < count && pool.length > 0) {
-    const index = Math.min(pool.length - 1, Math.floor(random() * pool.length));
-    selected.push(pool.splice(index, 1)[0]);
-  }
-  return selected;
+export function selectInitialSuggestedQuestions(questions: string[], count = 3): string[] {
+  return compactQuestions(questions).slice(0, count);
 }
 
 export function replaceSuggestedQuestionAt(
   questions: string[],
   currentQuestions: string[],
-  questionIndex: number,
-  random: () => number = Math.random
+  questionIndex: number
 ): string[] {
   if (questionIndex < 0 || questionIndex >= currentQuestions.length) return currentQuestions;
 
-  const normalizedCurrent = compactQuestions(currentQuestions);
-  const currentQuestion = normalizedCurrent[questionIndex] || '';
-  const visibleQuestions = new Set(normalizedCurrent.filter((_question, index) => index !== questionIndex));
-  const pool = compactQuestions(questions).filter((question) => !visibleQuestions.has(question) && question !== currentQuestion);
+  const currentQuestion = currentQuestions[questionIndex] || '';
+  const visibleQuestions = new Set(
+    compactQuestions(currentQuestions.filter((_question, index) => index !== questionIndex))
+  );
+  const replacement = compactQuestions(questions).find(
+    (question) => !visibleQuestions.has(question) && question !== currentQuestion
+  );
 
-  if (!pool.length) return currentQuestions;
+  if (!replacement) return currentQuestions;
 
-  const replacementIndex = Math.min(pool.length - 1, Math.floor(random() * pool.length));
-  return currentQuestions.map((question, index) => (index === questionIndex ? pool[replacementIndex] : question));
+  return currentQuestions.map((question, index) => (index === questionIndex ? replacement : question));
 }

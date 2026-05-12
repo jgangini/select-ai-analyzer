@@ -101,13 +101,22 @@ function authenticatedRoutes(
   onLogin: (username: string, password: string) => Promise<void>,
   onLogout: () => void,
   sidebarChats: SidebarChatState,
-  suggestedQuestions: string[],
   showToast: ShowToast
 ) {
   return (
     <Routes>
       <Route path="/login" element={suspensePage(<LoginForm appName={appName} login={onLogin} />)} />
-      <Route path="/home" element={protectedPage(isAuthenticated, user, onLogout, appName, sidebarChats, <Home appName={appName} />)} />
+      <Route
+        path="/home"
+        element={protectedPage(
+          isAuthenticated,
+          user,
+          onLogout,
+          appName,
+          sidebarChats,
+          <Home appName={appName} currentUserId={user?.user_id ?? 'anonymous'} />
+        )}
+      />
       <Route
         path="/chat"
         element={protectedPage(
@@ -119,8 +128,8 @@ function authenticatedRoutes(
           <div className="h-full">
             <AnalyticsChatPanel
               agentName={agentName}
+              currentUserId={user?.user_id ?? 'anonymous'}
               showToast={showToast}
-              suggestedQuestions={suggestedQuestions}
               userName={user?.name || 'You'}
             />
           </div>,
@@ -155,14 +164,12 @@ export function AppRoutes({
   appName,
   showToast,
   sidebarChats,
-  suggestedQuestions,
   setupGate,
 }: {
   agentName: string;
   appName: string;
   showToast: ShowToast;
   sidebarChats: SidebarChatState;
-  suggestedQuestions: string[];
   setupGate: SetupGateState;
 }) {
   const { isAuthenticated, login, logout, setupDone, showSpinner, completeSetup, user } = setupGate;
@@ -172,7 +179,7 @@ export function AppRoutes({
 
   return (
     <>
-      {authenticatedRoutes(agentName, appName, isAuthenticated, user, login, logout, sidebarChats, suggestedQuestions, showToast)}
+      {authenticatedRoutes(agentName, appName, isAuthenticated, user, login, logout, sidebarChats, showToast)}
       {suspensePage(
         <SearchChatsModal
           isAuthenticated={isAuthenticated}

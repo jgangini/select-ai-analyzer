@@ -10,7 +10,7 @@ describe('settingsApi name resolvers', () => {
     expect(resolveAgentName(payload)).toBe('Nadia Ops');
   });
 
-  it('falls back to defaults for missing or blank names', () => {
+  it('uses product names when branding is missing or blank', () => {
     const payload = { app: { name: '   ', agent_name: '' } };
 
     expect(resolveApplicationName(payload)).toBe('Select AI Analytics');
@@ -19,12 +19,14 @@ describe('settingsApi name resolvers', () => {
     expect(resolveAgentName(undefined)).toBe('Nadia Analytics');
   });
 
-  it('resolves configured suggested questions with defaults when missing', () => {
+  it('resolves configured starter questions and starter seed when missing', () => {
     const payload = {
       suggested_questions: {
-        question_1: '¿Qué clientes crecieron más este mes?',
-        question_2: '¿Qué productos concentran más transacciones?',
-        question_3: '¿Qué transacciones están pendientes?',
+        items: [
+          '¿Qué clientes crecieron más este mes?',
+          '¿Qué productos concentran más transacciones?',
+          '¿Qué transacciones están pendientes?',
+        ],
       },
     };
 

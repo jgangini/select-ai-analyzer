@@ -1,7 +1,9 @@
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useQuery } from '@tanstack/react-query';
+import { useSearchParams } from 'react-router-dom';
 
-import { replaceSuggestedQuestionAt, selectRandomSuggestedQuestions } from '../../../config/suggestedQuestions';
-import { analyticsApi } from '../../../services/analyticsApi';
+import { replaceSuggestedQuestionAt, selectInitialSuggestedQuestions } from '../../../config/suggestedQuestions';
+import { analyticsApi, analyticsQueryKeys } from '../../../services/analyticsApi';
 import { dashboardsApi } from '../../../services/dashboardsApi';
 import { dataSourcesApi } from '../../../services/dataSourcesApi';
 import { OracleAgentGraphPanel } from './OracleAgentGraphPanel';
@@ -23,16 +25,22 @@ type ShowToast = (message: string, type?: 'success' | 'error' | 'info' | 'warnin
 
 export function AnalyticsChatPanel({
   agentName,
+  currentUserId,
   showToast,
-  suggestedQuestions = [],
   userName = 'You',
 }: {
   agentName: string;
+  currentUserId: number | string;
   showToast: ShowToast;
-  suggestedQuestions?: string[];
   userName?: string;
 }) {
+  const [searchParams, setSearchParams] = useSearchParams();
   const conversation = useAnalyticsConversationState({ agentName, analyticsClient: analyticsApi, dataSourcesClient: dataSourcesApi, showToast });
+  const recommendationsQuery = useQuery({
+    queryKey: analyticsQueryKeys.questionRecommendations(currentUserId, 20),
+    queryFn: () => analyticsApi.getQuestionRecommendations(20).then((response) => response.data),
+    staleTime: 30_000,
+  });
   const dashboard = useAnalyticsDashboardDraft({
     conversationTitle: conversation.conversationTitle,
     dashboardsClient: dashboardsApi,
@@ -47,11 +55,25 @@ export function AnalyticsChatPanel({
   };
   const renderComposer = (placeholder: string) => <AnalyticsChatComposer {...composerProps} placeholder={placeholder} />;
   const userInitials = getUserInitials(userName || 'You');
-  const [startQuestions, setStartQuestions] = useState<string[]>(() => selectRandomSuggestedQuestions(suggestedQuestions, 3));
+  const suggestedQuestions = useMemo(
+    () => (recommendationsQuery.data?.new_chat || []).map((item) => item.question),
+    [recommendationsQuery.data]
+  );
+  const [startQuestions, setStartQuestions] = useState<string[]>([]);
+  const setConversationQuestion = conversation.setQuestion;
+
+  useEffect(() => {
+    const questionFromHome = searchParams.get('question');
+    if (!questionFromHome) return;
+    setConversationQuestion(questionFromHome);
+    const nextSearchParams = new URLSearchParams(searchParams);
+    nextSearchParams.delete('question');
+    setSearchParams(nextSearchParams, { replace: true });
+  }, [searchParams, setConversationQuestion, setSearchParams]);
 
   useEffect(() => {
     if (!conversation.isInitialCentered) return;
-    setStartQuestions(selectRandomSuggestedQuestions(suggestedQuestions, 3));
+    setStartQuestions(selectInitialSuggestedQuestions(suggestedQuestions, 3));
   }, [conversation.currentConversationId, conversation.isInitialCentered, suggestedQuestions]);
 
   const handleRefreshSuggestedQuestion = useCallback(

@@ -11,6 +11,7 @@ from apps.backend.app.select_ai.errors import (
     is_genai_resource_exhausted,
 )
 from apps.backend.app.select_ai.service import SelectAIAnalyticsService
+from apps.backend.app.services.settings_service import SettingsService
 
 
 router = APIRouter(
@@ -65,6 +66,25 @@ def list_analytics_conversations(
             limit=limit,
         )
         return {"items": items}
+    except Exception as exc:
+        raise _analytics_http_exception(exc) from exc
+
+
+@router.get("/question-recommendations")
+def get_question_recommendations(
+    limit: int = Query(default=12, ge=1, le=50),
+    current_user: dict = Depends(get_current_user),
+) -> dict:
+    try:
+        public_settings = SettingsService.from_runtime().get_public_payload()
+        suggested_questions = public_settings.get("suggested_questions") or {}
+        catalog_items = suggested_questions.get("items") if isinstance(suggested_questions, dict) else []
+        catalog_questions = catalog_items if isinstance(catalog_items, list) else []
+        return SelectAIAnalyticsService.from_runtime().question_recommendations(
+            catalog_questions=catalog_questions,
+            user_id=int(current_user.get("user_id") or 0),
+            limit=limit,
+        )
     except Exception as exc:
         raise _analytics_http_exception(exc) from exc
 

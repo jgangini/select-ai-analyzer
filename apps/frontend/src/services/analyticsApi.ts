@@ -58,11 +58,26 @@ type AnalyticsConversationDetail = {
   messages: AnalyticsConversationMessage[];
 };
 
+export type AnalyticsQuestionRecommendation = {
+  question: string;
+  usage_count: number;
+  last_used_at?: string | null;
+  source: 'starter' | 'history';
+};
+
+export type AnalyticsQuestionRecommendations = {
+  new_chat: AnalyticsQuestionRecommendation[];
+  frequent: AnalyticsQuestionRecommendation[];
+  catalog_size: number;
+};
+
 export const analyticsQueryKeys = {
   ask: ['analytics', 'ask'] as const,
   conversations: (userId: number | string, search = '') => ['analytics', 'conversations', userId, search] as const,
   sidebarConversations: (userId: number | string) => ['analytics', 'sidebar-conversations', userId] as const,
   conversation: (conversationId: string | null) => ['analytics', 'conversation', conversationId] as const,
+  questionRecommendations: (userId: number | string, limit = 12) =>
+    ['analytics', 'question-recommendations', userId, limit] as const,
 };
 
 export function sortConversations(items: AnalyticsConversationSummary[]): AnalyticsConversationSummary[] {
@@ -82,6 +97,10 @@ export const analyticsApi = {
   getConversation: (conversationId: string, maxRows = 500) =>
     api.get<AnalyticsConversationDetail>(`/analytics/conversations/${encodeURIComponent(conversationId)}`, {
       params: { max_rows: maxRows },
+    }),
+  getQuestionRecommendations: (limit = 12) =>
+    api.get<AnalyticsQuestionRecommendations>('/analytics/question-recommendations', {
+      params: { limit },
     }),
   renameConversation: (conversationId: string, title: string) =>
     api.put<AnalyticsConversationSummary>(`/analytics/conversations/${encodeURIComponent(conversationId)}`, { title }),

@@ -214,3 +214,22 @@ def _select_question_runs(cursor, *, conversation_id: str) -> None:
         """,
         conversation_id=conversation_id,
     )
+
+
+def _select_user_question_usage(cursor, *, user_id: int) -> None:
+    cursor.execute(
+        """
+        SELECT
+            DBMS_LOB.SUBSTR(qr.question_text, 1000, 1) AS question_text,
+            COUNT(*) AS usage_count,
+            MAX(qr.created_at) AS last_used_at
+        FROM question_runs qr
+        JOIN analytics_conversations c
+          ON c.conversation_id = qr.conversation_id
+        WHERE c.conversation_type = 'analytics'
+          AND (:user_id = 0 OR c.created_by_user_id = :user_id)
+        GROUP BY DBMS_LOB.SUBSTR(qr.question_text, 1000, 1)
+        ORDER BY COUNT(*) DESC, MAX(qr.created_at) DESC
+        """,
+        user_id=user_id,
+    )
