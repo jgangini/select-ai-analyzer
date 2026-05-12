@@ -48,6 +48,17 @@ export type DataSourceColumnMetadata = {
   primary_key?: boolean;
 };
 
+export type DataSourceCsvUploadDraft = {
+  id: string;
+  baseName: string;
+  csvFile: File;
+  metadataJsonFile: File | null;
+  tableName: string;
+  tableComment: string;
+  columnMetadata: DataSourceColumnMetadata[];
+  error: string | null;
+};
+
 export type DataSourceSchema = {
   schema_name: string;
   exists: boolean;
@@ -142,7 +153,7 @@ export function catalogTablePlaceholder(tableOwner: string, isCatalogTablesLoadi
 
 export function getObjectSubmitState({
   objectMode,
-  csvFile,
+  csvUploadDrafts,
   isUploadPending,
   isSchemasLoading,
   tableOwner,
@@ -151,7 +162,7 @@ export function getObjectSubmitState({
   isCatalogTableFetching,
 }: {
   objectMode: DataSourceObjectMode;
-  csvFile: File | null;
+  csvUploadDrafts: DataSourceCsvUploadDraft[];
   isUploadPending: boolean;
   isSchemasLoading: boolean;
   tableOwner: string;
@@ -160,9 +171,15 @@ export function getObjectSubmitState({
   isCatalogTableFetching: boolean;
 }): ObjectSubmitState {
   if (objectMode === 'csv') {
+    const hasDrafts = csvUploadDrafts.length > 0;
+    const hasInvalidDrafts = csvUploadDrafts.some((draft) => draft.error || !draft.metadataJsonFile);
     return {
-      disabled: !csvFile || isUploadPending || isSchemasLoading,
-      label: isUploadPending ? 'Uploading...' : 'Upload CSV',
+      disabled: !hasDrafts || hasInvalidDrafts || isUploadPending || isSchemasLoading,
+      label: isUploadPending
+        ? 'Uploading...'
+        : csvUploadDrafts.length > 1
+          ? `Upload ${csvUploadDrafts.length} CSVs`
+          : 'Upload CSV',
     };
   }
 

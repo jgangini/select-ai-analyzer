@@ -2,7 +2,7 @@ import { cleanup, fireEvent, render, screen } from '@testing-library/react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
 import { DataSourceObjectModal } from './DataSourceObjectModal';
-import type { DataSourceObjectMode } from './dataSourceUtils';
+import type { DataSourceCsvUploadDraft, DataSourceObjectMode } from './dataSourceUtils';
 
 type ModalProps = Parameters<typeof DataSourceObjectModal>[0];
 
@@ -10,10 +10,10 @@ function modalProps(overrides: Partial<ModalProps> = {}): ModalProps {
   return {
     open: true,
     objectMode: 'csv' as DataSourceObjectMode,
-    csvFile: null,
-    metadataJsonFile: null,
+    csvUploadDrafts: [],
+    activeCsvUploadId: null,
+    csvUploadIssues: [],
     csvSchemaName: 'APP_AGENT_DATA',
-    csvTableName: '',
     normalizedCsvSchema: 'APP_AGENT_DATA',
     schemaNeedsCreation: false,
     schemaOptions: [],
@@ -31,10 +31,10 @@ function modalProps(overrides: Partial<ModalProps> = {}): ModalProps {
     onClose: vi.fn(),
     onSubmit: vi.fn((event) => event.preventDefault()),
     onObjectModeChange: vi.fn(),
-    onCsvFileChange: vi.fn(),
-    onMetadataJsonFileChange: vi.fn(),
+    onCsvUploadFilesChange: vi.fn(),
+    onActiveCsvUploadIdChange: vi.fn(),
+    onCsvUploadDraftRemove: vi.fn(),
     onCsvSchemaNameChange: vi.fn(),
-    onCsvTableNameChange: vi.fn(),
     onTableOwnerChange: vi.fn(),
     onTableNameChange: vi.fn(),
     onColumnMetadataChange: vi.fn(),
@@ -52,8 +52,8 @@ describe('DataSourceObjectModal', () => {
 
     expect(screen.getByRole('heading', { name: /add object/i })).toBeInTheDocument();
     expect(screen.queryByText('Load a CSV into a data schema.')).not.toBeInTheDocument();
-    expect(screen.getByLabelText('CSV file')).toBeInTheDocument();
-    expect(screen.getByLabelText('Metadata JSON')).toBeInTheDocument();
+    expect(screen.getByLabelText('Target schema')).toBeInTheDocument();
+    expect(screen.getByLabelText(/add files/i)).toBeInTheDocument();
     expect(screen.queryByRole('textbox', { name: /table comment/i })).not.toBeInTheDocument();
     expect(screen.getByText(/reserved for application tables/i)).toBeInTheDocument();
   });
@@ -66,23 +66,31 @@ describe('DataSourceObjectModal', () => {
     expect(screen.queryByRole('textbox', { name: /optional display name/i })).not.toBeInTheDocument();
   });
 
-  it('keeps paired CSV fields in shared responsive rows', () => {
-    render(<DataSourceObjectModal {...modalProps()} />);
+  it('renders selected CSV batches and editable data dictionary for the active file', () => {
+    const activeDraft: DataSourceCsvUploadDraft = {
+      id: 'accounts',
+      baseName: 'accounts',
+      csvFile: new File(['ACCOUNT_ID,AMOUNT\n1,25'], 'accounts.csv', { type: 'text/csv' }),
+      metadataJsonFile: new File(['{}'], 'accounts.json', { type: 'application/json' }),
+      tableName: 'ACCOUNTS',
+      tableComment: '',
+      columnMetadata: [{ column_name: 'ACCOUNT_ID', comment: 'Account key' }],
+      error: null,
+    };
 
-    const csvField = screen.getByLabelText('CSV file');
-    const metadataJsonField = screen.getByLabelText('Metadata JSON');
-    const targetSchemaField = screen.getByLabelText('Target schema');
-    const tableNameField = screen.getByLabelText('Optional table name');
+    render(
+      <DataSourceObjectModal
+        {...modalProps({
+          csvUploadDrafts: [activeDraft],
+          activeCsvUploadId: activeDraft.id,
+        })}
+      />
+    );
 
-    const csvFieldWrapper = csvField.closest('div');
-    const metadataJsonFieldWrapper = metadataJsonField.closest('div');
-    const targetSchemaWrapper = targetSchemaField.closest('div');
-    const tableNameWrapper = tableNameField.closest('div');
-
-    expect(csvFieldWrapper?.parentElement).toBe(metadataJsonFieldWrapper?.parentElement);
-    expect(csvFieldWrapper?.parentElement).toHaveClass('sm:grid-cols-2');
-    expect(targetSchemaWrapper?.parentElement).toBe(tableNameWrapper?.parentElement);
-    expect(targetSchemaWrapper?.parentElement).toHaveClass('sm:grid-cols-2');
+    expect(screen.getAllByText('ACCOUNTS')).toHaveLength(2);
+    expect(screen.getByText('accounts.csv - 1 KB')).toBeInTheDocument();
+    expect(screen.getAllByText('accounts.json')).toHaveLength(2);
+    expect(screen.getByRole('textbox', { name: /comment for account_id/i })).toHaveValue('Account key');
   });
 
   it('switches object mode through the source selector', () => {

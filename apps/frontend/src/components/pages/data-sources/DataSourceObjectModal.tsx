@@ -1,4 +1,4 @@
-import type { FormEvent } from 'react';
+import type { ChangeEvent, DragEvent, FormEvent } from 'react';
 
 import { LoadingState } from '../../common/LoadingState';
 import { ConfirmModal, GlassModal } from '../../common/Modal';
@@ -12,6 +12,7 @@ import {
   userSchemaOptions,
   type DataSourceCatalogOwner,
   type DataSourceCatalogTable,
+  type DataSourceCsvUploadDraft,
   type DataSourceColumnMetadata,
   type DataSourceObjectMode,
   type DataSourceSchema,
@@ -21,10 +22,10 @@ import {
 interface DataSourceObjectModalProps {
   open: boolean;
   objectMode: DataSourceObjectMode;
-  csvFile: File | null;
-  metadataJsonFile: File | null;
+  csvUploadDrafts: DataSourceCsvUploadDraft[];
+  activeCsvUploadId: string | null;
+  csvUploadIssues: string[];
   csvSchemaName: string;
-  csvTableName: string;
   normalizedCsvSchema: string;
   schemaNeedsCreation: boolean;
   schemaOptions: DataSourceSchema[];
@@ -42,10 +43,10 @@ interface DataSourceObjectModalProps {
   onClose: () => void;
   onSubmit: (event: FormEvent<HTMLFormElement>) => void;
   onObjectModeChange: (mode: DataSourceObjectMode) => void;
-  onCsvFileChange: (file: File | null) => void;
-  onMetadataJsonFileChange: (file: File | null) => void;
+  onCsvUploadFilesChange: (files: FileList | File[] | null) => void;
+  onActiveCsvUploadIdChange: (value: string) => void;
+  onCsvUploadDraftRemove: (id: string) => void;
   onCsvSchemaNameChange: (value: string) => void;
-  onCsvTableNameChange: (value: string) => void;
   onTableOwnerChange: (value: string) => void;
   onTableNameChange: (value: string) => void;
   onColumnMetadataChange: (index: number, patch: Partial<DataSourceColumnMetadata>) => void;
@@ -65,40 +66,88 @@ function DeleteDataSourceConfirmMessage({ source }: { source: DataSourceSummary 
   );
 }
 
-function DataSourceFilePicker({
-  id,
-  label,
-  accept,
-  fileName,
-  onFileChange,
+function formatFileSize(bytes: number): string {
+  if (!Number.isFinite(bytes) || bytes <= 0) return '0 KB';
+  if (bytes < 1024 * 1024) return `${Math.ceil(bytes / 1024)} KB`;
+  return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
+}
+
+function CsvUploadStatusBadge({ draft }: { draft: DataSourceCsvUploadDraft }) {
+  if (draft.error) {
+    return (
+      <span className="inline-flex rounded-full border border-rose-200 bg-rose-50 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-rose-700">
+        Review
+      </span>
+    );
+  }
+  return (
+    <span className="inline-flex rounded-full border border-emerald-200 bg-emerald-50 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-emerald-700">
+      Ready
+    </span>
+  );
+}
+
+function CsvUploadDraftList({
+  drafts,
+  activeDraftId,
+  onSelectDraft,
+  onRemoveDraft,
 }: {
-  id: string;
-  label: string;
-  accept: string;
-  fileName?: string;
-  onFileChange: (file: File | null) => void;
+  drafts: DataSourceCsvUploadDraft[];
+  activeDraftId: string | null;
+  onSelectDraft: (id: string) => void;
+  onRemoveDraft: (id: string) => void;
 }) {
   return (
-    <div>
-      <label htmlFor={id} className="block text-sm font-medium text-oracle-dark-gray">{label}</label>
-      <div className="mt-1 flex min-h-11 items-center gap-3 rounded border border-oracle-border bg-white px-3 py-2">
-        <label
-          htmlFor={id}
-          className="shrink-0 cursor-pointer rounded border border-gray-300 bg-white px-3 py-1.5 text-sm font-medium text-gray-700 transition-colors hover:bg-gray-50"
-        >
-          Choose file
-        </label>
-        <span className="min-w-0 truncate text-sm text-oracle-medium-gray">
-          {fileName || 'No file selected'}
-        </span>
+    <div className="rounded-lg border border-oracle-border bg-white">
+      <div className="border-b border-oracle-border px-4 py-3">
+        <h3 className="text-sm font-semibold text-oracle-dark-gray">Files</h3>
       </div>
-      <input
-        id={id}
-        type="file"
-        accept={accept}
-        onChange={(event) => onFileChange(event.target.files?.[0] ?? null)}
-        className="hidden"
-      />
+      <div className="max-h-[25rem] overflow-y-auto">
+        {drafts.map((draft) => {
+          const active = draft.id === activeDraftId;
+          return (
+            <div
+              key={draft.id}
+              className={`border-b border-gray-100 px-3 py-2 last:border-b-0 ${
+                active ? 'border-l-2 border-l-oracle-red bg-gray-50' : 'border-l-2 border-l-transparent bg-white'
+              }`}
+            >
+              <div className="flex items-start gap-2">
+                <button
+                  type="button"
+                  onClick={() => onSelectDraft(draft.id)}
+                  className="min-w-0 flex-1 text-left"
+                >
+                  <div className="flex items-center gap-2">
+                    <span className="min-w-0 truncate font-mono text-xs font-semibold text-oracle-dark-gray">
+                      {draft.tableName}
+                    </span>
+                    <CsvUploadStatusBadge draft={draft} />
+                  </div>
+                  <p className="mt-1 truncate text-xs text-oracle-medium-gray" title={draft.csvFile.name}>
+                    {draft.csvFile.name} - {formatFileSize(draft.csvFile.size)}
+                  </p>
+                  <p className={`mt-0.5 truncate text-xs ${draft.metadataJsonFile ? 'text-emerald-700' : 'text-rose-700'}`}>
+                    {draft.metadataJsonFile ? draft.metadataJsonFile.name : 'Missing JSON metadata'}
+                  </p>
+                  {draft.error ? <p className="mt-1 text-xs text-rose-700">{draft.error}</p> : null}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => onRemoveDraft(draft.id)}
+                  className="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-lg text-oracle-medium-gray transition-colors hover:bg-gray-100 hover:text-oracle-dark-gray"
+                  aria-label={`Remove ${draft.csvFile.name}`}
+                >
+                  <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                  </svg>
+                </button>
+              </div>
+            </div>
+          );
+        })}
+      </div>
     </div>
   );
 }
@@ -163,7 +212,7 @@ export function DataSourceSchemaCreationConfirmModal({
       title="Create schema"
       message={
         <span>
-          Create <span className="font-mono font-semibold">{schemaName}</span> and load this CSV there?
+          Create <span className="font-mono font-semibold">{schemaName}</span> and load the selected CSV files there?
         </span>
       }
       detail="APP_AGENT remains only for application objects."
@@ -180,10 +229,10 @@ export function DataSourceSchemaCreationConfirmModal({
 export function DataSourceObjectModal({
   open,
   objectMode,
-  csvFile,
-  metadataJsonFile,
+  csvUploadDrafts,
+  activeCsvUploadId,
+  csvUploadIssues,
   csvSchemaName,
-  csvTableName,
   normalizedCsvSchema,
   schemaNeedsCreation,
   schemaOptions,
@@ -201,17 +250,17 @@ export function DataSourceObjectModal({
   onClose,
   onSubmit,
   onObjectModeChange,
-  onCsvFileChange,
-  onMetadataJsonFileChange,
+  onCsvUploadFilesChange,
+  onActiveCsvUploadIdChange,
+  onCsvUploadDraftRemove,
   onCsvSchemaNameChange,
-  onCsvTableNameChange,
   onTableOwnerChange,
   onTableNameChange,
   onColumnMetadataChange,
 }: DataSourceObjectModalProps) {
   const submitState = getObjectSubmitState({
     objectMode,
-    csvFile,
+    csvUploadDrafts,
     isUploadPending,
     isSchemasLoading,
     tableOwner,
@@ -219,13 +268,29 @@ export function DataSourceObjectModal({
     isRegisterPending,
     isCatalogTableFetching,
   });
+  const activeCsvUpload = csvUploadDrafts.find((draft) => draft.id === activeCsvUploadId) || null;
+  const readyCsvUploadCount = csvUploadDrafts.filter((draft) => !draft.error && draft.metadataJsonFile).length;
+
+  const handleCsvFilesChange = (event: ChangeEvent<HTMLInputElement>) => {
+    onCsvUploadFilesChange(event.target.files);
+    event.target.value = '';
+  };
+
+  const handleCsvDrop = (event: DragEvent<HTMLDivElement>) => {
+    event.preventDefault();
+    onCsvUploadFilesChange(event.dataTransfer.files);
+  };
+
+  const handleCsvDragOver = (event: DragEvent<HTMLDivElement>) => {
+    event.preventDefault();
+  };
 
   return (
     <GlassModal
       open={open}
       onClose={onClose}
       containerClassName="items-start justify-center p-4"
-      panelClassName="mt-8 flex max-h-[88vh] w-full max-w-4xl flex-col border-0"
+      panelClassName="mt-8 flex max-h-[88vh] w-full max-w-6xl flex-col border-0"
     >
       <div className="flex items-center gap-3 bg-oracle-dark-gray px-5 py-4">
         <h2 className="text-lg font-semibold text-white">Add Object</h2>
@@ -258,58 +323,100 @@ export function DataSourceObjectModal({
 
         {objectMode === 'csv' ? (
           <>
-            <div className="grid gap-4 sm:grid-cols-2">
-              <DataSourceFilePicker
-                id="data-source-csv-file"
-                label="CSV file"
-                accept=".csv,text/csv"
-                fileName={csvFile?.name}
-                onFileChange={onCsvFileChange}
+            <input
+              id="data-source-csv-batch-files"
+              type="file"
+              multiple
+              accept=".csv,.json,text/csv,application/json"
+              onChange={handleCsvFilesChange}
+              className="hidden"
+            />
+            <div>
+              <label htmlFor="data-source-csv-schema" className="block text-sm font-medium text-oracle-dark-gray">Target schema</label>
+              <input
+                id="data-source-csv-schema"
+                value={csvSchemaName}
+                onChange={(event) => onCsvSchemaNameChange(normalizeIdentifier(event.target.value))}
+                className="input-oracle mt-1 font-mono uppercase"
+                placeholder={DEFAULT_DATA_SCHEMA}
+                list="data-source-schema-options"
               />
-              <DataSourceFilePicker
-                id="data-source-metadata-json-file"
-                label="Metadata JSON"
-                accept=".json,application/json"
-                fileName={metadataJsonFile?.name}
-                onFileChange={onMetadataJsonFileChange}
-              />
+              <datalist id="data-source-schema-options">
+                {userSchemaOptions(schemaOptions).map((schema) => (
+                  <option key={schema.schema_name} value={schema.schema_name}>
+                    {schema.exists ? `${schema.source_count} source(s)` : 'Create on upload'}
+                  </option>
+                ))}
+              </datalist>
+              {normalizedCsvSchema === 'APP_AGENT' ? (
+                <p className="mt-1 text-xs text-red-600">APP_AGENT is reserved for application tables.</p>
+              ) : schemaNeedsCreation ? (
+                <p className="mt-1 text-xs text-amber-700">This schema does not exist yet. You will be asked to confirm creation.</p>
+              ) : (
+                <p className="mt-1 text-xs text-oracle-light-gray">Use an existing schema or type a new one.</p>
+              )}
             </div>
-            <div className="grid gap-4 sm:grid-cols-2">
-              <div>
-                <label htmlFor="data-source-csv-schema" className="block text-sm font-medium text-oracle-dark-gray">Target schema</label>
-                <input
-                  id="data-source-csv-schema"
-                  value={csvSchemaName}
-                  onChange={(event) => onCsvSchemaNameChange(normalizeIdentifier(event.target.value))}
-                  className="input-oracle mt-1 font-mono uppercase"
-                  placeholder={DEFAULT_DATA_SCHEMA}
-                  list="data-source-schema-options"
-                />
-                <datalist id="data-source-schema-options">
-                  {userSchemaOptions(schemaOptions).map((schema) => (
-                    <option key={schema.schema_name} value={schema.schema_name}>
-                      {schema.exists ? `${schema.source_count} source(s)` : 'Create on upload'}
-                    </option>
+            <div className="space-y-3">
+              <div className="flex flex-col gap-3 border-y border-gray-200 bg-gray-50 px-4 py-3 sm:flex-row sm:items-center sm:justify-between">
+                <label htmlFor="data-source-csv-batch-files" className="btn-secondary cursor-pointer">
+                  + Add files
+                </label>
+                <div className="text-sm text-oracle-medium-gray">
+                  {csvUploadDrafts.length === 0
+                    ? 'No files selected'
+                    : `${readyCsvUploadCount}/${csvUploadDrafts.length} ready`}
+                </div>
+              </div>
+              {csvUploadIssues.length > 0 ? (
+                <div className="rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-xs text-amber-800">
+                  {csvUploadIssues.map((issue) => (
+                    <div key={issue}>{issue}</div>
                   ))}
-                </datalist>
-                {normalizedCsvSchema === 'APP_AGENT' ? (
-                  <p className="mt-1 text-xs text-red-600">APP_AGENT is reserved for application tables.</p>
-                ) : schemaNeedsCreation ? (
-                  <p className="mt-1 text-xs text-amber-700">This schema does not exist yet. You will be asked to confirm creation.</p>
-                ) : (
-                  <p className="mt-1 text-xs text-oracle-light-gray">Use an existing schema or type a new one.</p>
-                )}
-              </div>
-              <div>
-                <label htmlFor="data-source-csv-table-name" className="block text-sm font-medium text-oracle-dark-gray">Optional table name</label>
-                <input
-                  id="data-source-csv-table-name"
-                  value={csvTableName}
-                  onChange={(event) => onCsvTableNameChange(event.target.value)}
-                  className="input-oracle mt-1 font-mono uppercase"
-                  placeholder="FLEX_TRANSACTIONS_TEST"
-                />
-              </div>
+                </div>
+              ) : null}
+              {csvUploadDrafts.length === 0 ? (
+                <div
+                  className="flex min-h-48 items-center justify-center rounded-lg border-2 border-dashed border-gray-300 bg-gray-50 px-6 py-8 text-center"
+                  onDrop={handleCsvDrop}
+                  onDragOver={handleCsvDragOver}
+                >
+                  <div>
+                    <div className="text-sm font-semibold text-oracle-dark-gray">Drop CSV and JSON files</div>
+                    <label
+                      htmlFor="data-source-csv-batch-files"
+                      className="mt-2 inline-flex cursor-pointer text-sm font-medium text-oracle-blue-link hover:underline"
+                    >
+                      Select files
+                    </label>
+                  </div>
+                </div>
+              ) : (
+                <div className="grid gap-4 lg:grid-cols-[minmax(260px,360px)_1fr]">
+                  <CsvUploadDraftList
+                    drafts={csvUploadDrafts}
+                    activeDraftId={activeCsvUploadId}
+                    onSelectDraft={onActiveCsvUploadIdChange}
+                    onRemoveDraft={onCsvUploadDraftRemove}
+                  />
+                  <div className="min-w-0 space-y-3">
+                    {activeCsvUpload ? (
+                      <div className="flex flex-wrap items-center gap-2 text-sm">
+                        <span className="font-mono font-semibold text-oracle-dark-gray">
+                          {activeCsvUpload.tableName}
+                        </span>
+                        <span className="text-oracle-medium-gray">
+                          {activeCsvUpload.metadataJsonFile ? activeCsvUpload.metadataJsonFile.name : 'Missing JSON'}
+                        </span>
+                      </div>
+                    ) : null}
+                    <DataDictionaryEditor
+                      columns={activeCsvUpload?.columnMetadata || []}
+                      onColumnChange={onColumnMetadataChange}
+                      renderLoadingState={() => <LoadingState size="sm" label="Loading..." />}
+                    />
+                  </div>
+                </div>
+              )}
             </div>
           </>
         ) : (
@@ -356,12 +463,14 @@ export function DataSourceObjectModal({
           </>
         )}
 
-        <DataDictionaryEditor
-          columns={columnMetadata}
-          isLoading={objectMode === 'existing_table' && isCatalogTableFetching}
-          onColumnChange={onColumnMetadataChange}
-          renderLoadingState={() => <LoadingState size="sm" label="Loading..." />}
-        />
+        {objectMode === 'existing_table' ? (
+          <DataDictionaryEditor
+            columns={columnMetadata}
+            isLoading={isCatalogTableFetching}
+            onColumnChange={onColumnMetadataChange}
+            renderLoadingState={() => <LoadingState size="sm" label="Loading..." />}
+          />
+        ) : null}
 
         <div className="flex justify-end gap-2">
           <button type="button" className="btn-secondary" onClick={onClose}>

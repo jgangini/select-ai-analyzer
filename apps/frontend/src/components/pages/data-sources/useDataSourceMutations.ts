@@ -1,6 +1,8 @@
 import type { Dispatch, FormEvent, SetStateAction } from 'react';
 import { useMutation } from '@tanstack/react-query';
 
+import type { DataSourceCsvUploadDraft } from './dataSourceUtils';
+
 type DataSourceColumnMetadata = {
   column_name: string;
   data_type?: string;
@@ -50,16 +52,13 @@ type DataSourceApiForMutations = {
 };
 
 type DataSourceObjectFormForMutations = {
-  csvFile: File | null;
-  csvTableName: string;
+  csvUploadDrafts: DataSourceCsvUploadDraft[];
   csvSchemaName: string;
   tableComment: string;
   columnMetadata: DataSourceColumnMetadata[];
   tableOwner: string;
   tableName: string;
   pendingSchemaCreation: string | null;
-  setCsvFile: (file: File | null) => void;
-  setCsvTableName: (value: string) => void;
   setCsvSchemaName: (value: string) => void;
   setPendingSchemaCreation: (value: string | null) => void;
   setIsObjectModalOpen: (value: boolean) => void;
@@ -84,6 +83,37 @@ function showMetadataWarnings(
 ) {
   const message = metadataWarningMessage(warnings);
   if (message) showToast(message, 'warning');
+}
+
+async function uploadCsvDrafts({
+  apiClient,
+  drafts,
+  normalizedCsvSchema,
+  createSchema,
+}: {
+  apiClient: DataSourceApiForMutations;
+  drafts: DataSourceCsvUploadDraft[];
+  normalizedCsvSchema: string;
+  createSchema: boolean;
+}): Promise<{ data: { metadata_warnings: string[] } }> {
+  const invalidDraft = drafts.find((draft) => draft.error || !draft.metadataJsonFile);
+  if (invalidDraft) throw new Error(`Resolve ${invalidDraft.csvFile.name} before uploading.`);
+  if (drafts.length === 0) throw new Error('Select CSV and JSON files.');
+
+  const metadataWarnings: string[] = [];
+  for (const draft of drafts) {
+    const response = await apiClient.uploadCsv(
+      draft.csvFile,
+      draft.tableName,
+      draft.tableComment,
+      draft.columnMetadata,
+      'all',
+      normalizedCsvSchema,
+      createSchema
+    );
+    metadataWarnings.push(...(response.data.metadata_warnings || []));
+  }
+  return { data: { metadata_warnings: metadataWarnings } };
 }
 
 export function useDataSourceMutations({
@@ -112,27 +142,15 @@ export function useDataSourceMutations({
   metadataWarningMessage: (warnings?: string[]) => string | null;
 }) {
   const uploadMutation = useMutation({
-    mutationFn: ({ createSchema }: { createSchema: boolean }) => {
-      if (!objectForm.csvFile) throw new Error('Select a CSV file.');
-      return apiClient.uploadCsv(
-        objectForm.csvFile,
-        objectForm.csvTableName,
-        objectForm.tableComment,
-        objectForm.columnMetadata,
-        'all',
-        normalizedCsvSchema,
-        createSchema
-      );
-    },
+    mutationFn: ({ createSchema }: { createSchema: boolean }) =>
+      uploadCsvDrafts({ apiClient, drafts: objectForm.csvUploadDrafts, normalizedCsvSchema, createSchema }),
     onSuccess: (response) => {
-      objectForm.setCsvFile(null);
-      objectForm.setCsvTableName('');
       objectForm.setCsvSchemaName(defaultDataSchema);
       objectForm.resetObjectMetadata();
       objectForm.setPendingSchemaCreation(null);
       objectForm.setIsObjectModalOpen(false);
       invalidateSources();
-      showToast('CSV loaded and Select AI profile updated.', 'success');
+      showToast('CSV files loaded and Select AI profile updated.', 'success');
       showMetadataWarnings(showToast, metadataWarningMessage, response.data.metadata_warnings);
     },
     onError: (error) => showToast(getErrorMessage(error), 'error'),
@@ -178,7 +196,11 @@ export function useDataSourceMutations({
 
   const submitCsv = (event: FormEvent) => {
     event.preventDefault();
-    if (!objectForm.csvFile || uploadMutation.isPending || schemasAreLoading) return;
+    if (objectForm.csvUploadDrafts.length === 0 || uploadMutation.isPending || schemasAreLoading) return;
+    if (objectForm.csvUploadDrafts.some((draft) => draft.error || !draft.metadataJsonFile)) {
+      showToast('Resolve CSV and JSON matches before uploading.', 'error');
+      return;
+    }
     if (normalizedCsvSchema === 'APP_AGENT') {
       showToast('APP_AGENT is reserved for application tables. Choose another schema.', 'error');
       return;

@@ -187,7 +187,18 @@ describe('data source controller utilities', () => {
   it('derives submit button state for CSV upload and table registration', () => {
     const csvInput: Parameters<typeof getObjectSubmitState>[0] = {
       objectMode: 'csv',
-      csvFile: {} as File,
+      csvUploadDrafts: [
+        {
+          id: 'accounts',
+          baseName: 'accounts',
+          csvFile: {} as File,
+          metadataJsonFile: {} as File,
+          tableName: 'ACCOUNTS',
+          tableComment: '',
+          columnMetadata: [],
+          error: null,
+        },
+      ],
       isUploadPending: false,
       isSchemasLoading: false,
       tableOwner: '',
@@ -198,7 +209,7 @@ describe('data source controller utilities', () => {
     const csvReady = getObjectSubmitState(csvInput);
     const tablePending = getObjectSubmitState({
       objectMode: 'existing_table',
-      csvFile: null,
+      csvUploadDrafts: [],
       isUploadPending: false,
       isSchemasLoading: false,
       tableOwner: 'CORE',
@@ -208,7 +219,19 @@ describe('data source controller utilities', () => {
     });
 
     expect(csvReady).toEqual({ disabled: false, label: 'Upload CSV' });
-    expect(getObjectSubmitState({ ...csvInput, csvFile: null }).disabled).toBe(true);
+    expect(getObjectSubmitState({ ...csvInput, csvUploadDrafts: [] }).disabled).toBe(true);
+    expect(
+      getObjectSubmitState({
+        ...csvInput,
+        csvUploadDrafts: [
+          {
+            ...csvInput.csvUploadDrafts[0],
+            metadataJsonFile: null,
+            error: 'Missing matching JSON metadata.',
+          },
+        ],
+      }).disabled
+    ).toBe(true);
     expect(tablePending).toEqual({ disabled: true, label: 'Registering...' });
   });
 

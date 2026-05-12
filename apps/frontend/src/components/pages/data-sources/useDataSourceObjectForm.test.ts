@@ -17,29 +17,55 @@ function helpers() {
 }
 
 describe('useDataSourceObjectForm', () => {
-  it('loads CSV headers and merges them with existing metadata', async () => {
+  it('builds upload drafts by matching CSV and JSON files by name', async () => {
     const showToast = vi.fn();
     const formHelpers = helpers();
     const { result } = renderHook(() => useDataSourceObjectForm(showToast, formHelpers));
 
-    const file = { text: () => Promise.resolve('ACCOUNT_ID,AMOUNT\n1,25') } as File;
-    act(() => result.current.handleCsvFileChange(file));
+    const csvFile = new File(['ACCOUNT_ID,AMOUNT\n1,25'], 'accounts.csv', { type: 'text/csv' });
+    const jsonFile = new File([
+      JSON.stringify({ tableComment: 'Core accounts', columns: [{ column_name: 'AMOUNT', comment: 'Balance' }] }),
+    ], 'accounts.json', { type: 'application/json' });
+    act(() => result.current.handleCsvUploadFilesChange([csvFile, jsonFile]));
 
     await waitFor(() =>
-      expect(result.current.columnMetadata).toEqual([{ column_name: 'ACCOUNT_ID' }, { column_name: 'AMOUNT' }])
+      expect(result.current.csvUploadDrafts[0]).toMatchObject({
+        baseName: 'accounts',
+        tableName: 'ACCOUNTS',
+        metadataJsonFile: jsonFile,
+        tableComment: 'Core accounts',
+        error: null,
+      })
     );
     expect(formHelpers.parseCsvHeaders).toHaveBeenCalledWith('ACCOUNT_ID,AMOUNT\n1,25');
+    expect(result.current.csvUploadDrafts[0].columnMetadata).toEqual([
+      { column_name: 'ACCOUNT_ID' },
+      { column_name: 'AMOUNT', comment: 'Balance' },
+    ]);
   });
 
   it('resets metadata when object mode or owner/table changes', () => {
     const { result } = renderHook(() => useDataSourceObjectForm(vi.fn(), helpers()));
 
     act(() => {
+      result.current.setCsvUploadDrafts([
+        {
+          id: 'accounts',
+          baseName: 'accounts',
+          csvFile: {} as File,
+          metadataJsonFile: {} as File,
+          tableName: 'ACCOUNTS',
+          tableComment: '',
+          columnMetadata: [{ column_name: 'ACCOUNT_ID', comment: 'Account' }],
+          error: null,
+        },
+      ]);
       result.current.setColumnMetadata([{ column_name: 'ACCOUNT_ID', comment: 'Account' }]);
       result.current.setTableComment('Accounts');
       result.current.changeObjectMode('existing_table');
     });
     expect(result.current.objectMode).toBe('existing_table');
+    expect(result.current.csvUploadDrafts).toEqual([]);
     expect(result.current.columnMetadata).toEqual([]);
     expect(result.current.tableComment).toBe('');
 
@@ -51,17 +77,36 @@ describe('useDataSourceObjectForm', () => {
     expect(result.current.tableName).toBe('');
   });
 
-  it('loads metadata JSON and shows success feedback', async () => {
-    const showToast = vi.fn();
-    const { result } = renderHook(() => useDataSourceObjectForm(showToast, helpers()));
-    const file = {
-      text: () => Promise.resolve(JSON.stringify({ tableComment: 'Core accounts', columns: [{ column_name: 'ACCOUNT_ID' }] })),
-    } as File;
+  it('marks CSV files without matching metadata as not ready', async () => {
+    const { result } = renderHook(() => useDataSourceObjectForm(vi.fn(), helpers()));
+    const csvFile = new File(['ACCOUNT_ID\n1'], 'accounts.csv', { type: 'text/csv' });
 
-    act(() => result.current.handleMetadataJsonFileChange(file));
+    act(() => result.current.handleCsvUploadFilesChange([csvFile]));
 
-    await waitFor(() => expect(result.current.tableComment).toBe('Core accounts'));
-    expect(result.current.columnMetadata).toEqual([{ column_name: 'ACCOUNT_ID' }]);
-    expect(showToast).toHaveBeenCalledWith('Metadata JSON loaded.', 'success');
+    await waitFor(() => expect(result.current.csvUploadDrafts[0].error).toContain('Missing matching JSON metadata.'));
+  });
+
+  it('keeps selected CSV files when matching JSON files are added later', async () => {
+    const { result } = renderHook(() => useDataSourceObjectForm(vi.fn(), helpers()));
+    const csvFile = new File(['ACCOUNT_ID\n1'], 'accounts.csv', { type: 'text/csv' });
+    const jsonFile = new File([JSON.stringify({ columns: [{ column_name: 'ACCOUNT_ID', comment: 'Account' }] })], 'accounts.json', {
+      type: 'application/json',
+    });
+
+    act(() => result.current.handleCsvUploadFilesChange([csvFile]));
+    await waitFor(() => expect(result.current.csvUploadDrafts[0].metadataJsonFile).toBeNull());
+
+    act(() => result.current.handleCsvUploadFilesChange([jsonFile]));
+
+    await waitFor(() =>
+      expect(result.current.csvUploadDrafts[0]).toMatchObject({
+        csvFile,
+        metadataJsonFile: jsonFile,
+        error: null,
+      })
+    );
+    expect(result.current.csvUploadDrafts[0].columnMetadata).toEqual([
+      { column_name: 'ACCOUNT_ID', comment: 'Account' },
+    ]);
   });
 });

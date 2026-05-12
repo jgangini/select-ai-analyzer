@@ -145,10 +145,10 @@ function buildDataSourcesController({
     objectModalProps: {
       open: objectForm.isObjectModalOpen,
       objectMode: objectForm.objectMode,
-      csvFile: objectForm.csvFile,
-      metadataJsonFile: objectForm.metadataJsonFile,
+      csvUploadDrafts: objectForm.csvUploadDrafts,
+      activeCsvUploadId: objectForm.activeCsvUploadId,
+      csvUploadIssues: objectForm.csvUploadIssues,
       csvSchemaName: objectForm.csvSchemaName,
-      csvTableName: objectForm.csvTableName,
       normalizedCsvSchema: objectForm.normalizedCsvSchema,
       schemaNeedsCreation,
       schemaOptions,
@@ -166,13 +166,15 @@ function buildDataSourcesController({
       onClose: mutations.closeObjectModal,
       onSubmit: objectForm.objectMode === 'csv' ? mutations.submitCsv : mutations.submitExistingTable,
       onObjectModeChange: objectForm.changeObjectMode,
-      onCsvFileChange: objectForm.handleCsvFileChange,
-      onMetadataJsonFileChange: objectForm.handleMetadataJsonFileChange,
+      onCsvUploadFilesChange: objectForm.handleCsvUploadFilesChange,
+      onActiveCsvUploadIdChange: objectForm.setActiveCsvUploadId,
+      onCsvUploadDraftRemove: objectForm.removeCsvUploadDraft,
       onCsvSchemaNameChange: objectForm.setCsvSchemaName,
-      onCsvTableNameChange: objectForm.setCsvTableName,
       onTableOwnerChange: objectForm.changeTableOwner,
       onTableNameChange: objectForm.changeTableName,
-      onColumnMetadataChange: objectForm.updateColumnMetadata,
+      onColumnMetadataChange: objectForm.objectMode === 'csv'
+        ? objectForm.updateActiveCsvUploadMetadata
+        : objectForm.updateColumnMetadata,
     },
     previewModalProps: {
       source: listState.viewingSource,
