@@ -5,6 +5,11 @@ const BAR_CHART_HEIGHT_PX = 268;
 const BAR_CHART_TOP_PADDING_PX = 34;
 const BAR_CHART_BOTTOM_PADDING_PX = 38;
 const BAR_CHART_MAX_BAR_HEIGHT_PX = 176;
+const LINE_CHART_HEIGHT_PX = 270;
+const LINE_CHART_PLOT_TOP_PX = 34;
+const LINE_CHART_PLOT_RIGHT_PX = 32;
+const LINE_CHART_PLOT_BOTTOM_PX = 212;
+const LINE_CHART_PLOT_LEFT_PX = 64;
 const CHART_SURFACE_CLASS = 'rounded-lg border border-[#e2d8d0] bg-[#fffdfb] p-4 shadow-sm';
 const CHART_SURFACE_RELAXED_CLASS = 'relative rounded-lg border border-[#e2d8d0] bg-[#fffdfb] p-5 shadow-sm';
 const PIE_CHART_GEOMETRY = {
@@ -147,6 +152,30 @@ export function getBarHeight(value: number, maxValue: number): number {
   return Math.max(8, (Math.abs(value) / maxValue) * BAR_CHART_MAX_BAR_HEIGHT_PX);
 }
 
+function linePointX(index: number, pointCount: number, chartWidth: number): number {
+  const plotWidth = chartWidth - LINE_CHART_PLOT_LEFT_PX - LINE_CHART_PLOT_RIGHT_PX;
+  if (pointCount <= 1) return LINE_CHART_PLOT_LEFT_PX + plotWidth / 2;
+  return LINE_CHART_PLOT_LEFT_PX + index * (plotWidth / (pointCount - 1));
+}
+
+function linePointY(value: number, maxValue: number): number {
+  const plotHeight = LINE_CHART_PLOT_BOTTOM_PX - LINE_CHART_PLOT_TOP_PX;
+  return LINE_CHART_PLOT_BOTTOM_PX - (Math.max(value, 0) / maxValue) * plotHeight;
+}
+
+function compactXAxisLabel(label: string): string {
+  const value = String(label || '').trim();
+  const dateMatch = value.match(/^(\d{4})-(\d{2})-(\d{2})(?:T.*)?$/);
+  if (dateMatch) {
+    const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+    const monthIndex = Number(dateMatch[2]) - 1;
+    const day = dateMatch[3];
+    if (monthIndex >= 0 && monthIndex < monthNames.length) return `${monthNames[monthIndex]} ${day}`;
+  }
+  if (value.length <= 12) return value;
+  return `${value.slice(0, 11)}...`;
+}
+
 export function EmptyChartState(props: ChartRendererProps) {
   const ChartControls = props.tools.ChartControls;
 
@@ -206,35 +235,99 @@ export function LineAreaChart(props: ChartRendererProps) {
   const ChartControls = tools.ChartControls;
   const ChartScrollFrame = tools.ChartScrollFrame;
   const chartWidth = Math.max(620, points.length * 92);
-  const step = points.length > 1 ? (chartWidth - 100) / (points.length - 1) : 0;
+  const yAxisTicks = tools.buildYAxisTicks(maxValue);
   const path = points
     .map((point, index) => {
-      const px = 40 + index * step;
-      const py = 190 - (Math.max(point.value, 0) / maxValue) * 150;
+      const px = linePointX(index, points.length, chartWidth);
+      const py = linePointY(point.value, maxValue);
       return `${index === 0 ? 'M' : 'L'} ${px} ${py}`;
     })
     .join(' ');
-  const areaPath = `${path} L ${40 + (points.length - 1) * step} 205 L 40 205 Z`;
+  const lastPointX = linePointX(points.length - 1, points.length, chartWidth);
+  const firstPointX = linePointX(0, points.length, chartWidth);
+  const areaPath = `${path} L ${lastPointX} ${LINE_CHART_PLOT_BOTTOM_PX} L ${firstPointX} ${LINE_CHART_PLOT_BOTTOM_PX} Z`;
 
   return (
     <div className={CHART_SURFACE_CLASS}>
       <ChartControls {...chartControlProps(props)} />
       <ChartScrollFrame>
         <svg
-          viewBox={`0 0 ${chartWidth} 240`}
+          viewBox={`0 0 ${chartWidth} ${LINE_CHART_HEIGHT_PX}`}
           className="h-64 max-w-none"
           style={{ width: `${chartWidth}px` }}
           role="img"
           aria-label={spec.title || 'Line chart'}
         >
-          <line x1="38" y1="205" x2={chartWidth - 30} y2="205" stroke="#d9d2cb" />
-          <line x1="38" y1="28" x2="38" y2="205" stroke="#d9d2cb" />
+          {yAxisTicks.map((tick, index) => {
+            const y = linePointY(tick, maxValue);
+            return (
+              <g key={`${tick}-${index}`}>
+                <line
+                  x1={LINE_CHART_PLOT_LEFT_PX}
+                  y1={y}
+                  x2={chartWidth - LINE_CHART_PLOT_RIGHT_PX}
+                  y2={y}
+                  stroke={index === yAxisTicks.length - 1 ? '#c9c0b8' : '#eee6df'}
+                />
+                <text
+                  x={LINE_CHART_PLOT_LEFT_PX - 10}
+                  y={y + 4}
+                  textAnchor="end"
+                  fontSize="11"
+                  fontWeight="600"
+                  fill="#8b8178"
+                >
+                  {tools.formatAxisValue(tick)}
+                </text>
+              </g>
+            );
+          })}
+          <line
+            x1={LINE_CHART_PLOT_LEFT_PX}
+            y1={LINE_CHART_PLOT_BOTTOM_PX}
+            x2={chartWidth - LINE_CHART_PLOT_RIGHT_PX}
+            y2={LINE_CHART_PLOT_BOTTOM_PX}
+            stroke="#c9c0b8"
+          />
+          <line
+            x1={LINE_CHART_PLOT_LEFT_PX}
+            y1={LINE_CHART_PLOT_TOP_PX}
+            x2={LINE_CHART_PLOT_LEFT_PX}
+            y2={LINE_CHART_PLOT_BOTTOM_PX}
+            stroke="#c9c0b8"
+          />
           {spec.type === 'area' && <path d={areaPath} fill="rgba(199,70,52,0.12)" />}
           <path d={path} fill="none" stroke="#c74634" strokeWidth="4" strokeLinecap="round" strokeLinejoin="round" />
           {points.map((point, index) => {
-            const px = 40 + index * step;
-            const py = 190 - (Math.max(point.value, 0) / maxValue) * 150;
-            return <circle key={`${point.label}-${index}`} cx={px} cy={py} r="4.5" fill={CHART_COLORS[index % CHART_COLORS.length]} />;
+            const px = linePointX(index, points.length, chartWidth);
+            const py = linePointY(point.value, maxValue);
+            return (
+              <g key={`${point.label}-${index}`}>
+                <text
+                  x={px}
+                  y={Math.max(16, py - 12)}
+                  textAnchor="middle"
+                  fontSize="11"
+                  fontWeight="700"
+                  fill="#4f4640"
+                >
+                  {tools.formatAxisValue(point.value)}
+                </text>
+                <circle cx={px} cy={py} r="4.5" fill={CHART_COLORS[index % CHART_COLORS.length]}>
+                  <title>{`${point.label}: ${tools.formatCellValue(point.value)}`}</title>
+                </circle>
+                <text
+                  x={px}
+                  y={LINE_CHART_PLOT_BOTTOM_PX + 24}
+                  textAnchor="middle"
+                  fontSize="11"
+                  fontWeight="600"
+                  fill="#8b8178"
+                >
+                  {compactXAxisLabel(point.label)}
+                </text>
+              </g>
+            );
           })}
         </svg>
       </ChartScrollFrame>
