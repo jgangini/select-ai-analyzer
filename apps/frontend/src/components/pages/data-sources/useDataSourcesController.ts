@@ -154,8 +154,6 @@ function buildDataSourcesController({
       schemaOptions,
       tableOwner: objectForm.tableOwner,
       tableName: objectForm.tableName,
-      displayName: objectForm.displayName,
-      tableComment: objectForm.tableComment,
       columnMetadata: objectForm.columnMetadata,
       ownerOptions: queries.catalogOwnersQuery.data || [],
       tableOptions,
@@ -174,8 +172,6 @@ function buildDataSourcesController({
       onCsvTableNameChange: objectForm.setCsvTableName,
       onTableOwnerChange: objectForm.changeTableOwner,
       onTableNameChange: objectForm.changeTableName,
-      onDisplayNameChange: objectForm.setDisplayName,
-      onTableCommentChange: objectForm.setTableComment,
       onColumnMetadataChange: objectForm.updateColumnMetadata,
     },
     previewModalProps: {

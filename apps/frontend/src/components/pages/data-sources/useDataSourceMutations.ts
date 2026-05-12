@@ -57,7 +57,6 @@ type DataSourceObjectFormForMutations = {
   columnMetadata: DataSourceColumnMetadata[];
   tableOwner: string;
   tableName: string;
-  displayName: string;
   pendingSchemaCreation: string | null;
   setCsvFile: (file: File | null) => void;
   setCsvTableName: (value: string) => void;
@@ -67,7 +66,6 @@ type DataSourceObjectFormForMutations = {
   resetObjectMetadata: () => void;
   setTableOwner: (value: string) => void;
   setTableName: (value: string) => void;
-  setDisplayName: (value: string) => void;
   setTableComment: (value: string) => void;
   setColumnMetadata: (value: DataSourceColumnMetadata[]) => void;
 };
@@ -144,7 +142,6 @@ export function useDataSourceMutations({
       apiClient.registerTable({
         owner: objectForm.tableOwner.trim(),
         table_name: objectForm.tableName.trim(),
-        display_name: objectForm.displayName.trim() || undefined,
         table_comment: objectForm.tableComment.trim() || undefined,
         columns: objectForm.columnMetadata,
         access_scope: 'all',
@@ -152,7 +149,6 @@ export function useDataSourceMutations({
     onSuccess: (response) => {
       objectForm.setTableOwner('');
       objectForm.setTableName('');
-      objectForm.setDisplayName('');
       objectForm.setTableComment('');
       objectForm.setColumnMetadata([]);
       objectForm.setIsObjectModalOpen(false);

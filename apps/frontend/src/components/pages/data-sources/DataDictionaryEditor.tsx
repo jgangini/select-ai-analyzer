@@ -11,17 +11,13 @@ type DataSourceColumnMetadata = {
 };
 
 export function DataDictionaryEditor({
-  tableComment,
   columns,
   isLoading,
-  onTableCommentChange,
   onColumnChange,
   renderLoadingState,
 }: {
-  tableComment: string;
   columns: DataSourceColumnMetadata[];
   isLoading?: boolean;
-  onTableCommentChange: (value: string) => void;
   onColumnChange: (index: number, patch: Partial<DataSourceColumnMetadata>) => void;
   renderLoadingState: () => ReactNode;
 }) {
@@ -31,16 +27,6 @@ export function DataDictionaryEditor({
         <h3 className="text-sm font-semibold text-oracle-dark-gray">Data dictionary</h3>
       </div>
       <div className="space-y-3 p-4">
-        <div>
-          <label htmlFor="data-dictionary-table-comment" className="block text-sm font-medium text-oracle-dark-gray">Table comment</label>
-          <textarea
-            id="data-dictionary-table-comment"
-            value={tableComment}
-            onChange={(event) => onTableCommentChange(event.target.value)}
-            className="input-oracle mt-1 min-h-20 resize-y"
-            placeholder="Business meaning for this table"
-          />
-        </div>
         <div className="max-h-72 overflow-auto rounded border border-gray-200">
           <table className="min-w-[760px] divide-y divide-gray-200">
             <thead className="bg-gray-50">

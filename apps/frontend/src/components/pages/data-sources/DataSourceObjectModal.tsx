@@ -30,8 +30,6 @@ interface DataSourceObjectModalProps {
   schemaOptions: DataSourceSchema[];
   tableOwner: string;
   tableName: string;
-  displayName: string;
-  tableComment: string;
   columnMetadata: DataSourceColumnMetadata[];
   ownerOptions: DataSourceCatalogOwner[];
   tableOptions: DataSourceCatalogTable[];
@@ -50,8 +48,6 @@ interface DataSourceObjectModalProps {
   onCsvTableNameChange: (value: string) => void;
   onTableOwnerChange: (value: string) => void;
   onTableNameChange: (value: string) => void;
-  onDisplayNameChange: (value: string) => void;
-  onTableCommentChange: (value: string) => void;
   onColumnMetadataChange: (index: number, patch: Partial<DataSourceColumnMetadata>) => void;
 }
 
@@ -193,8 +189,6 @@ export function DataSourceObjectModal({
   schemaOptions,
   tableOwner,
   tableName,
-  displayName,
-  tableComment,
   columnMetadata,
   ownerOptions,
   tableOptions,
@@ -213,8 +207,6 @@ export function DataSourceObjectModal({
   onCsvTableNameChange,
   onTableOwnerChange,
   onTableNameChange,
-  onDisplayNameChange,
-  onTableCommentChange,
   onColumnMetadataChange,
 }: DataSourceObjectModalProps) {
   const submitState = getObjectSubmitState({
@@ -266,7 +258,6 @@ export function DataSourceObjectModal({
 
         {objectMode === 'csv' ? (
           <>
-            <p className="text-sm text-oracle-medium-gray">Load a CSV into a data schema.</p>
             <div className="grid gap-4 sm:grid-cols-2">
               <DataSourceFilePicker
                 id="data-source-csv-file"
@@ -362,24 +353,12 @@ export function DataSourceObjectModal({
                 </select>
               </div>
             </div>
-            <div>
-              <label htmlFor="data-source-display-name" className="block text-sm font-medium text-oracle-dark-gray">Optional display name</label>
-              <input
-                id="data-source-display-name"
-                value={displayName}
-                onChange={(event) => onDisplayNameChange(event.target.value)}
-                className="input-oracle mt-1"
-                placeholder="Flexcube daily movements"
-              />
-            </div>
           </>
         )}
 
         <DataDictionaryEditor
-          tableComment={tableComment}
           columns={columnMetadata}
           isLoading={objectMode === 'existing_table' && isCatalogTableFetching}
-          onTableCommentChange={onTableCommentChange}
           onColumnChange={onColumnMetadataChange}
           renderLoadingState={() => <LoadingState size="sm" label="Loading..." />}
         />

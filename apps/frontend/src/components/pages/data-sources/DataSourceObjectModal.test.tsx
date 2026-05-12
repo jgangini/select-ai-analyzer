@@ -19,8 +19,6 @@ function modalProps(overrides: Partial<ModalProps> = {}): ModalProps {
     schemaOptions: [],
     tableOwner: '',
     tableName: '',
-    displayName: '',
-    tableComment: '',
     columnMetadata: [],
     ownerOptions: [],
     tableOptions: [],
@@ -39,8 +37,6 @@ function modalProps(overrides: Partial<ModalProps> = {}): ModalProps {
     onCsvTableNameChange: vi.fn(),
     onTableOwnerChange: vi.fn(),
     onTableNameChange: vi.fn(),
-    onDisplayNameChange: vi.fn(),
-    onTableCommentChange: vi.fn(),
     onColumnMetadataChange: vi.fn(),
     ...overrides,
   };
@@ -55,10 +51,19 @@ describe('DataSourceObjectModal', () => {
     render(<DataSourceObjectModal {...modalProps({ normalizedCsvSchema: 'APP_AGENT' })} />);
 
     expect(screen.getByRole('heading', { name: /add object/i })).toBeInTheDocument();
-    expect(screen.getByText('Load a CSV into a data schema.')).toBeInTheDocument();
+    expect(screen.queryByText('Load a CSV into a data schema.')).not.toBeInTheDocument();
     expect(screen.getByLabelText('CSV file')).toBeInTheDocument();
     expect(screen.getByLabelText('Metadata JSON')).toBeInTheDocument();
+    expect(screen.queryByRole('textbox', { name: /table comment/i })).not.toBeInTheDocument();
     expect(screen.getByText(/reserved for application tables/i)).toBeInTheDocument();
+  });
+
+  it('omits optional display name for existing tables', () => {
+    render(<DataSourceObjectModal {...modalProps({ objectMode: 'existing_table' })} />);
+
+    expect(screen.getByRole('combobox', { name: /owner/i })).toBeInTheDocument();
+    expect(screen.getByRole('combobox', { name: /table/i })).toBeInTheDocument();
+    expect(screen.queryByRole('textbox', { name: /optional display name/i })).not.toBeInTheDocument();
   });
 
   it('keeps paired CSV fields in shared responsive rows', () => {

@@ -41,7 +41,6 @@ export function useDataSourceObjectForm(showToast: ShowToast, helpers: DataSourc
   const [pendingSchemaCreation, setPendingSchemaCreation] = useState<string | null>(null);
   const [tableOwner, setTableOwner] = useState('');
   const [tableName, setTableName] = useState('');
-  const [displayName, setDisplayName] = useState('');
   const [tableComment, setTableComment] = useState('');
   const [columnMetadata, setColumnMetadata] = useState<DataSourceColumnMetadata[]>([]);
   const normalizedCsvSchema = helpers.normalizeIdentifier(csvSchemaName);
@@ -125,7 +124,7 @@ export function useDataSourceObjectForm(showToast: ShowToast, helpers: DataSourc
     isObjectModalOpen, setIsObjectModalOpen, objectMode, csvFile, setCsvFile, metadataJsonFile,
     csvTableName, setCsvTableName, csvSchemaName, setCsvSchemaName, normalizedCsvSchema,
     pendingSchemaCreation, setPendingSchemaCreation, tableOwner, setTableOwner, tableName, setTableName,
-    displayName, setDisplayName, tableComment, setTableComment, columnMetadata, setColumnMetadata,
+    tableComment, setTableComment, columnMetadata, setColumnMetadata,
   };
   const actions = {
     openObjectModal, changeObjectMode, changeTableOwner, changeTableName, updateColumnMetadata,

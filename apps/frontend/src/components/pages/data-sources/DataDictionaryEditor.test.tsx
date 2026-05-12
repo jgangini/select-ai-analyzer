@@ -5,12 +5,10 @@ import { DataDictionaryEditor } from './DataDictionaryEditor';
 
 describe('DataDictionaryEditor', () => {
   it('exposes editable metadata fields with accessible names', () => {
-    const onTableCommentChange = vi.fn();
     const onColumnChange = vi.fn();
 
     render(
       <DataDictionaryEditor
-        tableComment="Customer account data"
         columns={[
           {
             column_name: 'ACCOUNT_ID',
@@ -22,15 +20,12 @@ describe('DataDictionaryEditor', () => {
             primary_key: true,
           },
         ]}
-        onTableCommentChange={onTableCommentChange}
         onColumnChange={onColumnChange}
         renderLoadingState={() => <span>Loading metadata</span>}
       />
     );
 
-    fireEvent.change(screen.getByRole('textbox', { name: /table comment/i }), {
-      target: { value: 'Updated table comment' },
-    });
+    expect(screen.queryByRole('textbox', { name: /table comment/i })).not.toBeInTheDocument();
     fireEvent.change(screen.getByRole('textbox', { name: /comment for account_id/i }), {
       target: { value: 'Updated column comment' },
     });
@@ -42,7 +37,6 @@ describe('DataDictionaryEditor', () => {
     });
     fireEvent.click(screen.getByRole('checkbox', { name: /primary key account_id/i }));
 
-    expect(onTableCommentChange).toHaveBeenCalledWith('Updated table comment');
     expect(onColumnChange).toHaveBeenCalledWith(0, { comment: 'Updated column comment' });
     expect(onColumnChange).toHaveBeenCalledWith(0, { ui_display: 'Account number' });
     expect(onColumnChange).toHaveBeenCalledWith(0, { classification: 'business key' });
@@ -52,10 +46,8 @@ describe('DataDictionaryEditor', () => {
   it('uses the provided loading renderer while metadata is loading', () => {
     render(
       <DataDictionaryEditor
-        tableComment=""
         columns={[]}
         isLoading
-        onTableCommentChange={vi.fn()}
         onColumnChange={vi.fn()}
         renderLoadingState={() => <span>Loading metadata</span>}
       />
