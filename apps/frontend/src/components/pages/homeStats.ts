@@ -22,19 +22,7 @@ export function buildHomeStatCards(sources: HomeStatsSource[]): HomeStatCard[] {
   const totalRows = sources.reduce((sum, source) => sum + Number(source.row_count || 0), 0);
   return [
     { label: 'Objects', value: sources.length, kind: 'objects', caption: 'Tables registered for governed Select AI' },
-    { label: 'Columns', value: totalColumns, kind: 'columns', caption: 'Registered fields available for analysis' },
+    { label: 'Columns', value: totalColumns, kind: 'columns', caption: 'Fields available for analysis' },
     { label: 'Rows', value: totalRows, kind: 'rows', caption: 'Rows available for analytical questions' },
   ];
-}
-
-export function buildReadinessSummary(
-  sources: HomeStatsSource[],
-  isLoading: boolean
-): { readinessRate: number; readinessSummary: string } {
-  const activeSources = sources.filter((source) => String(source.status || '').toLowerCase() === 'active').length;
-  const readinessRate = sources.length > 0 ? Math.round((activeSources / sources.length) * 100) : 0;
-  return {
-    readinessRate,
-    readinessSummary: isLoading ? 'Loading registered objects' : `${activeSources} of ${sources.length} objects active`,
-  };
 }

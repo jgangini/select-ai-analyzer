@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 
 import { analyticsApi, analyticsQueryKeys } from '../../services/analyticsApi';
 import { dataSourcesApi, dataSourcesQueryKeys } from '../../services/dataSourcesApi';
-import { buildHomeStatCards, buildReadinessSummary, formatNumber, type StatKind } from './homeStats';
+import { buildHomeStatCards, formatNumber, type StatKind } from './homeStats';
 
 function StatIcon({ kind }: { kind: StatKind }) {
   if (kind === 'columns') {
@@ -44,7 +44,6 @@ export function Home({ appName, currentUserId }: { appName: string; currentUserI
 
   const sources = sourcesQuery.data ?? [];
   const statCards = buildHomeStatCards(sources);
-  const { readinessRate, readinessSummary } = buildReadinessSummary(sources, sourcesQuery.isLoading);
   const frequentQuestions = recommendationsQuery.data?.frequent || [];
   const openQuestion = (question: string) => {
     navigate(`/chat?question=${encodeURIComponent(question)}`);
@@ -84,7 +83,7 @@ export function Home({ appName, currentUserId }: { appName: string; currentUserI
       </section>
 
       {frequentQuestions.length > 0 ? (
-        <section className="home-light-card rounded-3xl p-6 sm:p-7">
+        <section className="home-light-card home-question-card rounded-3xl p-6 sm:p-7">
           <div className="flex flex-col gap-2">
             <p className="text-[11px] font-bold uppercase tracking-[0.18em] text-oracle-red">
               Your frequent questions
@@ -99,11 +98,11 @@ export function Home({ appName, currentUserId }: { appName: string; currentUserI
                 key={item.question}
                 type="button"
                 onClick={() => openQuestion(item.question)}
-                className="rounded-lg border border-oracle-border bg-white px-4 py-3 text-left text-sm font-medium text-oracle-dark-gray shadow-sm transition hover:border-oracle-red hover:shadow-md"
+                className="home-question-button rounded-lg px-4 py-3 text-left text-sm font-medium transition"
                 title={item.question}
               >
                 <span className="block leading-5">{item.question}</span>
-                <span className="mt-2 block text-xs font-semibold text-oracle-light-gray">
+                <span className="home-question-count mt-2 block text-xs font-semibold">
                   Used {item.usage_count} time{item.usage_count === 1 ? '' : 's'}
                 </span>
               </button>
@@ -111,32 +110,6 @@ export function Home({ appName, currentUserId }: { appName: string; currentUserI
           </div>
         </section>
       ) : null}
-
-      <section className="home-light-card home-ingestion-card rounded-3xl p-6 sm:p-7">
-        <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
-          <div>
-            <p className="text-[11px] font-bold uppercase tracking-[0.18em] text-oracle-red">
-              Data readiness
-            </p>
-            <h2 className="home-light-title mt-2 text-2xl font-semibold">
-              Select AI catalog status
-            </h2>
-          </div>
-        </div>
-        <p className="home-light-muted mt-4 w-full max-w-none text-sm leading-6">
-          Active objects are included in the enforced Select AI object list. Inactive or failed registrations stay visible in Data Source so the team can repair permissions, reload CSV files, or remove obsolete tables.
-        </p>
-        <div className="mt-6 flex flex-col gap-2 text-xs font-semibold uppercase tracking-[0.12em] sm:flex-row sm:items-center sm:justify-between">
-          <span className="home-progress-note">{readinessSummary}</span>
-          <span className="home-progress-note home-progress-note--right">{readinessRate}% ready</span>
-        </div>
-        <div className="home-progress-track mt-3 h-3 overflow-hidden rounded-full">
-          <div
-            className="home-progress-fill h-full rounded-full transition-all duration-500"
-            style={{ width: `${readinessRate}%` }}
-          />
-        </div>
-      </section>
     </div>
   );
 }
