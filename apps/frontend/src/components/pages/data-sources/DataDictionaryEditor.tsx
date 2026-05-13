@@ -16,16 +16,18 @@ export function DataDictionaryEditor({
   isLoading,
   onColumnChange,
   renderLoadingState,
+  bodyClassName = 'min-h-0 flex flex-1 p-4',
   className = '',
-  scrollClassName = 'max-h-72',
+  tableShellClassName = 'max-h-72 overflow-auto rounded border border-gray-200',
 }: {
   columns: DataSourceColumnMetadata[];
   headerMeta?: ReactNode;
   isLoading?: boolean;
   onColumnChange: (index: number, patch: Partial<DataSourceColumnMetadata>) => void;
   renderLoadingState: () => ReactNode;
+  bodyClassName?: string;
   className?: string;
-  scrollClassName?: string;
+  tableShellClassName?: string;
 }) {
   return (
     <div className={`flex flex-col rounded-lg border border-oracle-border bg-white ${className}`}>
@@ -33,8 +35,8 @@ export function DataDictionaryEditor({
         <h3 className="text-sm font-semibold text-oracle-dark-gray">Data dictionary</h3>
         {headerMeta ? <div className="min-w-0 flex-1 text-sm text-oracle-medium-gray">{headerMeta}</div> : null}
       </div>
-      <div className="min-h-0 flex flex-1 p-4">
-        <div className={`${scrollClassName} overflow-auto rounded border border-gray-200`}>
+      <div className={bodyClassName}>
+        <div className={tableShellClassName}>
           <table className="min-w-[760px] divide-y divide-gray-200">
             <thead className="bg-gray-50">
               <tr>

@@ -62,13 +62,13 @@ describe('DataDictionaryEditor', () => {
     render(
       <DataDictionaryEditor
         columns={[]}
-        headerMeta={<span>ACCOUNTS accounts.json</span>}
+        headerMeta={<span>ACCOUNTS</span>}
         onColumnChange={vi.fn()}
         renderLoadingState={() => <span>Loading metadata</span>}
       />
     );
 
     expect(screen.getByRole('heading', { name: /data dictionary/i })).toBeInTheDocument();
-    expect(screen.getByText('ACCOUNTS accounts.json')).toBeInTheDocument();
+    expect(screen.getByText('ACCOUNTS')).toBeInTheDocument();
   });
 });

@@ -348,18 +348,9 @@ export function DataSourceObjectModal({
   );
 
   const activeCsvHeaderMeta = activeCsvUpload ? (
-    <div className="flex min-w-0 items-center gap-2">
-      <span>:</span>
-      <span className="min-w-0 truncate font-mono font-semibold text-oracle-dark-gray" title={activeCsvUpload.tableName}>
-        {activeCsvUpload.tableName}
-      </span>
-      <span
-        className={`min-w-0 truncate ${activeCsvUpload.metadataJsonFile ? 'text-emerald-700' : 'text-rose-700'}`}
-        title={activeCsvUpload.metadataJsonFile?.name || 'Missing JSON'}
-      >
-        {activeCsvUpload.metadataJsonFile ? activeCsvUpload.metadataJsonFile.name : 'Missing JSON'}
-      </span>
-    </div>
+    <span className="block min-w-0 truncate text-xs text-oracle-medium-gray" title={activeCsvUpload.tableName}>
+      {activeCsvUpload.tableName}
+    </span>
   ) : null;
 
   return (
@@ -424,7 +415,7 @@ export function DataSourceObjectModal({
                   </div>
                 </div>
               ) : (
-                <div className="grid items-stretch gap-4 lg:grid-cols-[minmax(260px,360px)_1fr]">
+                <div className="grid items-stretch gap-4 lg:grid-cols-[minmax(230px,330px)_1fr]">
                   <CsvUploadDraftList
                     drafts={csvUploadDrafts}
                     activeDraftId={activeCsvUploadId}
@@ -435,11 +426,12 @@ export function DataSourceObjectModal({
                   <div className="min-w-0">
                     <DataDictionaryEditor
                       columns={activeCsvUpload?.columnMetadata || []}
+                      bodyClassName="min-h-0 flex flex-1"
                       className="h-[25rem]"
                       headerMeta={activeCsvHeaderMeta}
                       onColumnChange={onColumnMetadataChange}
                       renderLoadingState={() => <LoadingState size="sm" label="Loading..." />}
-                      scrollClassName="min-h-0 flex-1"
+                      tableShellClassName="min-h-0 flex-1 overflow-auto"
                     />
                   </div>
                 </div>
