@@ -39,7 +39,7 @@ function OracleGraphHeader({
           {result ? `Conversation: ${result.conversation_id}` : 'Ask a question to populate the graph'}
         </p>
       </div>
-      <button type="button" className="ml-auto rounded-md p-1.5 text-oracle-medium-gray transition-colors hover:bg-black/5" onClick={onClose} aria-label="Close agent graph">
+      <button type="button" className="ml-auto rounded-md p-1.5 text-oracle-medium-gray transition-colors hover:bg-black/5" onClick={onClose} aria-label="Close runtime graph">
         <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
         </svg>
@@ -107,7 +107,7 @@ function OracleGraphCanvas({
       style={{ cursor: graphPanning ? 'grabbing' : 'grab' }}
     >
       <div style={{ width: '100%', height: graphCanvasHeight, minHeight: graphCanvasHeight, margin: '0 auto' }}>
-        <svg width="100%" height={graphCanvasHeight} viewBox={`${graphEffectiveViewBox.x} ${graphEffectiveViewBox.y} ${graphEffectiveViewBox.width} ${graphEffectiveViewBox.height}`} preserveAspectRatio="xMidYMin meet" className="block" role="img" aria-label="Oracle 26ai runtime graph">
+        <svg width="100%" height={graphCanvasHeight} viewBox={`${graphEffectiveViewBox.x} ${graphEffectiveViewBox.y} ${graphEffectiveViewBox.width} ${graphEffectiveViewBox.height}`} preserveAspectRatio="xMidYMin meet" className="block" role="img" aria-label="Select AI runtime graph">
           <OracleGraphMarkers />
           {edgePaths.map((edge, index) => <OracleGraphEdge key={`${edge.source}-${edge.target}-${index}`} edge={edge} renderNodes={renderNodes} />)}
           {renderNodes.map((node) => (

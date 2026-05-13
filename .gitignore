@@ -40,7 +40,8 @@ apps/frontend/logs/
 .codex/
 .oci/
 .source/
-.data/
+.data/*
+!.data/questions.csv
 .playwright-cli/
 .playwright-runner/
 build/

@@ -189,7 +189,6 @@ def load_source_seed(
 
         if refresh_profile:
             cursor.callproc("SP_SEL_AI_PROFILE", [DEFAULT_PROFILE, 0])
-            cursor.callproc("SP_SEL_AI_AGENT", [DEFAULT_PROFILE])
             conn.commit()
 
         return {

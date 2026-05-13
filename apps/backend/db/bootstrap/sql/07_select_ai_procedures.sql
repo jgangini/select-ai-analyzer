@@ -62,7 +62,6 @@ BEGIN
         "annotations":"true",
         "constraints":"true",
         "conversation":"true",
-        "object_list_mode":"automated",
         "object_list":' || l_object_list || ',
         "enforce_object_list":"true",
         "region":"' || l_region || '",
@@ -72,22 +71,6 @@ BEGIN
     DBMS_CLOUD_AI.CREATE_PROFILE(
         profile_name => p_profile_name,
         attributes   => l_json_attributes
-    );
-
-    BEGIN
-        DBMS_CLOUD_AI_AGENT.DROP_TOOL(tool_name => p_profile_name || '_SQL_TOOL', force => TRUE);
-    EXCEPTION
-        WHEN OTHERS THEN
-            IF SQLCODE = -4043 OR INSTR(LOWER(SQLERRM), 'not exist') > 0 THEN
-                NULL;
-            ELSE
-                RAISE;
-            END IF;
-    END;
-
-    DBMS_CLOUD_AI_AGENT.CREATE_TOOL(
-        tool_name  => p_profile_name || '_SQL_TOOL',
-        attributes => '{"tool_type":"SQL","tool_params":{"profile_name":"' || p_profile_name || '"}}'
     );
 
     MERGE INTO select_ai_profiles p
@@ -104,95 +87,3 @@ BEGIN
         VALUES (p_profile_name, NVL(p_user_id, 0), l_credential, l_model, l_object_count, 'active');
 END;
 /
---
-CREATE OR REPLACE PROCEDURE SP_SEL_AI_AGENT (
-    p_profile_name IN VARCHAR2
-) AS
-    l_agent_name      VARCHAR2(128) := p_profile_name || '_AGENT';
-    l_answer_task     VARCHAR2(128) := p_profile_name || '_ANSWER_TASK';
-    l_chart_task      VARCHAR2(128) := p_profile_name || '_CHART_TASK';
-    l_sql_tool        VARCHAR2(128) := p_profile_name || '_SQL_TOOL';
-    l_team_name       VARCHAR2(128) := p_profile_name || '_TEAM';
-BEGIN
-    BEGIN
-        DBMS_CLOUD_AI_AGENT.DROP_AGENT(agent_name => l_agent_name, force => TRUE);
-    EXCEPTION WHEN OTHERS THEN
-        IF SQLCODE != -4043 AND INSTR(LOWER(SQLERRM), 'not exist') = 0 THEN RAISE; END IF;
-    END;
-    DBMS_CLOUD_AI_AGENT.CREATE_AGENT(
-        agent_name => l_agent_name,
-        attributes => '{
-            "profile_name":"' || p_profile_name || '",
-            "role":"You are a senior banking analytics agent. Use only the registered SQL tool, explain the result in Spanish, and never invent data.",
-            "enable_human_tool":"False"
-        }'
-    );
-
-    BEGIN
-        DBMS_CLOUD_AI_AGENT.DROP_TASK(task_name => l_answer_task, force => TRUE);
-    EXCEPTION WHEN OTHERS THEN
-        IF SQLCODE != -4043 AND INSTR(LOWER(SQLERRM), 'not exist') = 0 THEN RAISE; END IF;
-    END;
-    DBMS_CLOUD_AI_AGENT.CREATE_TASK(
-        task_name => l_answer_task,
-        attributes => '{
-            "instruction":"Answer the user query {query} using the SQL tool. Include the SQL reasoning briefly and highlight business insights.",
-            "tools":["' || l_sql_tool || '"]
-        }'
-    );
-
-    BEGIN
-        DBMS_CLOUD_AI_AGENT.DROP_TASK(task_name => l_chart_task, force => TRUE);
-    EXCEPTION WHEN OTHERS THEN
-        IF SQLCODE != -4043 AND INSTR(LOWER(SQLERRM), 'not exist') = 0 THEN RAISE; END IF;
-    END;
-    DBMS_CLOUD_AI_AGENT.CREATE_TASK(
-        task_name => l_chart_task,
-        attributes => '{
-            "instruction":"Given {query}, recommend a compact JSON chart spec with type, title, x and y fields when a chart is useful.",
-            "tools":["' || l_sql_tool || '"]
-        }'
-    );
-
-    BEGIN
-        DBMS_CLOUD_AI_AGENT.DROP_TEAM(team_name => l_team_name, force => TRUE);
-    EXCEPTION WHEN OTHERS THEN
-        IF SQLCODE != -4043 AND INSTR(LOWER(SQLERRM), 'not exist') = 0 THEN RAISE; END IF;
-    END;
-    DBMS_CLOUD_AI_AGENT.CREATE_TEAM(
-        team_name => l_team_name,
-        attributes => '{"agents":[{"name":"' || l_agent_name || '","task":"' || l_answer_task || '"},{"name":"' || l_agent_name || '","task":"' || l_chart_task || '"}],"process":"sequential"}'
-    );
-END;
-/
---
-CREATE OR REPLACE PROCEDURE SP_AI_NAME_VALIDATE (
-    p_object_type IN VARCHAR2,
-    p_object_name IN VARCHAR2
-) AS
-    v_cnt INTEGER := 0;
-    v_type VARCHAR2(16) := UPPER(TRIM(p_object_type));
-    v_name VARCHAR2(256) := TRIM(p_object_name);
-BEGIN
-    IF v_type IS NULL OR v_name IS NULL THEN
-        RAISE_APPLICATION_ERROR(-20001, 'object_type and object_name are required');
-    END IF;
-
-    IF v_type = 'TEAM' THEN
-        SELECT COUNT(*) INTO v_cnt FROM USER_AI_AGENT_TEAMS WHERE UPPER(AGENT_TEAM_NAME) = UPPER(v_name);
-    ELSIF v_type = 'AGENT' THEN
-        SELECT COUNT(*) INTO v_cnt FROM USER_AI_AGENTS WHERE UPPER(AGENT_NAME) = UPPER(v_name);
-    ELSIF v_type = 'TASK' THEN
-        SELECT COUNT(*) INTO v_cnt FROM USER_AI_AGENT_TASKS WHERE UPPER(TASK_NAME) = UPPER(v_name);
-    ELSIF v_type = 'TOOL' THEN
-        SELECT COUNT(*) INTO v_cnt FROM USER_AI_AGENT_TOOLS WHERE UPPER(TOOL_NAME) = UPPER(v_name);
-    ELSE
-        RAISE_APPLICATION_ERROR(-20005, 'Unsupported object_type: ' || v_type);
-    END IF;
-
-    IF v_cnt > 0 THEN
-        RAISE_APPLICATION_ERROR(-20002, 'Name already exists for ' || v_type || ': ' || v_name);
-    END IF;
-END;
-/
---

@@ -59,6 +59,29 @@
   backdrop-filter: blur(18px);
 }
 
+.setup-shell-ambient .bg-white {
+  color: var(--oracle-dark-gray);
+}
+
+.setup-shell-ambient .bg-white h1,
+.setup-shell-ambient .bg-white h2,
+.setup-shell-ambient .bg-white h3,
+.setup-shell-ambient .bg-white h4,
+.setup-shell-ambient .bg-white label {
+  color: var(--oracle-dark-gray);
+}
+
+.setup-shell-ambient .input-oracle {
+  border-color: var(--oracle-border);
+  background-color: #ffffff;
+  color: var(--oracle-dark-gray);
+}
+
+.setup-shell-ambient .input-oracle::placeholder {
+  color: #7b8794;
+  opacity: 1;
+}
+
 .app-page-title {
   color: var(--app-text);
   letter-spacing: -0.035em;

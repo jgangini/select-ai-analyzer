@@ -11,7 +11,6 @@ from apps.backend.app.select_ai.errors import (
     is_genai_resource_exhausted,
 )
 from apps.backend.app.select_ai.source_intents import (
-    _fallback_sql_for_question,
     _is_velocity_window_intent,
     _sql_generation_hints,
     _uses_current_clock,
@@ -101,13 +100,7 @@ class SelectAIGenerationMixin:
             conversation_id=conversation_id,
             profile_name=profile_name,
         )
-        try:
-            safe_sql = validate_read_only_select(sql)
-        except ValueError:
-            fallback_sql = _fallback_sql_for_question(question)
-            if not fallback_sql:
-                raise
-            safe_sql = validate_read_only_select(fallback_sql)
+        safe_sql = validate_read_only_select(sql)
         if (
             _is_velocity_window_intent(question)
             and _uses_current_clock(safe_sql)

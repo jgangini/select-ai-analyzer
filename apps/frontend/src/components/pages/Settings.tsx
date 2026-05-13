@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 
 import { LoadingState } from '../common/LoadingState';
@@ -6,9 +6,9 @@ import { ConfirmQuestionModal } from '../common/Modal';
 import { settingsApi, settingsQueryKeys } from '../../services/settingsApi';
 import { DEFAULT_AGENT_DISPLAY_NAME, DEFAULT_APP_DISPLAY_NAME } from '../../config/branding';
 import {
-  STARTER_SUGGESTED_QUESTIONS,
   compactQuestions,
   normalizeSuggestedQuestions,
+  parseSuggestedQuestionsCsv,
 } from '../../config/suggestedQuestions';
 
 type SettingsPayload = {
@@ -61,10 +61,24 @@ function suggestedQuestionItems(value: unknown): string[] {
   return normalizeSuggestedQuestions(value);
 }
 
+function readTextFile(file: File): Promise<string> {
+  if (typeof file.text === 'function') {
+    return file.text();
+  }
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => resolve(String(reader.result || ''));
+    reader.onerror = () => reject(reader.error || new Error('Could not read the CSV file.'));
+    reader.readAsText(file);
+  });
+}
+
 export function Settings({ showToast }: { showToast: ShowToast }) {
   const [formData, setFormData] = useState<SettingsPayload | null>(null);
   const [activeTab, setActiveTab] = useState('app');
   const [showSaveModal, setShowSaveModal] = useState(false);
+  const [isQuestionsDragActive, setIsQuestionsDragActive] = useState(false);
+  const questionsCsvInputRef = useRef<HTMLInputElement>(null);
   const queryClient = useQueryClient();
 
   const { data, isLoading } = useQuery({
@@ -126,12 +140,45 @@ export function Settings({ showToast }: { showToast: ShowToast }) {
   const removeSuggestedQuestion = (index: number) => {
     setFormData((prev) => {
       const items = suggestedQuestionItems(prev?.suggested_questions);
-      if (compactQuestions(items).length <= 3) return prev;
       return {
         ...(prev || {}),
         suggested_questions: { items: items.filter((_question, itemIndex) => itemIndex !== index) },
       };
     });
+  };
+
+  const replaceSuggestedQuestions = (questions: string[]) => {
+    setFormData((prev) => ({
+      ...(prev || {}),
+      suggested_questions: { items: questions },
+    }));
+  };
+
+  const importSuggestedQuestionsCsv = async (file: File | null | undefined) => {
+    if (!file) return;
+    if (!file.name.toLowerCase().endsWith('.csv')) {
+      showToast('Select a CSV file.', 'error');
+      return;
+    }
+    try {
+      const text = await readTextFile(file);
+      const questions = parseSuggestedQuestionsCsv(text);
+      if (!questions.length) {
+        showToast('The CSV does not contain questions.', 'error');
+        return;
+      }
+      replaceSuggestedQuestions(questions);
+      showToast(`Imported ${questions.length} questions from CSV.`, 'success');
+    } catch (error) {
+      const maybeError = error as { message?: string };
+      showToast(maybeError.message || 'Could not import the CSV file.', 'error');
+    }
+  };
+
+  const handleQuestionsDrop = (event: React.DragEvent<HTMLDivElement>) => {
+    event.preventDefault();
+    setIsQuestionsDragActive(false);
+    void importSuggestedQuestionsCsv(event.dataTransfer.files?.[0]);
   };
 
   const applicationDisplayName = useMemo(
@@ -152,17 +199,13 @@ export function Settings({ showToast }: { showToast: ShowToast }) {
 
   const confirmSave = () => {
     const questions = compactQuestions(suggestedQuestionItems(formData.suggested_questions));
-    if (questions.length < 3) {
-      showToast('Keep at least three starter questions.', 'error');
-      setShowSaveModal(false);
-      return;
-    }
     updateMutation.mutate({
       ...normalizeSettingsPayload(formData),
       suggested_questions: { items: questions },
     });
     setShowSaveModal(false);
   };
+  const visibleSuggestedQuestions = suggestedQuestionItems(formData.suggested_questions);
 
   return (
     <>
@@ -351,45 +394,86 @@ export function Settings({ showToast }: { showToast: ShowToast }) {
                 </div>
               </div>
 
-              <div className="overflow-hidden rounded-lg border border-gray-200 bg-white">
-                {suggestedQuestionItems(formData.suggested_questions).map((question, index) => (
-                  <div key={`starter-question-${index}`} className="flex gap-3 border-b border-gray-200 bg-white p-2.5 last:border-b-0">
-                    <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-md border border-gray-200 bg-gray-50 text-xs font-semibold text-oracle-medium-gray">
-                      {String(index + 1).padStart(2, '0')}
-                    </div>
-                    <div className="min-w-0 flex-1 self-center">
-                      <label className="sr-only" htmlFor={`suggested-question-${index}`}>
-                        Starter question {index + 1}
-                      </label>
-                      <input
-                        id={`suggested-question-${index}`}
-                        type="text"
-                        value={question}
-                        onChange={(event) => updateSuggestedQuestion(index, event.target.value)}
-                        className="input-oracle h-9 truncate text-sm"
-                        placeholder={STARTER_SUGGESTED_QUESTIONS[index % STARTER_SUGGESTED_QUESTIONS.length]}
-                        title={question}
-                      />
-                    </div>
-                    <button
-                      type="button"
-                      aria-label={`Remove starter question ${index + 1}`}
-                      onClick={() => removeSuggestedQuestion(index)}
-                      disabled={compactQuestions(suggestedQuestionItems(formData.suggested_questions)).length <= 3}
-                      className="flex h-9 w-9 shrink-0 items-center justify-center rounded-md border border-gray-200 text-oracle-light-gray transition hover:border-oracle-red hover:text-oracle-red disabled:cursor-not-allowed disabled:opacity-40"
-                    >
-                      ×
-                    </button>
-                  </div>
-                ))}
-              </div>
-              <button
-                type="button"
-                onClick={addSuggestedQuestion}
-                className="rounded-md border border-oracle-border px-3 py-2 text-sm font-medium text-oracle-dark-gray transition hover:border-oracle-red hover:text-oracle-red"
+              <input
+                ref={questionsCsvInputRef}
+                type="file"
+                accept=".csv,text/csv"
+                className="sr-only"
+                aria-label="Questions CSV file"
+                onChange={(event) => {
+                  void importSuggestedQuestionsCsv(event.target.files?.[0]);
+                  event.currentTarget.value = '';
+                }}
+              />
+
+              <div
+                className={`overflow-hidden rounded-lg border bg-white transition ${
+                  isQuestionsDragActive ? 'border-oracle-red bg-red-50/40' : 'border-gray-200'
+                }`}
+                aria-label="Starter questions table"
+                onDragEnter={(event) => {
+                  event.preventDefault();
+                  setIsQuestionsDragActive(true);
+                }}
+                onDragOver={(event) => {
+                  event.preventDefault();
+                  setIsQuestionsDragActive(true);
+                }}
+                onDragLeave={() => setIsQuestionsDragActive(false)}
+                onDrop={handleQuestionsDrop}
               >
-                Add question
-              </button>
+                {visibleSuggestedQuestions.length ? (
+                  visibleSuggestedQuestions.map((question, index) => (
+                    <div key={`starter-question-${index}`} className="flex gap-3 border-b border-gray-200 bg-white p-2.5 last:border-b-0">
+                      <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-md border border-gray-200 bg-gray-50 text-xs font-semibold text-oracle-medium-gray">
+                        {String(index + 1).padStart(2, '0')}
+                      </div>
+                      <div className="min-w-0 flex-1 self-center">
+                        <label className="sr-only" htmlFor={`suggested-question-${index}`}>
+                          Starter question {index + 1}
+                        </label>
+                        <input
+                          id={`suggested-question-${index}`}
+                          type="text"
+                          value={question}
+                          onChange={(event) => updateSuggestedQuestion(index, event.target.value)}
+                          className="input-oracle h-9 truncate text-sm"
+                          placeholder="Write a question"
+                          title={question}
+                        />
+                      </div>
+                      <button
+                        type="button"
+                        aria-label={`Remove starter question ${index + 1}`}
+                        onClick={() => removeSuggestedQuestion(index)}
+                        className="flex h-9 w-9 shrink-0 items-center justify-center rounded-md border border-gray-200 text-oracle-light-gray transition hover:border-oracle-red hover:text-oracle-red"
+                      >
+                        ×
+                      </button>
+                    </div>
+                  ))
+                ) : (
+                  <div className="flex min-h-20 items-center justify-center bg-white p-4 text-sm text-oracle-medium-gray">
+                    No starter questions
+                  </div>
+                )}
+              </div>
+              <div className="flex flex-wrap gap-2">
+                <button
+                  type="button"
+                  onClick={addSuggestedQuestion}
+                  className="rounded-md border border-oracle-border px-3 py-2 text-sm font-medium text-oracle-dark-gray transition hover:border-oracle-red hover:text-oracle-red"
+                >
+                  Add question
+                </button>
+                <button
+                  type="button"
+                  onClick={() => questionsCsvInputRef.current?.click()}
+                  className="rounded-md border border-oracle-border px-3 py-2 text-sm font-medium text-oracle-dark-gray transition hover:border-oracle-red hover:text-oracle-red"
+                >
+                  Import CSV
+                </button>
+              </div>
             </div>
           )}
         </div>

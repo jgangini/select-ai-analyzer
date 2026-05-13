@@ -1,16 +1,3 @@
-export const STARTER_SUGGESTED_QUESTIONS = [
-  '¿Cuál es el saldo actual por moneda y sucursal?',
-  '¿Qué cuentas tienen mayor saldo bloqueado?',
-  '¿Qué productos tienen mayor volumen de transacciones este mes?',
-  '¿Cuál es la tendencia diaria de débitos vs créditos en marzo?',
-  '¿Qué clientes tienen mayor volumen de transacciones este mes?',
-  '¿Qué cuentas tienen más retiros ATM?',
-  '¿Qué préstamos tienen mayor deuda pendiente?',
-  '¿Qué contratos de depósito vencen en los próximos 30 días?',
-  '¿Qué cuentas tienen transacciones ocultas en estados de cuenta?',
-  '¿Qué usuarios autorizaron más movimientos contables?',
-] as const;
-
 export function compactQuestions(values: unknown[]): string[] {
   const seen = new Set<string>();
   return values
@@ -30,19 +17,89 @@ export function normalizeSuggestedQuestions(value: unknown): string[] {
       : value;
 
   if (Array.isArray(container)) {
-    const questions = compactQuestions(container);
-    return questions.length ? questions : [...STARTER_SUGGESTED_QUESTIONS];
+    return compactQuestions(container);
   }
 
   if (container && typeof container === 'object') {
     const record = container as Record<string, unknown>;
     if (Array.isArray(record.items)) {
-      const questions = compactQuestions(record.items);
-      return questions.length ? questions : [...STARTER_SUGGESTED_QUESTIONS];
+      return compactQuestions(record.items);
     }
   }
 
-  return [...STARTER_SUGGESTED_QUESTIONS];
+  return [];
+}
+
+function parseCsvRows(csvText: string): string[][] {
+  const rows: string[][] = [];
+  let row: string[] = [];
+  let cell = '';
+  let inQuotes = false;
+
+  for (let index = 0; index < csvText.length; index += 1) {
+    const char = csvText[index];
+    const nextChar = csvText[index + 1];
+
+    if (char === '"') {
+      if (inQuotes && nextChar === '"') {
+        cell += '"';
+        index += 1;
+      } else {
+        inQuotes = !inQuotes;
+      }
+      continue;
+    }
+
+    if (char === ',' && !inQuotes) {
+      row.push(cell);
+      cell = '';
+      continue;
+    }
+
+    if ((char === '\n' || char === '\r') && !inQuotes) {
+      if (char === '\r' && nextChar === '\n') {
+        index += 1;
+      }
+      row.push(cell);
+      if (row.some((value) => String(value || '').trim())) {
+        rows.push(row);
+      }
+      row = [];
+      cell = '';
+      continue;
+    }
+
+    cell += char;
+  }
+
+  row.push(cell);
+  if (row.some((value) => String(value || '').trim())) {
+    rows.push(row);
+  }
+
+  return rows;
+}
+
+function normalizeHeader(value: string): string {
+  return String(value || '')
+    .trim()
+    .toLowerCase()
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '');
+}
+
+export function parseSuggestedQuestionsCsv(csvText: string): string[] {
+  const rows = parseCsvRows(csvText);
+  if (!rows.length) return [];
+
+  const headers = rows[0].map(normalizeHeader);
+  const questionColumn = headers.findIndex((header) =>
+    ['question', 'questions', 'pregunta', 'preguntas'].includes(header)
+  );
+  const valueColumn = questionColumn >= 0 ? questionColumn : 0;
+  const dataRows = questionColumn >= 0 ? rows.slice(1) : rows;
+
+  return compactQuestions(dataRows.map((row) => row[valueColumn] || ''));
 }
 
 export function selectInitialSuggestedQuestions(questions: string[], count = 3): string[] {

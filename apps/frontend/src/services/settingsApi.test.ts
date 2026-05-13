@@ -19,7 +19,7 @@ describe('settingsApi name resolvers', () => {
     expect(resolveAgentName(undefined)).toBe('Nadia Analytics');
   });
 
-  it('resolves configured starter questions and starter seed when missing', () => {
+  it('resolves configured starter questions and stays empty when missing', () => {
     const payload = {
       suggested_questions: {
         items: [
@@ -35,7 +35,7 @@ describe('settingsApi name resolvers', () => {
       '¿Qué productos concentran más transacciones?',
       '¿Qué transacciones están pendientes?',
     ]);
-    expect(resolveSuggestedQuestions(null)).toHaveLength(10);
+    expect(resolveSuggestedQuestions(null)).toEqual([]);
   });
 
 });

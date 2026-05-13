@@ -44,7 +44,7 @@ def make_service(tmp_path, *, config: FakeConfigService | None = None, setup: Fa
     )
 
 
-def test_get_payload_returns_starter_seed_when_config_table_is_missing(tmp_path) -> None:
+def test_get_payload_does_not_seed_case_specific_questions_when_config_table_is_missing(tmp_path) -> None:
     service = make_service(tmp_path, config=FakeConfigService(exists=False))
 
     payload = service.get_payload()
@@ -53,8 +53,7 @@ def test_get_payload_returns_starter_seed_when_config_table_is_missing(tmp_path)
     assert payload["app"]["agent_name"] == "Nadia Analytics"
     assert payload["app"]["avatar_url"] == ""
     assert payload["select_ai"]["profile_name"] == "APP_AGENT_ANALYTICS"
-    assert len(payload["suggested_questions"]["items"]) == 10
-    assert payload["suggested_questions"]["items"][0] == "¿Cuál es el saldo actual por moneda y sucursal?"
+    assert payload["suggested_questions"]["items"] == []
 
 
 def test_public_payload_uses_grouped_config_values_and_runtime_avatar(tmp_path) -> None:
@@ -112,7 +111,6 @@ def test_update_skips_dynamic_avatar_fields_and_writes_config_entries(tmp_path) 
                 "items": [
                     "Which customers increased volume?",
                     "Which accounts are inactive?",
-                    "Which products lead transaction volume?",
                 ],
             },
         }
@@ -129,18 +127,20 @@ def test_update_skips_dynamic_avatar_fields_and_writes_config_entries(tmp_path) 
     assert json.loads(question_entry["value"]) == [
         "Which customers increased volume?",
         "Which accounts are inactive?",
-        "Which products lead transaction volume?",
     ]
     assert config.deleted_keys == [["suggested_questions.question_1", "suggested_questions.question_2"]]
     assert result["success"] is True
     assert result["settings"]["app"]["name"] == "Portal"
 
 
-def test_update_requires_at_least_three_starter_questions(tmp_path) -> None:
-    service = make_service(tmp_path)
+def test_update_allows_empty_starter_questions(tmp_path) -> None:
+    config = FakeConfigService()
+    service = make_service(tmp_path, config=config)
+    result = service.update({"suggested_questions": {"items": []}})
 
-    with pytest.raises(ValueError, match="At least 3 starter questions"):
-        service.update({"suggested_questions": {"items": ["One", "Two"]}})
+    assert result["success"] is True
+    assert json.loads(config.upserts[0][0]["value"]) == []
+    assert result["settings"]["suggested_questions"]["items"] == []
 
 
 def test_avatar_upload_replaces_existing_file_and_reports_media_type(tmp_path) -> None:

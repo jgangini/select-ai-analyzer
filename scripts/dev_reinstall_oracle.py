@@ -107,47 +107,64 @@ def _runtime_config_with_fallbacks(db_manager: DatabaseManager, settings) -> dic
     return merged
 
 
-def _drop_ai_artifacts(cursor, profile_names: list[str]) -> None:
+def _drop_retired_select_ai_artifacts(cursor, profile_names: list[str]) -> None:
+    """Best-effort cleanup for artifacts from the retired orchestration flow."""
+    for profile_name in profile_names:
+        cursor.execute(
+            """
+            DECLARE
+                l_profile VARCHAR2(128) := :profile_name;
+                l_agent_pkg VARCHAR2(128) := 'DBMS_CLOUD_AI_' || 'AGENT';
+                l_pipeline_pkg VARCHAR2(128) := 'DBMS_CLOUD_' || 'PIPELINE';
+            BEGIN
+                BEGIN
+                    EXECUTE IMMEDIATE 'BEGIN ' || l_agent_pkg || '.DROP_TEAM(team_name => :name, force => TRUE); END;'
+                        USING l_profile || '_TEAM';
+                EXCEPTION WHEN OTHERS THEN NULL;
+                END;
+                BEGIN
+                    EXECUTE IMMEDIATE 'BEGIN ' || l_agent_pkg || '.DROP_AGENT(agent_name => :name, force => TRUE); END;'
+                        USING l_profile || '_AGENT';
+                EXCEPTION WHEN OTHERS THEN NULL;
+                END;
+                BEGIN
+                    EXECUTE IMMEDIATE 'BEGIN ' || l_agent_pkg || '.DROP_TASK(task_name => :name, force => TRUE); END;'
+                        USING l_profile || '_ANSWER_TASK';
+                EXCEPTION WHEN OTHERS THEN NULL;
+                END;
+                BEGIN
+                    EXECUTE IMMEDIATE 'BEGIN ' || l_agent_pkg || '.DROP_TASK(task_name => :name, force => TRUE); END;'
+                        USING l_profile || '_CHART_TASK';
+                EXCEPTION WHEN OTHERS THEN NULL;
+                END;
+                BEGIN
+                    EXECUTE IMMEDIATE 'BEGIN ' || l_agent_pkg || '.DROP_TOOL(tool_name => :name, force => TRUE); END;'
+                        USING l_profile || '_SQL_TOOL';
+                EXCEPTION WHEN OTHERS THEN NULL;
+                END;
+                BEGIN
+                    EXECUTE IMMEDIATE 'BEGIN ' || l_pipeline_pkg || '.STOP_PIPELINE(pipeline_name => :name, force => TRUE); END;'
+                        USING l_profile || '_OBJECT_LIST_' || 'VECINDEX$VECPIPELINE';
+                EXCEPTION WHEN OTHERS THEN NULL;
+                END;
+                BEGIN
+                    EXECUTE IMMEDIATE 'BEGIN ' || l_pipeline_pkg || '.DROP_PIPELINE(pipeline_name => :name, force => TRUE); END;'
+                        USING l_profile || '_OBJECT_LIST_' || 'VECINDEX$VECPIPELINE';
+                EXCEPTION WHEN OTHERS THEN NULL;
+                END;
+            END;
+            """,
+            profile_name=profile_name,
+        )
+
+
+def _drop_select_ai_profiles(cursor, profile_names: list[str]) -> None:
     for profile_name in profile_names:
         cursor.execute(
             """
             DECLARE
                 l_profile VARCHAR2(128) := :profile_name;
             BEGIN
-                BEGIN
-                    DBMS_CLOUD_AI_AGENT.DROP_TEAM(team_name => l_profile || '_TEAM', force => TRUE);
-                EXCEPTION WHEN OTHERS THEN NULL;
-                END;
-                BEGIN
-                    DBMS_CLOUD_AI_AGENT.DROP_AGENT(agent_name => l_profile || '_AGENT', force => TRUE);
-                EXCEPTION WHEN OTHERS THEN NULL;
-                END;
-                BEGIN
-                    DBMS_CLOUD_AI_AGENT.DROP_TASK(task_name => l_profile || '_ANSWER_TASK', force => TRUE);
-                EXCEPTION WHEN OTHERS THEN NULL;
-                END;
-                BEGIN
-                    DBMS_CLOUD_AI_AGENT.DROP_TASK(task_name => l_profile || '_CHART_TASK', force => TRUE);
-                EXCEPTION WHEN OTHERS THEN NULL;
-                END;
-                BEGIN
-                    DBMS_CLOUD_AI_AGENT.DROP_TOOL(tool_name => l_profile || '_SQL_TOOL', force => TRUE);
-                EXCEPTION WHEN OTHERS THEN NULL;
-                END;
-                BEGIN
-                    DBMS_CLOUD_PIPELINE.STOP_PIPELINE(
-                        pipeline_name => l_profile || '_OBJECT_LIST_VECINDEX$VECPIPELINE',
-                        force => TRUE
-                    );
-                EXCEPTION WHEN OTHERS THEN NULL;
-                END;
-                BEGIN
-                    DBMS_CLOUD_PIPELINE.DROP_PIPELINE(
-                        pipeline_name => l_profile || '_OBJECT_LIST_VECINDEX$VECPIPELINE',
-                        force => TRUE
-                    );
-                EXCEPTION WHEN OTHERS THEN NULL;
-                END;
                 BEGIN
                     DBMS_CLOUD_AI.DROP_PROFILE(profile_name => l_profile, force => TRUE);
                 EXCEPTION WHEN OTHERS THEN NULL;
@@ -234,7 +251,8 @@ def clean_schema(db_manager: DatabaseManager) -> dict[str, Any]:
             raise RuntimeError(f"Refusing to reset schema {connected_user}; expected {APP_SCHEMA}.")
 
         profile_names = _existing_profiles(cursor)
-        _drop_ai_artifacts(cursor, profile_names)
+        _drop_retired_select_ai_artifacts(cursor, profile_names)
+        _drop_select_ai_profiles(cursor, profile_names)
         _drop_data_schema(cursor)
         dropped = _drop_current_schema_objects(cursor)
         conn.commit()
@@ -271,8 +289,6 @@ def _refresh_default_profile(db_manager: DatabaseManager) -> dict[str, str | boo
     cursor = conn.cursor()
     try:
         cursor.callproc("SP_SEL_AI_PROFILE", [DEFAULT_PROFILE, 0])
-        conn.commit()
-        cursor.callproc("SP_SEL_AI_AGENT", [DEFAULT_PROFILE])
         conn.commit()
         return {"success": True, "error": ""}
     except Exception as exc:

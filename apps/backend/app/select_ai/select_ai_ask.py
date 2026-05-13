@@ -4,23 +4,7 @@ from typing import Any
 
 from apps.backend.app.select_ai.charting import infer_chart_spec, validate_chart_spec
 from apps.backend.app.select_ai.conversations import normalize_conversation_id
-from apps.backend.app.select_ai.errors import SelectAIModelCapacityError
 from apps.backend.app.select_ai.query_execution import execute_read_only_select
-from apps.backend.app.select_ai.source_intents import _fallback_sql_for_question
-from apps.backend.app.select_ai.sql_validation import validate_read_only_select
-
-
-def _capacity_fallback_answer(rows: list[dict[str, Any]]) -> str:
-    if rows:
-        return (
-            "The generative service is temporarily saturated, so the deterministic "
-            f"fallback query was executed. {len(rows)} rows were found; review the table "
-            "to inspect customers and growth percentages."
-        )
-    return (
-        "The generative service is temporarily saturated, so the deterministic "
-        "fallback query was executed. No rows matched the requested condition."
-    )
 
 
 class SelectAIAskMixin:
@@ -52,43 +36,19 @@ class SelectAIAskMixin:
         )
         scoped_profile_name, scoped_objects = self.create_scoped_profile(question)
         try:
-            fallback_sql = _fallback_sql_for_question(question)
-            validated_fallback_sql = validate_read_only_select(fallback_sql) if fallback_sql else None
-            used_capacity_fallback = False
-            try:
-                sql = self.generate_sql(
-                    question,
-                    conversation_id=oracle_conversation_id,
-                    profile_name=scoped_profile_name,
-                )
-                showsql_status = "completed"
-            except SelectAIModelCapacityError:
-                if not validated_fallback_sql:
-                    raise
-                sql = validated_fallback_sql
-                used_capacity_fallback = True
-                showsql_status = "completed"
+            sql = self.generate_sql(
+                question,
+                conversation_id=oracle_conversation_id,
+                profile_name=scoped_profile_name,
+            )
+            showsql_status = "completed"
             columns, rows = self.execute_select(sql, max_rows=max_rows)
-            if validated_fallback_sql and not rows and validated_fallback_sql != sql:
-                fallback_columns, fallback_rows = self.execute_select(validated_fallback_sql, max_rows=max_rows)
-                if fallback_rows:
-                    sql = validated_fallback_sql
-                    columns = fallback_columns
-                    rows = fallback_rows
-            if used_capacity_fallback:
-                answer = _capacity_fallback_answer(rows)
-                narrate_status = "completed"
-            else:
-                try:
-                    answer = self.narrate(
-                        question,
-                        conversation_id=oracle_conversation_id,
-                        profile_name=scoped_profile_name,
-                    )
-                    narrate_status = "completed"
-                except SelectAIModelCapacityError:
-                    answer = _capacity_fallback_answer(rows)
-                    narrate_status = "completed"
+            answer = self.narrate(
+                question,
+                conversation_id=oracle_conversation_id,
+                profile_name=scoped_profile_name,
+            )
+            narrate_status = "completed"
             chart_spec = validate_chart_spec(
                 infer_chart_spec(rows, columns, title=question[:120] or "Resultado analitico"),
                 columns,

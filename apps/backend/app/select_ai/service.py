@@ -6,7 +6,6 @@ from apps.backend.app.select_ai.scoped_profile_operations import SelectAIScopedP
 from apps.backend.app.select_ai.select_ai_ask import SelectAIAskMixin
 from apps.backend.app.select_ai.select_ai_generation import SelectAIGenerationMixin
 from apps.backend.app.select_ai.source_intents import (
-    _fallback_sql_for_question,
     _is_velocity_window_intent,
     _sql_generation_hints,
     _uses_current_clock,

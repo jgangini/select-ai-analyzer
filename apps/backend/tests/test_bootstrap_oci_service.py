@@ -63,6 +63,15 @@ class FakeBootstrapOciService(BootstrapOciMixin):
         self.synced_credentials.append((config_values, compartment_id))
 
 
+class CredentialBootstrapOciService(BootstrapOciMixin):
+    def __init__(self, db_manager: DbManager, connection: FakeConnection) -> None:
+        self.db_manager = db_manager
+        self.connection = connection
+
+    def _get_direct_connection(self) -> FakeConnection:
+        return self.connection
+
+
 def test_save_oci_config_persists_config_and_writes_runtime_config(tmp_path: Path) -> None:
     config_file = tmp_path / "keys" / "config"
     key_file = tmp_path / "api.pem"
@@ -110,6 +119,44 @@ def test_save_oci_config_persists_config_and_writes_runtime_config(tmp_path: Pat
             "ocid1.compartment",
         )
     ]
+
+
+def test_sync_select_ai_credential_uses_dbms_cloud(tmp_path: Path) -> None:
+    config_file = tmp_path / "keys" / "config"
+    key_file = tmp_path / "api.pem"
+    key_file.write_text(
+        "-----BEGIN PRIVATE KEY-----\nabcdef\n-----END PRIVATE KEY-----\n",
+        encoding="utf-8",
+    )
+    connection = FakeConnection()
+    service = CredentialBootstrapOciService(DbManager(config_file), connection)
+
+    service._sync_select_ai_credential(
+        config_values={
+            "user": "ocid1.user",
+            "fingerprint": "aa:bb",
+            "tenancy": "ocid1.tenancy",
+            "region": "us-ashburn-1",
+            "key_file": str(key_file),
+        },
+        compartment_id="ocid1.compartment",
+    )
+
+    credential_statement, credential_params = connection.cursor_instance.executions[0]
+    config_statement, config_params = connection.cursor_instance.executions[1]
+    assert "DBMS_CLOUD.DROP_CREDENTIAL" in credential_statement
+    assert "DBMS_CLOUD.CREATE_CREDENTIAL" in credential_statement
+    assert credential_params == {
+        "credential_name": "APP_AGENT_OCI_CRED",
+        "user_ocid": "ocid1.user",
+        "tenancy_ocid": "ocid1.tenancy",
+        "private_key": "abcdef",
+        "fingerprint": "aa:bb",
+    }
+    assert "select_ai.credential_name" in config_statement
+    assert config_params == {"credential_name": "APP_AGENT_OCI_CRED"}
+    assert connection.commits == 1
+    assert connection.closed is True
 
 
 def test_save_generative_ai_config_upserts_only_genai_keys(tmp_path: Path) -> None:

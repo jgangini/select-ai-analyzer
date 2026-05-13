@@ -176,11 +176,9 @@ class BootstrapOciMixin:
         try:
             cursor.execute(
                 """
-                DECLARE
-                    jo JSON_OBJECT_T;
                 BEGIN
                     BEGIN
-                        DBMS_VECTOR.DROP_CREDENTIAL(credential_name => :credential_name);
+                        DBMS_CLOUD.DROP_CREDENTIAL(credential_name => :credential_name);
                     EXCEPTION
                         WHEN OTHERS THEN
                             IF SQLCODE = -4043 OR INSTR(LOWER(SQLERRM), 'not exist') > 0 THEN
@@ -190,20 +188,16 @@ class BootstrapOciMixin:
                             END IF;
                     END;
 
-                    jo := JSON_OBJECT_T();
-                    jo.put('compartment_ocid', :compartment_id);
-                    jo.put('user_ocid', :user_ocid);
-                    jo.put('tenancy_ocid', :tenancy_ocid);
-                    jo.put('private_key', :private_key);
-                    jo.put('fingerprint', :fingerprint);
-                    DBMS_VECTOR.CREATE_CREDENTIAL(
+                    DBMS_CLOUD.CREATE_CREDENTIAL(
                         credential_name => :credential_name,
-                        params => JSON(jo.to_string)
+                        user_ocid       => :user_ocid,
+                        tenancy_ocid    => :tenancy_ocid,
+                        private_key     => :private_key,
+                        fingerprint     => :fingerprint
                     );
                 END;
                 """,
                 credential_name=credential_name,
-                compartment_id=compartment_id,
                 user_ocid=config_values["user"],
                 tenancy_ocid=config_values["tenancy"],
                 private_key=private_key,
@@ -217,7 +211,7 @@ class BootstrapOciMixin:
                     UPDATE SET c.config_value = :credential_name, c.config_updated = SYSDATE
                 WHEN NOT MATCHED THEN
                     INSERT (config_key, config_value, config_type, config_category, config_description)
-                    VALUES ('select_ai.credential_name', :credential_name, 'string', 'select_ai', 'DBMS_VECTOR credential used by Select AI')
+                    VALUES ('select_ai.credential_name', :credential_name, 'string', 'select_ai', 'OCI credential used by Select AI')
                 """,
                 credential_name=credential_name,
             )

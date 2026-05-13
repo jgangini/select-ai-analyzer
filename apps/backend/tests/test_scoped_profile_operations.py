@@ -99,6 +99,21 @@ def test_create_scoped_profile_uses_configured_genai_model() -> None:
     attributes = _created_profile_attributes(cursor)
     assert profile_name.startswith("APP_AGENT_ANALYTICS_Q_")
     assert objects == [{"owner": "APP_AGENT_DATA", "name": "ACCOUNTS"}]
+    assert set(attributes) == {
+        "provider",
+        "credential_name",
+        "model",
+        "temperature",
+        "comments",
+        "annotations",
+        "constraints",
+        "conversation",
+        "object_list",
+        "enforce_object_list",
+        "region",
+        "oci_compartment_id",
+        "max_tokens",
+    }
     assert attributes["model"] == "meta.llama-4-maverick"
     assert attributes["credential_name"] == "APP_AGENT_OCI_CRED"
     assert connection.committed is True

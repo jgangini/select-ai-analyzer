@@ -1,9 +1,8 @@
 import { createElement } from 'react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { cleanup, fireEvent, render, screen } from '@testing-library/react';
+import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
-import { STARTER_SUGGESTED_QUESTIONS } from '../../config/suggestedQuestions';
 import { settingsApi } from '../../services/settingsApi';
 import { fieldValue, normalizeSettingsPayload } from './Settings';
 import { Settings } from './Settings';
@@ -18,7 +17,7 @@ vi.mock('../../services/settingsApi', () => ({
   },
 }));
 
-function renderSettings() {
+function renderSettings(showToast = vi.fn()) {
   const queryClient = new QueryClient({
     defaultOptions: {
       queries: { retry: false },
@@ -30,7 +29,7 @@ function renderSettings() {
     createElement(
       QueryClientProvider,
       { client: queryClient },
-      createElement(Settings, { showToast: vi.fn() })
+      createElement(Settings, { showToast })
     )
   );
 }
@@ -56,10 +55,7 @@ describe('Settings helpers', () => {
       credential_name: 'APP_AGENT_OCI_CRED',
     });
     expect(payload.genai).toMatchObject({ model: 'google.gemini-2.5-flash' });
-    expect(payload.suggested_questions).toMatchObject({
-      items: [...STARTER_SUGGESTED_QUESTIONS],
-    });
-    expect((payload.suggested_questions as { items: string[] }).items[0]).toBe('¿Cuál es el saldo actual por moneda y sucursal?');
+    expect(payload.suggested_questions).toMatchObject({ items: [] });
   });
 
   it('reads configured field values with string conversion and supplied empty values', () => {
@@ -86,21 +82,17 @@ describe('Settings helpers', () => {
     expect((payload.suggested_questions as { items: string[] }).items).toEqual(['¿Qué clientes crecieron más este mes?']);
   });
 
-  it('renders starter questions as a dynamic one-line list', async () => {
+  it('renders an empty starter question list until questions are configured', async () => {
     vi.mocked(settingsApi.get).mockResolvedValue({ data: {} } as never);
 
     renderSettings();
     fireEvent.click(await screen.findByRole('button', { name: 'Questions' }));
 
-    const questionInputs = screen.getAllByRole('textbox', { name: /Starter question \d+/i });
-
     expect(screen.getByText('Starter Questions')).toBeInTheDocument();
     expect(screen.getByText('Global question library for all users')).toBeInTheDocument();
     expect(screen.queryByText('Los nuevos chats muestran aleatoriamente tres preguntas de esta lista.')).not.toBeInTheDocument();
-    expect(questionInputs).toHaveLength(10);
-    expect(questionInputs[0].tagName).toBe('INPUT');
-    expect(questionInputs[0]).toHaveAttribute('type', 'text');
-    expect(questionInputs[0]).toHaveValue('¿Cuál es el saldo actual por moneda y sucursal?');
+    expect(screen.getByText('No starter questions')).toBeInTheDocument();
+    expect(screen.queryAllByRole('textbox', { name: /Starter question \d+/i })).toHaveLength(0);
   });
 
   it('lets administrators add and remove starter questions before saving', async () => {
@@ -111,12 +103,34 @@ describe('Settings helpers', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Add question' }));
 
     const questionInputs = screen.getAllByRole('textbox', { name: /Starter question \d+/i });
-    expect(questionInputs).toHaveLength(11);
+    expect(questionInputs).toHaveLength(1);
 
-    fireEvent.change(questionInputs[10], { target: { value: '¿Qué clientes tienen mayor actividad fuera de horario?' } });
-    expect(questionInputs[10]).toHaveValue('¿Qué clientes tienen mayor actividad fuera de horario?');
+    fireEvent.change(questionInputs[0], { target: { value: '¿Qué clientes tienen mayor actividad fuera de horario?' } });
+    expect(questionInputs[0]).toHaveValue('¿Qué clientes tienen mayor actividad fuera de horario?');
 
-    fireEvent.click(screen.getByRole('button', { name: 'Remove starter question 11' }));
-    expect(screen.getAllByRole('textbox', { name: /Starter question \d+/i })).toHaveLength(10);
+    fireEvent.click(screen.getByRole('button', { name: 'Remove starter question 1' }));
+    expect(screen.queryAllByRole('textbox', { name: /Starter question \d+/i })).toHaveLength(0);
+  });
+
+  it('imports starter questions from a dropped CSV file', async () => {
+    const showToast = vi.fn();
+    vi.mocked(settingsApi.get).mockResolvedValue({ data: {} } as never);
+
+    renderSettings(showToast);
+    fireEvent.click(await screen.findByRole('button', { name: 'Questions' }));
+
+    const csv = new File(['question\n"¿Qué clientes crecieron más este mes?"\n"¿Qué productos lideran transacciones?"\n'], 'questions.csv', {
+      type: 'text/csv',
+    });
+    fireEvent.drop(screen.getByLabelText('Starter questions table'), {
+      dataTransfer: { files: [csv] },
+    });
+
+    await waitFor(() => {
+      expect(screen.getAllByRole('textbox', { name: /Starter question \d+/i })).toHaveLength(2);
+    });
+    expect(screen.getByDisplayValue('¿Qué clientes crecieron más este mes?')).toBeInTheDocument();
+    expect(screen.getByDisplayValue('¿Qué productos lideran transacciones?')).toBeInTheDocument();
+    expect(showToast).toHaveBeenCalledWith('Imported 2 questions from CSV.', 'success');
   });
 });

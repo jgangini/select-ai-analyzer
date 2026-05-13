@@ -15,18 +15,6 @@ SUGGESTED_QUESTIONS_CONFIG_KEY = "suggested_questions.items"
 RETIRED_SUGGESTED_QUESTION_PREFIX = "suggested_questions.question_"
 DEFAULT_APP_NAME = "Select AI Analytics"
 DEFAULT_AGENT_NAME = "Nadia Analytics"
-STARTER_SUGGESTED_QUESTIONS = (
-    "¿Cuál es el saldo actual por moneda y sucursal?",
-    "¿Qué cuentas tienen mayor saldo bloqueado?",
-    "¿Qué productos tienen mayor volumen de transacciones este mes?",
-    "¿Cuál es la tendencia diaria de débitos vs créditos en marzo?",
-    "¿Qué clientes tienen mayor volumen de transacciones este mes?",
-    "¿Qué cuentas tienen más retiros ATM?",
-    "¿Qué préstamos tienen mayor deuda pendiente?",
-    "¿Qué contratos de depósito vencen en los próximos 30 días?",
-    "¿Qué cuentas tienen transacciones ocultas en estados de cuenta?",
-    "¿Qué usuarios autorizaron más movimientos contables?",
-)
 
 
 class SetupStatusChecker(Protocol):
@@ -65,7 +53,7 @@ def _default_payload() -> dict[str, Any]:
         "genai": {
             "model": "google.gemini-2.5-flash",
         },
-        "suggested_questions": _starter_suggested_questions_payload(),
+        "suggested_questions": _empty_suggested_questions_payload(),
     }
 
 
@@ -82,8 +70,8 @@ def _compact_suggested_questions(values: list[Any] | tuple[Any, ...]) -> list[st
     return questions
 
 
-def _starter_suggested_questions_payload() -> dict[str, list[str]]:
-    return {"items": list(STARTER_SUGGESTED_QUESTIONS)}
+def _empty_suggested_questions_payload() -> dict[str, list[str]]:
+    return {"items": []}
 
 
 def _coerce_suggested_questions(value: Any, *, minimum: int) -> list[str]:
@@ -106,7 +94,7 @@ def _stored_suggested_questions(value: Any) -> list[str]:
         parsed = json.loads(str(value or ""))
     except json.JSONDecodeError as exc:
         raise ValueError("Stored starter questions are not valid JSON.") from exc
-    return _coerce_suggested_questions({"items": parsed}, minimum=1)
+    return _coerce_suggested_questions({"items": parsed}, minimum=0)
 
 
 def _suggested_questions_from_config_groups(groups: dict[str, list[dict[str, Any]]]) -> list[str]:
@@ -115,11 +103,11 @@ def _suggested_questions_from_config_groups(groups: dict[str, list[dict[str, Any
         key = str(entry.get("key") or "")
         if key == SUGGESTED_QUESTIONS_CONFIG_KEY:
             return _stored_suggested_questions(entry.get("value"))
-    return list(STARTER_SUGGESTED_QUESTIONS)
+    return []
 
 
 def _suggested_question_entries(values: Any) -> list[dict[str, Any]]:
-    questions = _coerce_suggested_questions(values, minimum=3)
+    questions = _coerce_suggested_questions(values, minimum=0)
     return [
         {
             "key": SUGGESTED_QUESTIONS_CONFIG_KEY,
@@ -190,7 +178,7 @@ class SettingsService:
                 "avatar_url": str(app_payload.get("avatar_url") or "").strip(),
                 "avatar_updated_at": int(app_payload.get("avatar_updated_at") or 0),
             },
-            "suggested_questions": payload.get("suggested_questions") or _starter_suggested_questions_payload(),
+            "suggested_questions": payload.get("suggested_questions") or _empty_suggested_questions_payload(),
         }
 
     def update(self, updates: dict[str, Any]) -> dict[str, Any]:

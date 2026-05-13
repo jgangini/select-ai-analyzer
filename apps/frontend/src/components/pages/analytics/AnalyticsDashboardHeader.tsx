@@ -4,6 +4,7 @@ import {
   DashboardVisibilityIcon,
   MoreVerticalIcon,
   RenameIcon,
+  ShareIcon,
   TrashIcon,
   type DashboardVisibility,
 } from './AnalyticsIcons';
@@ -155,7 +156,11 @@ export function AnalyticsDashboardHeader<TDashboard extends DashboardHeaderBase>
                 if (dashboard) onVisibilityChange(dashboard.dashboard_id, nextVisibility);
               }}
             >
-              <DashboardVisibilityIcon visibility={nextVisibility} className="h-4 w-4" />
+              {nextVisibility === 'shared' ? (
+                <ShareIcon className="h-4 w-4" />
+              ) : (
+                <DashboardVisibilityIcon visibility={nextVisibility} className="h-4 w-4" />
+              )}
               {nextVisibility === 'shared' ? 'Share' : 'Make private'}
             </button>
             <button

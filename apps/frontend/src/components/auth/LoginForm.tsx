@@ -48,7 +48,7 @@ const oracleServices = [
   },
 ];
 
-const reviewSignals = ['SQL inspectable', 'Charts', 'DBMS agents'];
+const reviewSignals = ['SQL inspectable', 'Charts', 'Scoped profiles'];
 
 export function LoginForm({
   appName,

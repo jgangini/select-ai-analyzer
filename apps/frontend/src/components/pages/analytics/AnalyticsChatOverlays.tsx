@@ -32,9 +32,9 @@ function DashboardVisibilityControl({
   value: DashboardVisibility;
   onChange: (visibility: DashboardVisibility) => void;
 }) {
-  const options: Array<{ value: DashboardVisibility; label: string; description: string }> = [
-    { value: 'private', label: 'Private', description: 'Only you can manage it.' },
-    { value: 'shared', label: 'Shared', description: 'Visible to all users.' },
+  const options: Array<{ value: DashboardVisibility; label: string }> = [
+    { value: 'private', label: 'Private' },
+    { value: 'shared', label: 'Shared' },
   ];
 
   return (
@@ -47,18 +47,15 @@ function DashboardVisibilityControl({
             type="button"
             role="radio"
             aria-checked={isSelected}
-            className={`rounded-lg border px-3 py-2 text-left transition-colors ${
+            className={`inline-flex h-10 items-center justify-center gap-2 rounded-lg border px-3 text-center text-sm font-semibold transition-colors ${
               isSelected
                 ? 'border-oracle-red bg-red-50 text-oracle-red'
                 : 'border-gray-200 bg-white text-oracle-dark-gray hover:bg-gray-50'
             }`}
             onClick={() => onChange(option.value)}
           >
-            <span className="flex items-center gap-2 text-sm font-semibold">
-              <DashboardVisibilityIcon visibility={option.value} />
-              {option.label}
-            </span>
-            <span className="mt-1 block text-xs text-oracle-medium-gray">{option.description}</span>
+            <DashboardVisibilityIcon visibility={option.value} />
+            {option.label}
           </button>
         );
       })}

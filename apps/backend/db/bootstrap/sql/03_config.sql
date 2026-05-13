@@ -51,15 +51,6 @@ INSERT INTO config (config_key, config_value, config_type, config_category, conf
 VALUES ('app.language', 'en', 'string', 'app', 'Default response language');
 --
 INSERT INTO config (config_key, config_value, config_type, config_category, config_description)
-VALUES (
-    'suggested_questions.items',
-    q'~["¿Cuál es el saldo actual por moneda y sucursal?","¿Qué cuentas tienen mayor saldo bloqueado?","¿Qué productos tienen mayor volumen de transacciones este mes?","¿Cuál es la tendencia diaria de débitos vs créditos en marzo?","¿Qué clientes tienen mayor volumen de transacciones este mes?","¿Qué cuentas tienen más retiros ATM?","¿Qué préstamos tienen mayor deuda pendiente?","¿Qué contratos de depósito vencen en los próximos 30 días?","¿Qué cuentas tienen transacciones ocultas en estados de cuenta?","¿Qué usuarios autorizaron más movimientos contables?"]~',
-    'json',
-    'suggested_questions',
-    'Global starter question library'
-);
---
-INSERT INTO config (config_key, config_value, config_type, config_category, config_description)
 VALUES ('select_ai.profile_name', 'APP_AGENT_ANALYTICS', 'string', 'select_ai', 'Default Select AI profile');
 --
 INSERT INTO config (config_key, config_value, config_type, config_category, config_description)
