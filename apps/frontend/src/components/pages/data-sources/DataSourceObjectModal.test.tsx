@@ -93,6 +93,7 @@ describe('DataSourceObjectModal', () => {
     expect(screen.getAllByText('ACCOUNTS')).toHaveLength(2);
     expect(screen.getByText('accounts.csv - 1 KB')).toBeInTheDocument();
     expect(screen.getAllByText('accounts.json')).toHaveLength(2);
+    expect(screen.getByText('1/1 ready')).toBeInTheDocument();
     expect(screen.getByRole('textbox', { name: /comment for account_id/i })).toHaveValue('Account key');
   });
 

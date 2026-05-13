@@ -1,7 +1,9 @@
-import { fireEvent, render, screen } from '@testing-library/react';
-import { describe, expect, it, vi } from 'vitest';
+import { cleanup, fireEvent, render, screen } from '@testing-library/react';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 
 import { DataDictionaryEditor } from './DataDictionaryEditor';
+
+afterEach(() => cleanup());
 
 describe('DataDictionaryEditor', () => {
   it('exposes editable metadata fields with accessible names', () => {
@@ -54,5 +56,19 @@ describe('DataDictionaryEditor', () => {
     );
 
     expect(screen.getByText('Loading metadata')).toBeInTheDocument();
+  });
+
+  it('renders optional header context next to the title', () => {
+    render(
+      <DataDictionaryEditor
+        columns={[]}
+        headerMeta={<span>ACCOUNTS accounts.json</span>}
+        onColumnChange={vi.fn()}
+        renderLoadingState={() => <span>Loading metadata</span>}
+      />
+    );
+
+    expect(screen.getByRole('heading', { name: /data dictionary/i })).toBeInTheDocument();
+    expect(screen.getByText('ACCOUNTS accounts.json')).toBeInTheDocument();
   });
 });

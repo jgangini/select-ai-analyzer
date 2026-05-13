@@ -90,20 +90,25 @@ function CsvUploadStatusBadge({ draft }: { draft: DataSourceCsvUploadDraft }) {
 function CsvUploadDraftList({
   drafts,
   activeDraftId,
+  readyCount,
   onSelectDraft,
   onRemoveDraft,
 }: {
   drafts: DataSourceCsvUploadDraft[];
   activeDraftId: string | null;
+  readyCount: number;
   onSelectDraft: (id: string) => void;
   onRemoveDraft: (id: string) => void;
 }) {
   return (
-    <div className="rounded-lg border border-oracle-border bg-white">
-      <div className="border-b border-oracle-border px-4 py-3">
+    <div className="flex h-[25rem] flex-col rounded-lg border border-oracle-border bg-white">
+      <div className="flex items-center justify-between gap-3 border-b border-oracle-border px-4 py-3">
         <h3 className="text-sm font-semibold text-oracle-dark-gray">Files</h3>
+        <span className="text-xs text-oracle-medium-gray">
+          {readyCount}/{drafts.length} ready
+        </span>
       </div>
-      <div className="max-h-[25rem] overflow-y-auto">
+      <div className="min-h-0 flex-1 overflow-y-auto">
         {drafts.map((draft) => {
           const active = draft.id === activeDraftId;
           return (
@@ -334,6 +339,29 @@ export function DataSourceObjectModal({
     </div>
   );
 
+  const addFilesControl = (
+    <div className="flex items-end">
+      <label htmlFor="data-source-csv-batch-files" className="btn-secondary h-[42px] cursor-pointer whitespace-nowrap">
+        + Add files
+      </label>
+    </div>
+  );
+
+  const activeCsvHeaderMeta = activeCsvUpload ? (
+    <div className="flex min-w-0 items-center gap-2">
+      <span>:</span>
+      <span className="min-w-0 truncate font-mono font-semibold text-oracle-dark-gray" title={activeCsvUpload.tableName}>
+        {activeCsvUpload.tableName}
+      </span>
+      <span
+        className={`min-w-0 truncate ${activeCsvUpload.metadataJsonFile ? 'text-emerald-700' : 'text-rose-700'}`}
+        title={activeCsvUpload.metadataJsonFile?.name || 'Missing JSON'}
+      >
+        {activeCsvUpload.metadataJsonFile ? activeCsvUpload.metadataJsonFile.name : 'Missing JSON'}
+      </span>
+    </div>
+  ) : null;
+
   return (
     <GlassModal
       open={open}
@@ -358,9 +386,10 @@ export function DataSourceObjectModal({
       <form onSubmit={onSubmit} className="space-y-4 overflow-y-auto bg-white/90 p-5">
         {objectMode === 'csv' ? (
           <>
-            <div className="grid gap-4 md:grid-cols-2">
+            <div className="grid gap-4 md:grid-cols-[minmax(0,1fr)_minmax(0,1fr)_auto]">
               {objectSourceField}
               {targetSchemaField}
+              {addFilesControl}
             </div>
             <input
               id="data-source-csv-batch-files"
@@ -371,16 +400,6 @@ export function DataSourceObjectModal({
               className="hidden"
             />
             <div className="space-y-3">
-              <div className="flex flex-col gap-3 border-y border-gray-200 bg-gray-50 px-4 py-3 sm:flex-row sm:items-center sm:justify-between">
-                <label htmlFor="data-source-csv-batch-files" className="btn-secondary cursor-pointer">
-                  + Add files
-                </label>
-                <div className="text-sm text-oracle-medium-gray">
-                  {csvUploadDrafts.length === 0
-                    ? 'No files selected'
-                    : `${readyCsvUploadCount}/${csvUploadDrafts.length} ready`}
-                </div>
-              </div>
               {csvUploadIssues.length > 0 ? (
                 <div className="rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-xs text-amber-800">
                   {csvUploadIssues.map((issue) => (
@@ -405,28 +424,22 @@ export function DataSourceObjectModal({
                   </div>
                 </div>
               ) : (
-                <div className="grid gap-4 lg:grid-cols-[minmax(260px,360px)_1fr]">
+                <div className="grid items-stretch gap-4 lg:grid-cols-[minmax(260px,360px)_1fr]">
                   <CsvUploadDraftList
                     drafts={csvUploadDrafts}
                     activeDraftId={activeCsvUploadId}
+                    readyCount={readyCsvUploadCount}
                     onSelectDraft={onActiveCsvUploadIdChange}
                     onRemoveDraft={onCsvUploadDraftRemove}
                   />
-                  <div className="min-w-0 space-y-3">
-                    {activeCsvUpload ? (
-                      <div className="flex flex-wrap items-center gap-2 text-sm">
-                        <span className="font-mono font-semibold text-oracle-dark-gray">
-                          {activeCsvUpload.tableName}
-                        </span>
-                        <span className="text-oracle-medium-gray">
-                          {activeCsvUpload.metadataJsonFile ? activeCsvUpload.metadataJsonFile.name : 'Missing JSON'}
-                        </span>
-                      </div>
-                    ) : null}
+                  <div className="min-w-0">
                     <DataDictionaryEditor
                       columns={activeCsvUpload?.columnMetadata || []}
+                      className="h-[25rem]"
+                      headerMeta={activeCsvHeaderMeta}
                       onColumnChange={onColumnMetadataChange}
                       renderLoadingState={() => <LoadingState size="sm" label="Loading..." />}
+                      scrollClassName="min-h-0 flex-1"
                     />
                   </div>
                 </div>

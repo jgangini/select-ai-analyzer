@@ -12,22 +12,29 @@ type DataSourceColumnMetadata = {
 
 export function DataDictionaryEditor({
   columns,
+  headerMeta,
   isLoading,
   onColumnChange,
   renderLoadingState,
+  className = '',
+  scrollClassName = 'max-h-72',
 }: {
   columns: DataSourceColumnMetadata[];
+  headerMeta?: ReactNode;
   isLoading?: boolean;
   onColumnChange: (index: number, patch: Partial<DataSourceColumnMetadata>) => void;
   renderLoadingState: () => ReactNode;
+  className?: string;
+  scrollClassName?: string;
 }) {
   return (
-    <div className="rounded-lg border border-oracle-border bg-white">
-      <div className="border-b border-oracle-border px-4 py-3">
+    <div className={`flex flex-col rounded-lg border border-oracle-border bg-white ${className}`}>
+      <div className="flex min-w-0 items-center gap-3 border-b border-oracle-border px-4 py-3">
         <h3 className="text-sm font-semibold text-oracle-dark-gray">Data dictionary</h3>
+        {headerMeta ? <div className="min-w-0 flex-1 text-sm text-oracle-medium-gray">{headerMeta}</div> : null}
       </div>
-      <div className="space-y-3 p-4">
-        <div className="max-h-72 overflow-auto rounded border border-gray-200">
+      <div className="min-h-0 flex flex-1 p-4">
+        <div className={`${scrollClassName} overflow-auto rounded border border-gray-200`}>
           <table className="min-w-[760px] divide-y divide-gray-200">
             <thead className="bg-gray-50">
               <tr>
