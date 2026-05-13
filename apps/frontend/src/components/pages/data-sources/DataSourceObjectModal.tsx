@@ -220,7 +220,6 @@ export function DataSourceSchemaCreationConfirmModal({
           Create <span className="font-mono font-semibold">{schemaName}</span> and load the selected CSV files there?
         </span>
       }
-      detail="APP_AGENT remains only for application objects."
       confirmText="Create and upload"
       confirmClass="text-amber-700 hover:bg-amber-50"
       onConfirm={onConfirm}
@@ -374,7 +373,7 @@ export function DataSourceObjectModal({
           </svg>
         </button>
       </div>
-      <form onSubmit={onSubmit} className="space-y-4 overflow-y-auto bg-white/90 p-5">
+      <form onSubmit={onSubmit} className="space-y-3 overflow-y-auto bg-white/90 p-5">
         {objectMode === 'csv' ? (
           <>
             <div className="grid gap-4 md:grid-cols-[minmax(0,1fr)_minmax(0,1fr)_auto]">
@@ -400,7 +399,7 @@ export function DataSourceObjectModal({
               ) : null}
               {csvUploadDrafts.length === 0 ? (
                 <div
-                  className="flex min-h-48 items-center justify-center rounded-lg border-2 border-dashed border-gray-300 bg-gray-50 px-6 py-8 text-center"
+                  className="flex min-h-36 items-center justify-center rounded-lg border-2 border-dashed border-gray-300 bg-gray-50 px-6 py-6 text-center"
                   onDrop={handleCsvDrop}
                   onDragOver={handleCsvDragOver}
                 >

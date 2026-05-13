@@ -57,6 +57,7 @@ describe('DataSourceObjectModal', () => {
     expect(screen.queryByRole('textbox', { name: /table comment/i })).not.toBeInTheDocument();
     expect(screen.queryByText(/use an existing schema or type a new one/i)).not.toBeInTheDocument();
     expect(screen.getByText(/reserved for application tables/i)).toBeInTheDocument();
+    expect(screen.getByText('Drop CSV and JSON files').parentElement?.parentElement).toHaveClass('min-h-36');
   });
 
   it('omits optional display name for existing tables', () => {
@@ -129,5 +130,6 @@ describe('DataSourceObjectModal', () => {
     }
 
     expect(String(overlay?.className)).toContain('z-[400]');
+    expect(screen.queryByText(/app_agent remains only for application objects/i)).not.toBeInTheDocument();
   });
 });
