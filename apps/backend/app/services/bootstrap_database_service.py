@@ -3,10 +3,24 @@ from pathlib import Path
 
 import oracledb
 
+from apps.backend.app.select_ai.constants import DEFAULT_DATA_SCHEMA
 from apps.backend.app.services.bootstrap_support import (
     parse_tns_aliases,
     select_preferred_wallet_dsn,
 )
+
+
+REQUIRED_APP_AGENT_PRIVILEGES = (
+    "CREATE TABLE",
+    "CREATE ANY TABLE",
+    "DROP ANY TABLE",
+    "INSERT ANY TABLE",
+    "SELECT ANY TABLE",
+)
+
+
+def missing_required_privileges(granted_privileges: set[str]) -> list[str]:
+    return [privilege for privilege in REQUIRED_APP_AGENT_PRIVILEGES if privilege not in granted_privileges]
 
 
 class BootstrapDatabaseMixin:
@@ -39,19 +53,32 @@ class BootstrapDatabaseMixin:
                         f"to avoid impacting other schemas. Connected user: {db_user}."
                     ),
                 }
+            cursor.execute("SELECT privilege FROM user_sys_privs")
+            granted_privileges = {str(row[0]).upper() for row in cursor.fetchall()}
+            missing_privileges = missing_required_privileges(granted_privileges)
             cursor.execute(
-                """
-                SELECT privilege FROM user_sys_privs
-                WHERE privilege = 'CREATE TABLE'
-                """
+                "SELECT COUNT(*) FROM all_users WHERE username = :schema_name",
+                schema_name=DEFAULT_DATA_SCHEMA,
             )
-            has_create_table = cursor.fetchone() is not None
+            data_schema_row = cursor.fetchone()
+            data_schema_exists = bool(data_schema_row and int(data_schema_row[0] or 0) > 0)
             cursor.close()
             connection.close()
-            if not has_create_table:
+            if missing_privileges:
                 return {
                     "success": False,
-                    "message": f"User {db_user} does not have CREATE TABLE privilege",
+                    "message": (
+                        f"User {db_user} is missing required privileges: {', '.join(missing_privileges)}. "
+                        "Run the admin APP_AGENT setup script before installing the application."
+                    ),
+                }
+            if not data_schema_exists and "CREATE USER" not in granted_privileges:
+                return {
+                    "success": False,
+                    "message": (
+                        f"{DEFAULT_DATA_SCHEMA} does not exist and user {db_user} cannot create it. "
+                        "Run the admin APP_AGENT setup script to create the data schema."
+                    ),
                 }
             return {
                 "success": True,

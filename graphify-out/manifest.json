@@ -168,8 +168,8 @@
     "hash": "0a62d326b899b9aedc056ba7aefac645"
   },
   "D:\\dev\\codex-select-ai\\apps\\backend\\app\\select_ai\\data_source_schema.py": {
-    "mtime": 1778532336.258836,
-    "hash": "ed1909531d160836de3eca5abe30723b"
+    "mtime": 1778659416.9138808,
+    "hash": "7fcf418154d347d4607cc93511a6a321"
   },
   "D:\\dev\\codex-select-ai\\apps\\backend\\app\\select_ai\\errors.py": {
     "mtime": 1778532706.6475096,
@@ -232,8 +232,8 @@
     "hash": "21e5afd9f71a7ba6adaeb39dc5922907"
   },
   "D:\\dev\\codex-select-ai\\apps\\backend\\app\\services\\bootstrap_database_service.py": {
-    "mtime": 1778534479.304024,
-    "hash": "c4d165e63e135b1c301b1926817e2aed"
+    "mtime": 1778659382.2389598,
+    "hash": "b3a380cdd924ffb6f0665127969e9687"
   },
   "D:\\dev\\codex-select-ai\\apps\\backend\\app\\services\\bootstrap_oci_service.py": {
     "mtime": 1778559177.23386,
@@ -276,8 +276,8 @@
     "hash": "6f4cf77c494da08c62e518f7748f0b66"
   },
   "D:\\dev\\codex-select-ai\\apps\\backend\\db\\admin\\create_app_agent_user.sql": {
-    "mtime": 1778559155.3533,
-    "hash": "a74ddd10fa747152c272d7d6707fca2d"
+    "mtime": 1778659375.5348828,
+    "hash": "b8009600d77ffb4f4554cdc4e7830dcb"
   },
   "D:\\dev\\codex-select-ai\\apps\\backend\\db\\bootstrap\\sql\\01_user_group.sql": {
     "mtime": 1777995363.5155113,
@@ -324,8 +324,8 @@
     "hash": "5ff56bbb021a09f323206dd7451cdd41"
   },
   "D:\\dev\\codex-select-ai\\apps\\backend\\tests\\test_bootstrap_database_service.py": {
-    "mtime": 1778220369.193497,
-    "hash": "cba27ee7bcde28b71807065d6f180140"
+    "mtime": 1778659405.1119182,
+    "hash": "2ee70d845aabcd1cb714594bd4122350"
   },
   "D:\\dev\\codex-select-ai\\apps\\backend\\tests\\test_bootstrap_oci_service.py": {
     "mtime": 1778559204.2587068,
@@ -652,8 +652,8 @@
     "hash": "63a9ed12f152bcf2639812ddfbee1f09"
   },
   "D:\\dev\\codex-select-ai\\apps\\frontend\\src\\components\\pages\\analytics\\useAnalyticsConversationState.ts": {
-    "mtime": 1778539524.998828,
-    "hash": "806ab29f62e5c66254d36ab8a9d59f7d"
+    "mtime": 1778659375.5338824,
+    "hash": "a4ca8c053a026ee3dc0416571b03eb75"
   },
   "D:\\dev\\codex-select-ai\\apps\\frontend\\src\\components\\pages\\analytics\\useAnalyticsDashboardDraft.test.tsx": {
     "mtime": 1778261707.1706705,
@@ -676,12 +676,12 @@
     "hash": "fa289724ecf09fb433ea262d2a09bf30"
   },
   "D:\\dev\\codex-select-ai\\apps\\frontend\\src\\components\\pages\\data-sources\\DataSourceObjectModal.test.tsx": {
-    "mtime": 1778555624.1851752,
-    "hash": "0bd06ce44af90f9a275303ff14a60d2b"
+    "mtime": 1778659405.1119182,
+    "hash": "9a7add8529b2dca7153861f2260cd8cd"
   },
   "D:\\dev\\codex-select-ai\\apps\\frontend\\src\\components\\pages\\data-sources\\DataSourceObjectModal.tsx": {
-    "mtime": 1778555617.4975767,
-    "hash": "92ddacff463cd35fbcebf8bff8d7ab6a"
+    "mtime": 1778659375.5338824,
+    "hash": "b77e11b66d261a3641b16b28ffb1e2cc"
   },
   "D:\\dev\\codex-select-ai\\apps\\frontend\\src\\components\\pages\\data-sources\\DataSourcePreviewModal.test.tsx": {
     "mtime": 1778253107.467287,
@@ -858,6 +858,14 @@
   "D:\\dev\\codex-select-ai\\apps\\frontend\\src\\context\\ToastContext.tsx": {
     "mtime": 1778275287.7694397,
     "hash": "c29eacd954664494264fa9f40b9c2d0e"
+  },
+  "D:\\dev\\codex-select-ai\\apps\\frontend\\src\\lib\\clientId.test.ts": {
+    "mtime": 1778659405.11092,
+    "hash": "8b9c7d40f0424eb0189a659060145935"
+  },
+  "D:\\dev\\codex-select-ai\\apps\\frontend\\src\\lib\\clientId.ts": {
+    "mtime": 1778659375.5328803,
+    "hash": "4217045eb53cf16b9652aa3c5d2e05dd"
   },
   "D:\\dev\\codex-select-ai\\apps\\frontend\\src\\routes\\AppRoutes.tsx": {
     "mtime": 1778549465.7282195,

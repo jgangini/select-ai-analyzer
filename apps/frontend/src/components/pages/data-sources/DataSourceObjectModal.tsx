@@ -222,6 +222,7 @@ export function DataSourceSchemaCreationConfirmModal({
       onCancel={onCancel}
       loading={isPending}
       loadingText="Uploading..."
+      zIndex="z-[400]"
     />
   );
 }

@@ -1,7 +1,7 @@
 import { cleanup, fireEvent, render, screen } from '@testing-library/react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
-import { DataSourceObjectModal } from './DataSourceObjectModal';
+import { DataSourceObjectModal, DataSourceSchemaCreationConfirmModal } from './DataSourceObjectModal';
 import type { DataSourceCsvUploadDraft, DataSourceObjectMode } from './dataSourceUtils';
 
 type ModalProps = Parameters<typeof DataSourceObjectModal>[0];
@@ -106,5 +106,27 @@ describe('DataSourceObjectModal', () => {
     });
 
     expect(onObjectModeChange).toHaveBeenCalledWith('existing_table');
+  });
+
+  it('places schema creation confirmation above the object modal', () => {
+    render(
+      <>
+        <DataSourceObjectModal {...modalProps({ schemaNeedsCreation: true })} />
+        <DataSourceSchemaCreationConfirmModal
+          schemaName="APP_AGENT_DATA"
+          isPending={false}
+          onConfirm={vi.fn()}
+          onCancel={vi.fn()}
+        />
+      </>
+    );
+
+    const heading = screen.getByRole('heading', { name: /create schema/i });
+    let overlay = heading.parentElement;
+    while (overlay && !String(overlay.className).includes('fixed')) {
+      overlay = overlay.parentElement;
+    }
+
+    expect(String(overlay?.className)).toContain('z-[400]');
   });
 });

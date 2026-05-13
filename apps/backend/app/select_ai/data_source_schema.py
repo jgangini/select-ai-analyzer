@@ -120,7 +120,8 @@ class SelectAIDataSourceSchemaMixin:
         except Exception as exc:
             conn.rollback()
             raise ValueError(
-                f"Could not create schema {owner_name}. APP_AGENT needs CREATE USER privileges or the schema must be created by an administrator."
+                f"Could not create schema {owner_name}. Run the admin APP_AGENT setup script so the data schema "
+                "exists and APP_AGENT has the required upload privileges."
             ) from exc
         finally:
             cursor.close()

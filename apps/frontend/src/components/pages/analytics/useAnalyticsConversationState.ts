@@ -10,6 +10,7 @@ import {
 import { useMutation, useQuery, useQueryClient, type QueryClient } from '@tanstack/react-query';
 
 import { useAnalyticsChat } from '../../../context/AnalyticsChatContext';
+import { createClientId } from '../../../lib/clientId';
 import {
   buildConversationMessages,
   findLatestAssistantMessage,
@@ -239,7 +240,7 @@ function useAskQuestion(options: UseAskQuestionOptions) {
       }
       setMessages((prev) => [
         ...prev,
-        { id: crypto.randomUUID(), role: 'user', content: variables.text, timestamp: new Date() },
+        { id: createClientId('message'), role: 'user', content: variables.text, timestamp: new Date() },
       ]);
     },
     onSuccess: (result, variables) => {
@@ -259,7 +260,7 @@ function useAskQuestion(options: UseAskQuestionOptions) {
       attachConversation(result.conversation_id, variables.title);
       setMessages((prev) => [
         ...prev,
-        { id: crypto.randomUUID(), role: 'assistant', content: result.answer, timestamp: new Date(), result, question: variables.text },
+        { id: createClientId('message'), role: 'assistant', content: result.answer, timestamp: new Date(), result, question: variables.text },
       ]);
     },
     onError: (error, variables) => {
