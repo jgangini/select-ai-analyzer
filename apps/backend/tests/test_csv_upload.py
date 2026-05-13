@@ -162,6 +162,38 @@ def test_create_table_from_csv_accepts_and_records_column_metadata(tmp_path, mon
     assert connection.committed is True
 
 
+def test_create_table_from_csv_uses_app_agent_connection_after_creating_schema(tmp_path, monkeypatch) -> None:
+    csv_path = tmp_path / "accounts.csv"
+    csv_path.write_text("Account No,Amount\n001,10.50\n", encoding="utf-8")
+    cursor = RecordingCursor()
+    connection = RecordingConnection(cursor)
+    service = SelectAIDataSourceService(RecordingDbManager(connection))
+    created_schemas: list[str] = []
+
+    monkeypatch.setattr(service, "schema_exists", lambda owner_name: False)
+
+    def create_data_schema(schema_name: str) -> dict[str, object]:
+        created_schemas.append(schema_name)
+        return {"schema_name": schema_name, "created": True, "password": "must-not-be-used"}
+
+    monkeypatch.setattr(service, "create_data_schema", create_data_schema)
+    monkeypatch.setattr(service, "refresh_profile", lambda *, user_id=0: None)
+
+    result = service.create_table_from_csv(
+        csv_path=csv_path,
+        original_filename="accounts.csv",
+        table_name="accounts",
+        target_schema="APP_AGENT_DATA",
+        create_schema=True,
+    )
+
+    statements = [statement for statement, _params in cursor.execute_calls]
+    assert created_schemas == ["APP_AGENT_DATA"]
+    assert result["owner_name"] == "APP_AGENT_DATA"
+    assert "CREATE TABLE APP_AGENT_DATA.ACCOUNTS (ACCOUNT_NO VARCHAR2(4000), AMOUNT VARCHAR2(4000))" in statements
+    assert connection.committed is True
+
+
 def test_register_existing_table_accepts_and_records_column_metadata(monkeypatch) -> None:
     cursor = RecordingCursor(
         fetchall_rows=[

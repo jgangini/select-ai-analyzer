@@ -84,8 +84,8 @@
     "hash": "682b4d9547d9a02a8e80bacababddc83"
   },
   "D:\\dev\\codex-select-ai\\apps\\backend\\app\\select_ai\\base_service.py": {
-    "mtime": 1778225401.2971478,
-    "hash": "ef452376181e4808a478e4e99c6f6591"
+    "mtime": 1778662106.4225907,
+    "hash": "2c61a957c5ef3e4293daf9af1b141bef"
   },
   "D:\\dev\\codex-select-ai\\apps\\backend\\app\\select_ai\\charting.py": {
     "mtime": 1778012601.1789222,
@@ -152,8 +152,8 @@
     "hash": "e9b6c3e66f4bd9c078227c465b613445"
   },
   "D:\\dev\\codex-select-ai\\apps\\backend\\app\\select_ai\\data_source_csv.py": {
-    "mtime": 1778261452.6033804,
-    "hash": "404d7185d3d81113c31d4e00719f0f7c"
+    "mtime": 1778662101.034255,
+    "hash": "c3de39d37ef0e21918e3cb4dfa792610"
   },
   "D:\\dev\\codex-select-ai\\apps\\backend\\app\\select_ai\\data_source_metadata.py": {
     "mtime": 1778243449.107723,
@@ -168,8 +168,8 @@
     "hash": "0a62d326b899b9aedc056ba7aefac645"
   },
   "D:\\dev\\codex-select-ai\\apps\\backend\\app\\select_ai\\data_source_schema.py": {
-    "mtime": 1778659416.9138808,
-    "hash": "7fcf418154d347d4607cc93511a6a321"
+    "mtime": 1778662085.8982255,
+    "hash": "8b81d8e2287a8f143fcc21446296a4c6"
   },
   "D:\\dev\\codex-select-ai\\apps\\backend\\app\\select_ai\\errors.py": {
     "mtime": 1778532706.6475096,
@@ -276,8 +276,8 @@
     "hash": "6f4cf77c494da08c62e518f7748f0b66"
   },
   "D:\\dev\\codex-select-ai\\apps\\backend\\db\\admin\\create_app_agent_user.sql": {
-    "mtime": 1778659375.5348828,
-    "hash": "b8009600d77ffb4f4554cdc4e7830dcb"
+    "mtime": 1778662278.4708452,
+    "hash": "39b3518ecf4a604932edc9a7be70c567"
   },
   "D:\\dev\\codex-select-ai\\apps\\backend\\db\\bootstrap\\sql\\01_user_group.sql": {
     "mtime": 1777995363.5155113,
@@ -352,8 +352,8 @@
     "hash": "dcc0cfe29a9a9e811e8befc25f7fd002"
   },
   "D:\\dev\\codex-select-ai\\apps\\backend\\tests\\test_csv_upload.py": {
-    "mtime": 1778261452.6043792,
-    "hash": "944c19b5315e055ba02dfcaba72611d1"
+    "mtime": 1778662185.60203,
+    "hash": "8e64a0385f4fbb4fa225fafb3fd07d86"
   },
   "D:\\dev\\codex-select-ai\\apps\\backend\\tests\\test_dashboard_item_mutations.py": {
     "mtime": 1778228782.3967624,
@@ -368,8 +368,8 @@
     "hash": "5440f955b5c06455ffaaaa9cedc9baa7"
   },
   "D:\\dev\\codex-select-ai\\apps\\backend\\tests\\test_data_source_helpers.py": {
-    "mtime": 1778532336.2613418,
-    "hash": "3fd5e04c2849cc09aeac9c9e77cbf077"
+    "mtime": 1778662112.5708296,
+    "hash": "ae214fc20cf56f707a53761d774d9d3f"
   },
   "D:\\dev\\codex-select-ai\\apps\\backend\\tests\\test_query_execution.py": {
     "mtime": 1778267954.4040334,
@@ -416,8 +416,8 @@
     "hash": "51c9359849304dde3085a32b93f0b39a"
   },
   "D:\\dev\\codex-select-ai\\apps\\backend\\tests\\test_source_seed_script_helpers.py": {
-    "mtime": 1778552878.7679224,
-    "hash": "669a2aacf018e1840fbfd52e0af040f7"
+    "mtime": 1778662278.471845,
+    "hash": "39de9f44ff51801782ade8781e37b527"
   },
   "D:\\dev\\codex-select-ai\\apps\\backend\\tests\\test_sql_validation_and_charting.py": {
     "mtime": 1778532800.5354898,
@@ -948,8 +948,8 @@
     "hash": "83b22be77c6098c6ecdcdb1ad32452cf"
   },
   "D:\\dev\\codex-select-ai\\scripts\\source_seed_db.py": {
-    "mtime": 1778532336.2710419,
-    "hash": "ba1b831e347bf037c67751f111aeda98"
+    "mtime": 1778662285.217367,
+    "hash": "b6a4b92f59b54698e098cbec6d9b068b"
   },
   "D:\\dev\\codex-select-ai\\scripts\\source_seed_metadata.py": {
     "mtime": 1778243449.1182313,

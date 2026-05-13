@@ -185,19 +185,18 @@ def test_source_seed_db_helpers_execute_expected_schema_statements() -> None:
 
     executed_sql = "\n".join(cursor.statements)
     assert "CREATE USER APP_AGENT_DATA" in executed_sql
-    assert "GRANT CREATE TABLE TO APP_AGENT_DATA" in executed_sql
+    assert "GRANT CREATE TABLE TO APP_AGENT_DATA" not in executed_sql
+    assert "GRANT CREATE SESSION TO APP_AGENT_DATA" not in executed_sql
     assert "DROP TABLE APP_AGENT_DATA.FLEX_ACCOUNT PURGE" in executed_sql
 
 
-def test_source_seed_data_schema_ignores_unavailable_grant_privilege() -> None:
+def test_source_seed_data_schema_creates_upload_owner_without_login_grants() -> None:
     class Cursor:
         def __init__(self) -> None:
             self.statements: list[str] = []
 
         def execute(self, statement: str, **_params) -> None:
             self.statements.append(statement)
-            if statement.startswith("GRANT "):
-                raise RuntimeError("ORA-01031: insufficient privileges")
 
         def fetchone(self) -> tuple[int]:
             return (0,)
@@ -208,8 +207,8 @@ def test_source_seed_data_schema_ignores_unavailable_grant_privilege() -> None:
 
     executed_sql = "\n".join(cursor.statements)
     assert "CREATE USER APP_AGENT_DATA" in executed_sql
-    assert "GRANT CREATE SESSION TO APP_AGENT_DATA" in executed_sql
-    assert "GRANT CREATE TABLE TO APP_AGENT_DATA" in executed_sql
+    assert "GRANT CREATE SESSION TO APP_AGENT_DATA" not in executed_sql
+    assert "GRANT CREATE TABLE TO APP_AGENT_DATA" not in executed_sql
 
 
 def test_source_seed_table_io_reads_typed_csv_rows(tmp_path) -> None:

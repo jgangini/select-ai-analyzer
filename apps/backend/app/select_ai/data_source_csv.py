@@ -9,7 +9,7 @@ from typing import Any
 import uuid
 
 from apps.backend.app.core.config import get_settings
-from apps.backend.app.select_ai.constants import APP_SCHEMA, DEFAULT_DATA_SCHEMA
+from apps.backend.app.select_ai.constants import DEFAULT_DATA_SCHEMA
 from apps.backend.app.select_ai.metadata_payload import parse_metadata_payload
 from apps.backend.app.select_ai.sql_names import _qualified_name, _safe_identifier
 
@@ -133,13 +133,12 @@ def _register_csv_data_source(
 
 
 class SelectAIDataSourceCsvMixin:
-    def _ensure_csv_target_schema(self, owner_name: str, create_schema: bool) -> str | None:
+    def _ensure_csv_target_schema(self, owner_name: str, create_schema: bool) -> None:
         if self.schema_exists(owner_name):
-            return None
+            return
         if not create_schema:
             raise ValueError(f"Schema {owner_name} does not exist. Confirm schema creation before uploading.")
-        schema_result = self.create_data_schema(owner_name, include_password=True)
-        return str(schema_result.get("password") or "") or None
+        self.create_data_schema(owner_name)
 
     def _load_csv_table_as_app_agent(
         self,
@@ -193,7 +192,7 @@ class SelectAIDataSourceCsvMixin:
         if not csv_path.exists():
             raise ValueError("CSV upload was not saved.")
         owner_name = self._assert_data_schema(target_schema or DEFAULT_DATA_SCHEMA)
-        target_password = self._ensure_csv_target_schema(owner_name, create_schema)
+        self._ensure_csv_target_schema(owner_name, create_schema)
         target_table = _safe_identifier(table_name or Path(original_filename).stem)
         qualified_table = _qualified_name(owner_name, target_table)
         upload = _read_csv_upload(csv_path)
@@ -205,34 +204,22 @@ class SelectAIDataSourceCsvMixin:
         metadata_warnings: list[str] = []
         try:
             _insert_load_job(cursor, load_job_id, original_filename, qualified_table)
-            if target_password:
-                metadata_warnings = self._load_csv_table_as_owner(
-                    owner_name=owner_name,
-                    password=target_password,
-                    table_name=target_table,
-                    fieldnames=upload.fieldnames,
-                    rows=upload.rows,
-                    table_comment=table_comment,
-                    column_metadata=column_metadata or [],
-                )
-            else:
-                self._load_csv_table_as_app_agent(
-                    cursor,
-                    owner_name=owner_name,
-                    table_name=target_table,
-                    qualified_table=qualified_table,
-                    fieldnames=upload.fieldnames,
-                    rows=upload.rows,
-                )
+            self._load_csv_table_as_app_agent(
+                cursor,
+                owner_name=owner_name,
+                table_name=target_table,
+                qualified_table=qualified_table,
+                fieldnames=upload.fieldnames,
+                rows=upload.rows,
+            )
             _assert_csv_table_selectable(cursor, qualified_table)
-            if not target_password:
-                metadata_warnings = self._apply_select_ai_metadata(
-                    cursor,
-                    owner_name=owner_name,
-                    table_name=target_table,
-                    table_comment=table_comment,
-                    column_metadata=column_metadata or [],
-                )
+            metadata_warnings = self._apply_select_ai_metadata(
+                cursor,
+                owner_name=owner_name,
+                table_name=target_table,
+                table_comment=table_comment,
+                column_metadata=column_metadata or [],
+            )
             _register_csv_data_source(
                 cursor,
                 data_source_id=data_source_id,
@@ -262,41 +249,6 @@ class SelectAIDataSourceCsvMixin:
             "row_count": len(upload.rows),
             "metadata_warnings": metadata_warnings,
         }
-
-    def _load_csv_table_as_owner(
-        self,
-        *,
-        owner_name: str,
-        password: str,
-        table_name: str,
-        fieldnames: list[str],
-        rows: list[dict[str, Any]],
-        table_comment: str | None = None,
-        column_metadata: list[dict[str, Any]] | None = None,
-    ) -> list[str]:
-        conn = self._connect_as(user=owner_name, password=password)
-        cursor = conn.cursor()
-        try:
-            self._drop_table_if_exists(cursor, table_name)
-            safe_table = _safe_identifier(table_name)
-            _create_csv_table(cursor, safe_table, fieldnames)
-            _insert_csv_rows(cursor, safe_table, fieldnames, rows)
-            metadata_warnings = self._apply_select_ai_metadata(
-                cursor,
-                owner_name=owner_name,
-                table_name=table_name,
-                table_comment=table_comment,
-                column_metadata=column_metadata or [],
-            )
-            cursor.execute(f"GRANT SELECT ON {_safe_identifier(table_name)} TO {APP_SCHEMA}")
-            conn.commit()
-            return metadata_warnings
-        except Exception:
-            conn.rollback()
-            raise
-        finally:
-            cursor.close()
-            conn.close()
 
     @staticmethod
     def _drop_table_if_exists(cursor, table_name: str, *, owner_name: str | None = None) -> None:

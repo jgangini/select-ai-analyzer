@@ -3,8 +3,6 @@ from __future__ import annotations
 from contextlib import contextmanager
 from typing import Any, Self
 
-import oracledb
-
 from apps.backend.app.core.config import get_settings
 from apps.backend.app.core.database import DatabaseManager
 from apps.backend.app.select_ai.constants import DEFAULT_PROFILE
@@ -53,20 +51,6 @@ class SelectAIBaseService:
 
     def _connection(self):
         return self.db_manager.get_connection()
-
-    def _connect_as(self, *, user: str, password: str):
-        config = self.db_manager.resolve_connection_config(user=user, password=password)
-        kwargs: dict[str, Any] = {
-            "user": config["user"],
-            "password": config["password"],
-            "dsn": config["dsn"],
-        }
-        if config.get("wallet_path"):
-            kwargs["config_dir"] = config["wallet_path"]
-            kwargs["wallet_location"] = config["wallet_path"]
-        if config.get("wallet_password"):
-            kwargs["wallet_password"] = config["wallet_password"]
-        return oracledb.connect(**kwargs)
 
     def refresh_profile(self, *, user_id: int = 0) -> None:
         with self._cursor() as (conn, cursor):
