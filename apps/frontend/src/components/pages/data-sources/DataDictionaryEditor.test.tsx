@@ -70,5 +70,6 @@ describe('DataDictionaryEditor', () => {
 
     expect(screen.getByRole('heading', { name: /data dictionary/i })).toBeInTheDocument();
     expect(screen.getByText('ACCOUNTS')).toBeInTheDocument();
+    expect(screen.getByText('ACCOUNTS').parentElement).toHaveClass('text-right');
   });
 });

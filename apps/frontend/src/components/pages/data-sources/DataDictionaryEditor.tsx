@@ -33,7 +33,7 @@ export function DataDictionaryEditor({
     <div className={`flex flex-col rounded-lg border border-oracle-border bg-white ${className}`}>
       <div className="flex min-w-0 items-center gap-3 border-b border-oracle-border px-4 py-3">
         <h3 className="text-sm font-semibold text-oracle-dark-gray">Data dictionary</h3>
-        {headerMeta ? <div className="min-w-0 flex-1 text-sm text-oracle-medium-gray">{headerMeta}</div> : null}
+        {headerMeta ? <div className="ml-auto min-w-0 flex-1 text-right text-sm text-oracle-medium-gray">{headerMeta}</div> : null}
       </div>
       <div className={bodyClassName}>
         <div className={tableShellClassName}>

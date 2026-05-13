@@ -1,16 +1,16 @@
 # Graph Report - codex-select-ai  (2026-05-13)
 
 ## Corpus Check
-- 257 files · ~112,685 words
+- 258 files · ~113,650 words
 - Verdict: corpus is large enough that graph structure adds value.
 
 ## Summary
-- 2290 nodes · 4142 edges · 116 communities (104 shown, 12 thin omitted)
-- Extraction: 85% EXTRACTED · 15% INFERRED · 0% AMBIGUOUS · INFERRED: 624 edges (avg confidence: 0.73)
+- 2319 nodes · 4179 edges · 117 communities (107 shown, 10 thin omitted)
+- Extraction: 85% EXTRACTED · 15% INFERRED · 0% AMBIGUOUS · INFERRED: 625 edges (avg confidence: 0.73)
 - Token cost: 0 input · 0 output
 
 ## Graph Freshness
-- Built from commit: `3b99ba6c`
+- Built from commit: `07fea787`
 - Run `git rev-parse HEAD` and compare to check if the graph is stale.
 - Run `graphify update .` after code changes (no API cost).
 
@@ -72,7 +72,6 @@
 - [[_COMMUNITY_Community 54|Community 54]]
 - [[_COMMUNITY_Community 55|Community 55]]
 - [[_COMMUNITY_Community 56|Community 56]]
-- [[_COMMUNITY_Community 57|Community 57]]
 - [[_COMMUNITY_Community 58|Community 58]]
 - [[_COMMUNITY_Community 59|Community 59]]
 - [[_COMMUNITY_Community 60|Community 60]]
@@ -118,10 +117,11 @@
 - [[_COMMUNITY_Community 100|Community 100]]
 - [[_COMMUNITY_Community 101|Community 101]]
 - [[_COMMUNITY_Community 102|Community 102]]
-- [[_COMMUNITY_Community 105|Community 105]]
+- [[_COMMUNITY_Community 103|Community 103]]
 - [[_COMMUNITY_Community 106|Community 106]]
 - [[_COMMUNITY_Community 107|Community 107]]
 - [[_COMMUNITY_Community 108|Community 108]]
+- [[_COMMUNITY_Community 109|Community 109]]
 
 ## God Nodes (most connected - your core abstractions)
 1. `DashboardService` - 27 edges
@@ -147,7 +147,7 @@
 - `test_convert_csv_value_uses_oracle_column_type()` --calls--> `convert_csv_value()`  [INFERRED]
   apps/backend/tests/test_source_seed_script_helpers.py → scripts/source_seed_values.py
 
-## Communities (116 total, 12 thin omitted)
+## Communities (117 total, 10 thin omitted)
 
 ### Community 0 - "Community 0"
 Cohesion: 0.06
@@ -155,394 +155,402 @@ Nodes (73): _is_balance_history_source(), _is_branch_dates_source(), _is_custome
 
 ### Community 1 - "Community 1"
 Cohesion: 0.05
-Nodes (54): ColumnMetadataRequest, create_schema(), CreateSchemaRequest, delete_data_source(), describe_catalog_table(), ExistingTableRequest, list_catalog_owners(), list_catalog_tables() (+46 more)
+Nodes (55): ColumnMetadataRequest, create_schema(), CreateSchemaRequest, delete_data_source(), describe_catalog_table(), ExistingTableRequest, list_catalog_owners(), list_catalog_tables() (+47 more)
 
 ### Community 2 - "Community 2"
 Cohesion: 0.05
-Nodes (60): AddVisualizationButton(), ChartControls(), ChartControlsProps, ChartScrollbarState, ChartScrollFrame(), ChartSortMode, ChartPreview(), chartRendererTools (+52 more)
+Nodes (59): AddVisualizationButton(), ChartControls(), ChartControlsProps, ChartScrollbarState, ChartScrollFrame(), ChartSortMode, chartRendererTools, ResultTableRenderer (+51 more)
 
 ### Community 3 - "Community 3"
 Cohesion: 0.05
-Nodes (63): RuntimeError, _capture_runtime_config(), clean_schema(), _drop_current_schema_objects(), _drop_data_schema(), _drop_retired_select_ai_artifacts(), _drop_select_ai_profiles(), _env_runtime_config() (+55 more)
+Nodes (33): create_access_token(), decode_access_token(), get_current_user(), get_settings(), Inject settings from main.py., Verify password against bcrypt hash., Dependency to get current user from JWT token., set_settings() (+25 more)
 
 ### Community 4 - "Community 4"
 Cohesion: 0.05
-Nodes (50): api, token, ConnectionAliasField(), ConnectionAliasFieldProps, DatabaseSetupNotice(), WalletUploadField(), WalletUploadFieldProps, WizardPasswordField() (+42 more)
-
-### Community 5 - "Community 5"
-Cohesion: 0.05
 Nodes (38): _assert_conversation_writable(), _json_dump(), _materialize_stored_result(), _open_cursor(), _safe_max_rows(), SelectAIConversationMixin, SelectAIConversationMutationMixin, _transaction_cursor() (+30 more)
 
-### Community 6 - "Community 6"
+### Community 5 - "Community 5"
 Cohesion: 0.06
 Nodes (48): appendUniqueTableRef(), baseInspection(), buildAnswerInspection(), buildExecuteInspection(), buildGraphBounds(), buildGraphEdges(), buildGraphNodes(), buildGraphViewBox() (+40 more)
 
-### Community 7 - "Community 7"
+### Community 6 - "Community 6"
 Cohesion: 0.07
 Nodes (50): main(), build_create_table_sql(), _normalize_identifier(), oracle_type_for_ddl(), parse_source_tables(), Parse SQL*Plus DESC output from .source into table metadata.      Blocks with SQ, SourceColumn, SourceTable (+42 more)
 
-### Community 8 - "Community 8"
+### Community 7 - "Community 7"
 Cohesion: 0.07
-Nodes (31): Protocol, AvatarFile, AvatarStorage, AvatarValidationError, media_type(), _coerce_suggested_questions(), _compact_suggested_questions(), _default_payload() (+23 more)
+Nodes (30): Protocol, AvatarFile, AvatarStorage, AvatarValidationError, media_type(), _coerce_suggested_questions(), _compact_suggested_questions(), _default_payload() (+22 more)
 
-### Community 9 - "Community 9"
-Cohesion: 0.05
-Nodes (27): BaseSettings, get_settings(), When `_env_file=None` is explicit, force defaults/init values only., Settings, create_access_token(), decode_access_token(), get_current_user(), get_settings() (+19 more)
-
-### Community 10 - "Community 10"
+### Community 8 - "Community 8"
 Cohesion: 0.05
 Nodes (18): _cursor(), SelectAIBaseService, SelectAIBaseService, SelectAIScopedProfileMixin, _created_profile_attributes(), FakeLob, ScopedProfileConnection, ScopedProfileCursor (+10 more)
 
-### Community 11 - "Community 11"
+### Community 9 - "Community 9"
 Cohesion: 0.07
-Nodes (38): DashboardItemMutationMixin, _dashboard_item_insert_params(), _dashboard_item_update_fields(), _json_object_literal(), _normalize_dashboard_item_ids(), _normalize_dashboard_items(), _normalize_required_text(), _dashboard_exists_for_owner() (+30 more)
+Nodes (37): DashboardItemMutationMixin, _dashboard_item_insert_params(), _dashboard_item_update_fields(), _json_object_literal(), _normalize_dashboard_item_ids(), _normalize_dashboard_items(), _normalize_required_text(), _dashboard_exists_for_owner() (+29 more)
+
+### Community 10 - "Community 10"
+Cohesion: 0.07
+Nodes (24): Block runtime operations until the setup wizard has completed., require_setup_completed(), get_db_manager(), Helpers de sesion/conexion para FastAPI., Retorna singleton de DatabaseManager., id, BootstrapStatusMixin, check_setup_status() (+16 more)
+
+### Community 11 - "Community 11"
+Cohesion: 0.06
+Nodes (41): DataSourcePreviewModal(), DataSourcePreviewModalProps, onClose, onPageChange, PreviewProps, { rerender }, response, source (+33 more)
 
 ### Community 12 - "Community 12"
+Cohesion: 0.07
+Nodes (42): _chunks(), _connect(), load_source_seed(), _load_table(), main(), _runtime_db_config_path(), assert_connected_schema(), drop_table_if_exists() (+34 more)
+
+### Community 13 - "Community 13"
 Cohesion: 0.05
 Nodes (37): Home(), buildHomeStatCards(), formatNumber(), HomeStatCard, HomeStatsSource, StatKind, cards, AgentTraceItem (+29 more)
 
-### Community 13 - "Community 13"
+### Community 14 - "Community 14"
 Cohesion: 0.08
 Nodes (21): change_password(), ChangePasswordRequest, create_user(), CreateUserRequest, current_user_id(), delete_user(), get_current_user_info(), get_user_service() (+13 more)
 
-### Community 14 - "Community 14"
+### Community 15 - "Community 15"
 Cohesion: 0.08
 Nodes (28): Profile(), ProfileFormData, currentUser, usersApiMock, emptyUserForm, UsersAuthUser, ChangePasswordPayload, CreateUserPayload (+20 more)
 
-### Community 15 - "Community 15"
-Cohesion: 0.07
-Nodes (33): LoadingState(), LoadingStateProps, SIZE_STYLES, DataSourcePreviewModal(), DataSourcePreviewModalProps, onClose, onPageChange, PreviewProps (+25 more)
-
 ### Community 16 - "Community 16"
+Cohesion: 0.12
+Nodes (29): AnalyticsVisualizationCard(), AnalyticsVisualizationCardProps, formatCellValue(), getInsertionLineClass(), getMetricLabel(), VisualizationCardItem, buildDropPosition(), buildEdgeDropPosition() (+21 more)
+
+### Community 17 - "Community 17"
 Cohesion: 0.14
 Nodes (25): extract_zip_safely(), safe_upload_name(), check_setup_status(), complete_setup(), execute_setup(), get_setup_service(), _has_complete_database_config(), list_genai_models() (+17 more)
 
-### Community 17 - "Community 17"
-Cohesion: 0.09
-Nodes (13): _alter_if_missing(), _create_if_missing(), DashboardSchemaMixin, FakeLob, SchemaConnection, SchemaCursor, SchemaDbManager, test_alter_if_missing_ignores_existing_column_or_constraint_errors() (+5 more)
-
 ### Community 18 - "Community 18"
-Cohesion: 0.09
-Nodes (27): DataSourceCatalogTableDetail, dataSourceStatusBadgeClassNames, EMPTY_DATA_SOURCES, filterDataSources(), mergeMetadataWithColumns(), metadataText(), ObjectSubmitState, PaginationWindow (+19 more)
-
-### Community 19 - "Community 19"
-Cohesion: 0.08
-Nodes (25): AddDashboardStep, AnalyticsAddVisualizationModal(), AnalyticsDashboardTray(), AnalyticsDeleteChatModal(), DashboardChartSpec, DashboardDraftItem, DashboardSummary, DashboardTargetMode (+17 more)
-
-### Community 20 - "Community 20"
-Cohesion: 0.1
-Nodes (23): AnalyticsAskRequest, AnalyticsAskResponse, AnalyticsConversationClient, AnalyticsConversationDetail, analyticsConversationQueryKey(), AnalyticsConversationSummary, ApiResponse, AskQuestionVariables (+15 more)
-
-### Community 21 - "Community 21"
-Cohesion: 0.1
-Nodes (21): DataSourceListHelpers, DataSourceListState, DataSourceStats, DataSourceSummary, listHelpers, { rerender, result }, { result }, Source (+13 more)
-
-### Community 22 - "Community 22"
 Cohesion: 0.07
 Nodes (27): 2026-03-18, Avatar del agente en chat (fallback por letra), Batería de 21 preguntas RAG (script de evaluación), Batería RAG: carpetas RM797, progreso y ETA, Batería RAG: corrida completa 2026-03-20 (2 carpetas, 42 preguntas), Batería RAG: modo secuencial por carpeta (`--workers 1`), Cambio de conexión Oracle: `HIGH` -> `MEDIUM`, DELETE /api/files/{id} -> 500 (FK monitorings) (+19 more)
 
-### Community 23 - "Community 23"
-Cohesion: 0.08
-Nodes (22): AddDashboardItemsPayload, AddDashboardStep, ApiResponse, CreateDashboardPayload, DashboardChartSpec, DashboardDetail, DashboardDraftItem, DashboardDraftTargetState (+14 more)
+### Community 19 - "Community 19"
+Cohesion: 0.09
+Nodes (17): ApiKeySection(), ConfigSetter, FinishSetupButton(), GenAIModelOption, GenerativeAISection(), ObjectStorageSection(), SelectAISetupConfig, SetupResult (+9 more)
 
-### Community 24 - "Community 24"
+### Community 20 - "Community 20"
+Cohesion: 0.14
+Nodes (19): compactQuestions(), normalizeSuggestedQuestions(), parseCsvRows(), parseSuggestedQuestionsCsv(), replaceSuggestedQuestionAt(), selectInitialSuggestedQuestions(), STARTER_SUGGESTED_QUESTIONS, pool (+11 more)
+
+### Community 21 - "Community 21"
 Cohesion: 0.15
 Nodes (14): BootstrapOciMixin, CredentialBootstrapOciService, DbManager, FakeBootstrapOciService, FakeConnection, Settings, test_complete_setup_marks_wizard_done_and_regenerates_runtime_config(), test_generative_ai_validation_normalizes_url_and_allows_http_status_errors() (+6 more)
 
-### Community 25 - "Community 25"
+### Community 22 - "Community 22"
+Cohesion: 0.12
+Nodes (12): BootstrapDatabaseMixin, missing_required_privileges(), DatabaseBootstrapper, DbManager, FakeOracleConnection, FakeOracleCursor, test_db_connection_accepts_app_agent_runtime_privileges(), test_db_connection_rejects_missing_default_data_schema_without_create_user() (+4 more)
+
+### Community 23 - "Community 23"
 Cohesion: 0.1
 Nodes (18): DataDictionaryEditor(), DataSourceColumnMetadata, onColumnChange, DataSourceObjectModal(), DataSourceObjectModalProps, DataSourceSchemaCreationConfirmModal(), activeDraft, heading (+10 more)
 
-### Community 26 - "Community 26"
-Cohesion: 0.12
-Nodes (20): AdminPasswordRequest, DBRuntimeConfigRequest, DBTestRequest, GenerativeAIConfigRequest, ObjectStorageTestRequest, OCIConfigRequest, SetupRequest, WalletDSNRequest (+12 more)
+### Community 24 - "Community 24"
+Cohesion: 0.1
+Nodes (18): DataSourceListHelpers, DataSourceListState, DataSourceStats, DataSourceSummary, listHelpers, { rerender, result }, { result }, Source (+10 more)
 
-### Community 27 - "Community 27"
-Cohesion: 0.15
-Nodes (21): AnalyticsChatComposerProps, AnalyticsChatHeader(), AnalyticsChatHeaderProps, AnalyticsChatMessageList(), AssistantChatListMessage, ChatListMessage, ChatMessageBubble(), formatTime() (+13 more)
-
-### Community 28 - "Community 28"
+### Community 25 - "Community 25"
 Cohesion: 0.16
 Nodes (20): apply_doc_example_overrides(), _set_if_present(), _apply_balance_history_example(), apply_core_doc_example_overrides(), _apply_customer_account_examples(), _apply_customer_account_row(), _apply_customer_examples(), _apply_daily_log_examples() (+12 more)
+
+### Community 26 - "Community 26"
+Cohesion: 0.12
+Nodes (11): _alter_if_missing(), _create_if_missing(), DashboardSchemaMixin, FakeLob, SchemaCursor, SchemaDbManager, test_alter_if_missing_ignores_existing_column_or_constraint_errors(), test_create_if_missing_ignores_existing_object_error() (+3 more)
+
+### Community 27 - "Community 27"
+Cohesion: 0.12
+Nodes (19): build_oracle_connection_kwargs(), open_runtime_database_connection(), parse_bootstrap_sql_statements(), read_private_key_for_db_credential(), resolve_oci_cli_config_path(), summarize_oracle_connect_error(), write_oci_cli_config_file(), DbManager (+11 more)
+
+### Community 28 - "Community 28"
+Cohesion: 0.17
+Nodes (16): BootstrapOciMixin, build_oci_client_config(), _failure_result(), _generative_model_options(), _inference_test_url(), missing_required_oci_config_keys(), _missing_saved_config_result(), _probe_inference_endpoint() (+8 more)
 
 ### Community 29 - "Community 29"
 Cohesion: 0.12
 Nodes (21): Analytics, AnalyticsChatPanel, AppRoutes(), authenticatedRoutes(), DataSources, Home, LoginForm, Profile (+13 more)
 
 ### Community 30 - "Community 30"
-Cohesion: 0.16
-Nodes (17): build_oci_client_config(), _failure_result(), _generative_model_options(), _inference_test_url(), missing_required_oci_config_keys(), _missing_saved_config_result(), _probe_inference_endpoint(), _read_key_file_content() (+9 more)
+Cohesion: 0.13
+Nodes (9): CatalogConnection, CatalogCursor, CatalogService, RegisterConnection, RegisterCursor, test_list_data_sources_returns_json_safe_catalog_rows(), test_list_schemas_includes_default_schema_and_source_counts(), test_register_existing_table_rolls_back_when_source_column_sync_fails() (+1 more)
 
 ### Community 31 - "Community 31"
-Cohesion: 0.13
-Nodes (9): DatabaseManager, _missing_required_config(), Initialize connection pool (thin mode, no Oracle Client)., Get connection from pool., Close pool (on shutdown)., Return whether a table exists in the current schema., Persist DB connection chosen in setup wizard., Singleton to manage connection pool to Autonomous Database. (+1 more)
+Cohesion: 0.11
+Nodes (20): AnalyticsAskRequest, AnalyticsAskResponse, AnalyticsConversationClient, AnalyticsConversationDetail, analyticsConversationQueryKey(), AnalyticsConversationSummary, ApiResponse, AskQuestionVariables (+12 more)
 
 ### Community 32 - "Community 32"
+Cohesion: 0.1
+Nodes (20): AddDashboardStep, AnalyticsAddVisualizationModal(), AnalyticsDashboardTray(), AnalyticsDeleteChatModal(), DashboardChartSpec, DashboardDraftItem, DashboardSummary, DashboardTargetMode (+12 more)
+
+### Community 33 - "Community 33"
 Cohesion: 0.16
 Nodes (20): BaseHTTPMiddleware, checkpoint(), _duration_ms(), _ensure_trace_file(), _enter_trace(), _exception_trace(), _exit_trace(), get_trace_id() (+12 more)
 
-### Community 33 - "Community 33"
+### Community 34 - "Community 34"
 Cohesion: 0.13
 Nodes (20): AnalyticsChatPanel(), AnalyticsChatMessage, AnalyticsChatResult, AnalyticsConversationForMessages, buildConversationMessages(), buildDashboardDraftItem(), findLatestAssistantMessage(), findLatestMessage() (+12 more)
 
-### Community 34 - "Community 34"
-Cohesion: 0.11
-Nodes (20): DashboardLayoutItem, getDashboardItemColumn(), getDashboardItemMoveUpdate(), getVisualizationWidth(), isDragBlockedTarget(), container, createDashboardElement(), createGrid() (+12 more)
-
 ### Community 35 - "Community 35"
-Cohesion: 0.14
-Nodes (8): make_service(), MutationConnection, MutationCursor, MutationDbManager, test_add_dashboard_items_inserts_normalized_visualization(), test_add_dashboard_items_rejects_empty_dashboard_id_or_items(), test_reorder_dashboard_items_rejects_duplicate_items_before_opening_connection(), test_update_dashboard_item_rejects_invalid_layout_before_opening_connection()
+Cohesion: 0.16
+Nodes (19): AnalyticsDashboardHeader(), AnalyticsDashboardTabs(), DashboardHeaderBase, DashboardTabSummary, onDelete, onRename, onSelect, onVisibilityChange (+11 more)
 
 ### Community 36 - "Community 36"
 Cohesion: 0.14
-Nodes (17): build_oracle_connection_kwargs(), open_runtime_database_connection(), parse_bootstrap_sql_statements(), read_private_key_for_db_credential(), summarize_oracle_connect_error(), DbManager, Settings, test_bootstrap_sql_files_are_grouped_by_domain() (+9 more)
+Nodes (15): DashboardModalDashboard, DashboardModalItem, DeleteDashboardModal(), DeleteVisualizationModal(), RenameDashboardModal(), RenameVisualizationModal(), SqlModal(), onClose (+7 more)
 
 ### Community 37 - "Community 37"
-Cohesion: 0.12
-Nodes (14): Footer(), buildInstallErrorMessage(), InstallationData, InstallationResult, InstallationStep(), Props, SetupScriptError, renderStep() (+6 more)
+Cohesion: 0.11
+Nodes (19): AnalyticsChatComposer(), AnalyticsChatComposerProps, AnalyticsChatHeader(), AnalyticsChatHeaderProps, AnalyticsChatMessageList(), AnalyticsSuggestedQuestionButtons(), AssistantChatListMessage, ChatListMessage (+11 more)
 
 ### Community 38 - "Community 38"
-Cohesion: 0.22
-Nodes (18): buildDropPosition(), buildEdgeDropPosition(), buildRowGapPosition(), DropPositionInput, EMPTY_DROP_POSITION, findDashboardItemIndex(), findOpenRowElement(), getDashboardItemElements() (+10 more)
+Cohesion: 0.19
+Nodes (20): _capture_runtime_config(), clean_schema(), _drop_current_schema_objects(), _drop_data_schema(), _drop_retired_select_ai_artifacts(), _drop_select_ai_profiles(), _env_runtime_config(), _existing_profiles() (+12 more)
 
 ### Community 39 - "Community 39"
-Cohesion: 0.13
-Nodes (16): DashboardItemMoveUpdate, DragSession, ShowToast, AddDashboardItemsPayload, ChartSpec, CreateDashboardPayload, DashboardDetail, DashboardItem (+8 more)
+Cohesion: 0.14
+Nodes (8): make_service(), MutationConnection, MutationCursor, MutationDbManager, test_add_dashboard_items_inserts_normalized_visualization(), test_add_dashboard_items_rejects_empty_dashboard_id_or_items(), test_reorder_dashboard_items_rejects_duplicate_items_before_opening_connection(), test_update_dashboard_item_rejects_invalid_layout_before_opening_connection()
 
 ### Community 40 - "Community 40"
-Cohesion: 0.14
-Nodes (13): analyticsApiMock, conversation, deleteOverlay, SearchChatsProbe(), searchOverlay, AnalyticsChatContext, AnalyticsChatContextType, AnalyticsChatProvider() (+5 more)
+Cohesion: 0.19
+Nodes (18): BooleanSetter, ResultSetter, runSetupTest(), saveSetupConfig(), SelectAIServicesStepProps, buildInferenceUrl(), buildUploadErrorMessage(), createDefaultSelectAISetupConfig() (+10 more)
 
 ### Community 41 - "Community 41"
-Cohesion: 0.19
-Nodes (14): checkSetupComplete(), readAppSetting(), resolveAgentName(), resolveApplicationName(), resolveSuggestedQuestions(), settingsQueryKeys, setupQueryKeys, payload (+6 more)
+Cohesion: 0.12
+Nodes (15): api, token, ConnectionAliasField(), ConnectionAliasFieldProps, DatabaseSetupNotice(), WalletUploadField(), WalletUploadFieldProps, WizardPasswordField() (+7 more)
 
 ### Community 42 - "Community 42"
-Cohesion: 0.13
-Nodes (17): AnalyticsVisualizationCard(), AnalyticsVisualizationCardProps, formatCellValue(), getInsertionLineClass(), getMetricLabel(), CardProps, item, onCardMouseDown (+9 more)
+Cohesion: 0.11
+Nodes (18): AddDashboardItemsPayload, AddDashboardStep, ApiResponse, CreateDashboardPayload, DashboardChartSpec, DashboardDetail, DashboardDraftItem, DashboardDraftTargetState (+10 more)
 
 ### Community 43 - "Community 43"
 Cohesion: 0.14
-Nodes (15): normalizeIdentifier(), buildCsvUploadDraft(), buildCsvUploadDrafts(), collectCsvUploadSlots(), CsvUploadSlot, CsvUploadSlotCollection, DataSourceColumnMetadata, DataSourceObjectFormHelpers (+7 more)
+Nodes (13): analyticsApiMock, conversation, deleteOverlay, SearchChatsProbe(), searchOverlay, AnalyticsChatContext, AnalyticsChatContextType, AnalyticsChatProvider() (+5 more)
 
 ### Community 44 - "Community 44"
-Cohesion: 0.18
-Nodes (8): DatabaseBootstrapper, FakeOracleConnection, FakeOracleCursor, test_db_connection_accepts_app_agent_runtime_privileges(), test_db_connection_rejects_missing_default_data_schema_without_create_user(), test_list_wallet_dsns_reports_missing_tnsnames(), test_list_wallet_dsns_returns_aliases_and_prefers_medium(), test_save_runtime_db_config_delegates_to_db_manager()
+Cohesion: 0.13
+Nodes (13): buildInstallErrorMessage(), InstallationData, InstallationResult, InstallationStep(), Props, SetupScriptError, renderStep(), SetupWizard() (+5 more)
 
 ### Community 45 - "Community 45"
-Cohesion: 0.18
-Nodes (8): BootstrapOciMixin, _oci_file_values(), _upsert_config_items(), normalize_oci_config_rows(), normalize_oci_config_value(), ReadableValue, test_normalize_oci_config_rows_strips_prefix_and_reads_values(), test_normalize_oci_config_value_reads_lobs_and_trims()
+Cohesion: 0.2
+Nodes (13): checkSetupComplete(), readAppSetting(), resolveAgentName(), resolveApplicationName(), resolveSuggestedQuestions(), settingsQueryKeys, setupQueryKeys, payload (+5 more)
 
 ### Community 46 - "Community 46"
-Cohesion: 0.17
-Nodes (6): FakeConnection, FakeCursor, FakeDbManager, test_get_value_reads_config_in_one_connection(), test_get_value_returns_default_when_config_table_is_missing(), test_get_value_returns_default_when_connection_is_unavailable()
+Cohesion: 0.13
+Nodes (16): DashboardLayoutItem, isDragBlockedTarget(), container, createDashboardElement(), createGrid(), elementFromPointMock, first, fullItem (+8 more)
 
 ### Community 47 - "Community 47"
-Cohesion: 0.17
-Nodes (12): STARTER_SUGGESTED_QUESTIONS, fieldValue(), normalizeSettingsPayload(), Settings(), SettingsPayload, ShowToast, suggestedQuestionItems(), csv (+4 more)
+Cohesion: 0.12
+Nodes (15): ChartPreview(), ShowToast, AddDashboardItemsPayload, ChartSpec, CreateDashboardPayload, DashboardDetail, DashboardItem, dashboardsApi (+7 more)
 
 ### Community 48 - "Community 48"
-Cohesion: 0.17
-Nodes (13): ToastProbe(), ToastContext, ToastContextType, ToastItem, ToastProvider(), ToastViewport(), useToast(), SelectAIServicesStep() (+5 more)
+Cohesion: 0.14
+Nodes (15): normalizeIdentifier(), buildCsvUploadDraft(), buildCsvUploadDrafts(), collectCsvUploadSlots(), CsvUploadSlot, CsvUploadSlotCollection, DataSourceColumnMetadata, DataSourceObjectFormHelpers (+7 more)
 
 ### Community 49 - "Community 49"
-Cohesion: 0.21
-Nodes (14): ConversationSummary, escapeRegExp(), highlightSearchMatch(), SearchChatsModal(), buildConversationMarkdown(), ConversationDetailForExport, ConversationMessageForExport, ConversationSummaryForSort (+6 more)
+Cohesion: 0.11
+Nodes (17): filterDataSources(), mergeMetadataWithColumns(), schemaNeedsCreation(), sortCatalogTables(), sortSchemaOptions(), summarizeDataSources(), csvInput, csvReady (+9 more)
 
 ### Community 50 - "Community 50"
 Cohesion: 0.17
-Nodes (7): CatalogCursor, CatalogService, RegisterCursor, test_list_data_sources_returns_json_safe_catalog_rows(), test_list_schemas_includes_default_schema_and_source_counts(), test_register_existing_table_rolls_back_when_source_column_sync_fails(), test_sql_name_helpers_reject_blank_identifier()
+Nodes (13): ToastProbe(), ToastContext, ToastContextType, ToastItem, ToastProvider(), ToastViewport(), useToast(), SelectAIServicesStep() (+5 more)
 
 ### Community 51 - "Community 51"
-Cohesion: 0.18
-Nodes (8): BootstrapStatusMixin, DbManager, FakeStatusReader, ReadableValue, test_bootstrap_status_mixin_reads_completed_flag_from_lob(), test_bootstrap_status_mixin_returns_false_when_runtime_config_is_missing(), test_setup_status_service_reports_missing_required_database_config(), test_setup_status_service_uses_runtime_database_config()
+Cohesion: 0.14
+Nodes (14): metadataWarningMessage(), cloneCsvUploadDrafts(), CsvUploadMutationVariables, CsvUploadStarter, DataSourceApiForMutations, DataSourceColumnMetadata, DataSourceMutationListState, DataSourceMutations (+6 more)
 
 ### Community 52 - "Community 52"
 Cohesion: 0.21
-Nodes (7): config_status(), health(), AppStatusService, FakeConfigService, FakeSettings, test_config_status_reports_select_ai_and_storage_state(), test_health_status_uses_runtime_model_default()
+Nodes (14): ConversationSummary, escapeRegExp(), highlightSearchMatch(), SearchChatsModal(), buildConversationMarkdown(), ConversationDetailForExport, ConversationMessageForExport, ConversationSummaryForSort (+6 more)
 
 ### Community 53 - "Community 53"
-Cohesion: 0.16
-Nodes (11): AuthClient, AuthContext, AuthContextType, AuthProvider(), AuthQueryKeys, AuthUser, authClient, AuthProbe() (+3 more)
+Cohesion: 0.14
+Nodes (9): SelectAIDataSourceMixin, SelectAIDataSourceCatalogMixin, SelectAIDataSourceCsvMixin, SelectAIDataSourceMetadataMixin, SelectAIDataSourcePreviewMixin, SelectAIDataSourceSchemaMixin, PreviewConnection, PreviewService (+1 more)
 
 ### Community 54 - "Community 54"
-Cohesion: 0.16
-Nodes (10): ActionMenuItem, ChatScrollbarState, ChatStatusIndicator(), formatRelativeUpdatedAt(), MenuItem, parseTimestamp(), RouteMenuItem, Sidebar() (+2 more)
+Cohesion: 0.15
+Nodes (12): AuthClient, AuthContext, AuthContextType, AuthProvider(), AuthQueryKeys, AuthUser, authClient, AuthProbe() (+4 more)
 
 ### Community 55 - "Community 55"
-Cohesion: 0.13
-Nodes (14): CloudTechNext, code:bash (docker run -d \), code:powershell (py -3 scripts\generate_source_seed.py --default-rows 365 --f), code:powershell (.\scripts\dev.ps1), code:powershell (.\scripts\dev.ps1 -InstallFrontendDeps), code:powershell (.\scripts\check-project.ps1 -InstallDeps), code:powershell (.\scripts\check-project.ps1), Docker (+6 more)
+Cohesion: 0.21
+Nodes (7): config_status(), health(), AppStatusService, FakeConfigService, FakeSettings, test_config_status_reports_select_ai_and_storage_state(), test_health_status_uses_runtime_model_default()
 
 ### Community 56 - "Community 56"
 Cohesion: 0.18
-Nodes (5): execute_read_only_select(), FakeConnection, FakeCursor, test_execute_read_only_select_rejects_mutating_sql_before_opening_connection(), test_execute_read_only_select_validates_and_serializes_rows()
-
-### Community 57 - "Community 57"
-Cohesion: 0.24
-Nodes (4): ConfigService, _is_missing_config_table_error(), _normalize_value(), Persist runtime configuration in the `config` table.
+Nodes (6): DatabaseManager, Initialize connection pool (thin mode, no Oracle Client)., Get connection from pool., Close pool (on shutdown)., Return whether a table exists in the current schema., Singleton to manage connection pool to Autonomous Database.
 
 ### Community 58 - "Community 58"
-Cohesion: 0.22
-Nodes (7): SelectAIDataSourceCatalogMixin, _assert_catalog_table_selectable(), _select_catalog_columns(), _select_catalog_owners(), _select_catalog_table_comment(), _select_catalog_tables(), _select_data_sources()
+Cohesion: 0.2
+Nodes (14): AdminPasswordRequest, DBRuntimeConfigRequest, DBTestRequest, GenerativeAIConfigRequest, ObjectStorageTestRequest, OCIConfigRequest, SetupRequest, WalletDSNRequest (+6 more)
 
 ### Community 59 - "Community 59"
+Cohesion: 0.14
+Nodes (12): AssistantAnalyticsResult, AssistantChartSpec, AssistantResult(), DashboardDraftItem, ConfirmDeleteModal(), ConfirmDeleteModalProps, ConfirmModal(), ConfirmModalProps (+4 more)
+
+### Community 60 - "Community 60"
+Cohesion: 0.16
+Nodes (10): ActionMenuItem, ChatScrollbarState, ChatStatusIndicator(), formatRelativeUpdatedAt(), MenuItem, parseTimestamp(), RouteMenuItem, Sidebar() (+2 more)
+
+### Community 61 - "Community 61"
+Cohesion: 0.13
+Nodes (14): CloudTechNext, code:bash (docker run -d \), code:powershell (py -3 scripts\generate_source_seed.py --default-rows 365 --f), code:powershell (.\scripts\dev.ps1), code:powershell (.\scripts\dev.ps1 -InstallFrontendDeps), code:powershell (.\scripts\check-project.ps1 -InstallDeps), code:powershell (.\scripts\check-project.ps1), Docker (+6 more)
+
+### Community 62 - "Community 62"
+Cohesion: 0.18
+Nodes (5): execute_read_only_select(), FakeConnection, FakeCursor, test_execute_read_only_select_rejects_mutating_sql_before_opening_connection(), test_execute_read_only_select_validates_and_serializes_rows()
+
+### Community 63 - "Community 63"
+Cohesion: 0.2
+Nodes (8): RuntimeError, _oci_file_values(), _upsert_config_items(), normalize_oci_config_rows(), normalize_oci_config_value(), ReadableValue, test_normalize_oci_config_rows_strips_prefix_and_reads_values(), test_normalize_oci_config_value_reads_lobs_and_trims()
+
+### Community 64 - "Community 64"
+Cohesion: 0.18
+Nodes (5): SelectAIDataSourceMixin, MetadataCursor, RegisterService, test_apply_select_ai_metadata_adds_comments_annotations_and_primary_key(), test_apply_select_ai_metadata_collects_statement_warnings()
+
+### Community 65 - "Community 65"
+Cohesion: 0.14
+Nodes (8): apiClient, draft, form, invalidateSources, onCsvUploadSettled, { result }, showToast, uploadResult
+
+### Community 66 - "Community 66"
 Cohesion: 0.24
 Nodes (8): ChartSpec, infer_chart_spec(), _is_number(), validate_chart_spec(), SelectAIAskMixin, test_infer_chart_spec_prefers_bar_for_category_and_number(), test_infer_chart_spec_uses_bar_for_single_row_numeric_comparison(), test_validate_chart_spec_rejects_unknown_columns()
 
-### Community 60 - "Community 60"
-Cohesion: 0.19
-Nodes (9): DashboardModalDashboard, DashboardModalItem, DeleteDashboardModal(), DeleteVisualizationModal(), RenameDashboardModal(), RenameVisualizationModal(), SqlModal(), onClose (+1 more)
+### Community 67 - "Community 67"
+Cohesion: 0.22
+Nodes (7): SelectAIDataSourceCatalogMixin, _assert_catalog_table_selectable(), _select_catalog_columns(), _select_catalog_owners(), _select_catalog_table_comment(), _select_catalog_tables(), _select_data_sources()
 
-### Community 61 - "Community 61"
+### Community 68 - "Community 68"
 Cohesion: 0.17
 Nodes (7): analytics, analyticsResult, ConversationStateProbe(), dataSources, dataSourcesClient(), pendingAsk, { result }
 
-### Community 62 - "Community 62"
+### Community 69 - "Community 69"
 Cohesion: 0.44
 Nodes (11): add_dashboard_items(), create_dashboard(), _current_user_id(), delete_dashboard(), delete_dashboard_item(), get_dashboard(), list_dashboards(), reorder_dashboard_items() (+3 more)
 
-### Community 63 - "Community 63"
-Cohesion: 0.21
-Nodes (5): SelectAIDataSourceMixin, MetadataCursor, RegisterService, test_apply_select_ai_metadata_adds_comments_annotations_and_primary_key(), test_apply_select_ai_metadata_collects_statement_warnings()
+### Community 70 - "Community 70"
+Cohesion: 0.2
+Nodes (6): AnalyticsDashboardSurface(), { rerender }, SurfaceProps, LoadingState(), LoadingStateProps, SIZE_STYLES
 
-### Community 64 - "Community 64"
-Cohesion: 0.17
-Nodes (11): AnalyticsChatComposer(), AnalyticsSuggestedQuestionButtons(), composer, onChange, onDeleteRequest, onRefreshQuestion, onRenameDraftChange, onSelect (+3 more)
-
-### Community 65 - "Community 65"
-Cohesion: 0.18
-Nodes (7): DataSourceDeleteConfirmModal(), DataSourceStats, formatNumber(), DataSources(), metricToneClassNames, ShowToast, dataSourcesControllerMock
-
-### Community 66 - "Community 66"
+### Community 71 - "Community 71"
 Cohesion: 0.33
 Nodes (10): delete_agent_avatar(), get_agent_avatar(), get_public_settings_payload(), get_settings_payload(), get_settings_service(), reset_settings(), settings_status(), SettingsUpdateRequest (+2 more)
 
-### Community 67 - "Community 67"
+### Community 72 - "Community 72"
 Cohesion: 0.2
-Nodes (7): SelectAIDataSourceMixin, SelectAIDataSourceCatalogMixin, SelectAIDataSourceCsvMixin, SelectAIDataSourceMetadataMixin, SelectAIDataSourcePreviewMixin, SelectAIDataSourceSchemaMixin, PreviewService
+Nodes (3): CapacityExhaustedDuringSqlAskService, test_ask_propagates_capacity_error_during_narration_without_fallback_answer(), test_ask_propagates_capacity_error_during_sql_generation_without_fallback()
 
-### Community 68 - "Community 68"
+### Community 73 - "Community 73"
 Cohesion: 0.25
 Nodes (5): is_genai_resource_exhausted(), Raised when the configured model provider reports temporary capacity exhaustion., SelectAIModelCapacityError, SelectAIGenerationMixin, test_genai_resource_exhausted_detection_sanitizes_oracle_stack()
 
-### Community 69 - "Community 69"
+### Community 74 - "Community 74"
 Cohesion: 0.2
-Nodes (3): CapacityExhaustedDuringNarrateAskService, test_ask_propagates_capacity_error_during_narration_without_fallback_answer(), test_ask_propagates_capacity_error_during_sql_generation_without_fallback()
+Nodes (8): BootstrapDatabaseMixin, BootstrapScriptMixin, BootstrapStatusMixin, get_password_hash(), Generate bcrypt hash of password (72-byte limit)., create_admin_user(), Initial setup service (database, OCI, admin user)., SetupService
 
-### Community 70 - "Community 70"
-Cohesion: 0.25
-Nodes (6): Lightweight setup-status reader used by runtime guards., SetupStatusService, FakeConnection, PooledDbManager, test_setup_status_service_caches_completed_status(), test_setup_status_service_prefers_pooled_connection()
+### Community 75 - "Community 75"
+Cohesion: 0.2
+Nodes (6): DataSourceDeleteConfirmModal(), DataSourceStats, DataSources(), metricToneClassNames, ShowToast, dataSourcesControllerMock
 
-### Community 71 - "Community 71"
+### Community 76 - "Community 76"
 Cohesion: 0.25
 Nodes (8): getLoginErrorMessage(), LoginForm(), makeMonochromeOracleSvg(), oracleServices, reviewSignals, login, AppBrand(), AppBrandProps
 
-### Community 72 - "Community 72"
-Cohesion: 0.2
-Nodes (9): metadataWarningMessage(), DataSourceApiForMutations, DataSourceColumnMetadata, DataSourceMutationListState, DataSourceMutations, DataSourceObjectFormForMutations, DataSourceSummary, showMetadataWarnings() (+1 more)
-
-### Community 73 - "Community 73"
+### Community 77 - "Community 77"
 Cohesion: 0.4
 Nodes (9): build_uvicorn_kwargs(), emit_startup_banner(), main(), parse_args(), Development runner for the backend server., resolve_reload_dirs(), resolve_reload_excludes(), resolve_repo_root() (+1 more)
 
-### Community 74 - "Community 74"
-Cohesion: 0.2
-Nodes (3): PreviewConnection, PreviewCursor, test_preview_data_source_rows_serializes_rows_and_clamps_pagination()
-
-### Community 75 - "Community 75"
-Cohesion: 0.33
-Nodes (7): _data_source_from_cursor(), SelectAIDataSourcePreviewMixin, _source_column_details(), _json_loads(), _json_safe(), _read_lob(), _rows_as_dicts()
-
-### Community 76 - "Community 76"
-Cohesion: 0.31
-Nodes (4): id, BootstrapStatusMixin, check_setup_status(), clear_status_cache()
-
-### Community 77 - "Community 77"
-Cohesion: 0.22
-Nodes (7): BootstrapDatabaseMixin, BootstrapScriptMixin, get_password_hash(), Generate bcrypt hash of password (72-byte limit)., create_admin_user(), Initial setup service (database, OCI, admin user)., SetupService
-
 ### Community 78 - "Community 78"
+Cohesion: 0.2
+Nodes (6): DashboardItemMutationMixin, DashboardMutationMixin, DashboardQueryMixin, DashboardSchemaMixin, DashboardReorderRequest, DashboardService
+
+### Community 79 - "Community 79"
 Cohesion: 0.27
 Nodes (8): BootstrapScriptMixin, execute_setup_scripts(), no_setup_scripts_result(), schema_guard_result(), is_ignorable_bootstrap_sql_error(), test_no_setup_scripts_result_includes_discovered_files_and_directory(), test_schema_guard_result_reports_connected_user(), test_is_ignorable_bootstrap_sql_error_matches_idempotent_oracle_errors()
 
-### Community 79 - "Community 79"
-Cohesion: 0.4
-Nodes (7): compactQuestions(), normalizeSuggestedQuestions(), parseCsvRows(), parseSuggestedQuestionsCsv(), replaceSuggestedQuestionAt(), selectInitialSuggestedQuestions(), pool
-
 ### Community 80 - "Community 80"
+Cohesion: 0.33
+Nodes (7): _data_source_from_cursor(), SelectAIDataSourcePreviewMixin, _source_column_details(), _json_loads(), _json_safe(), _read_lob(), _rows_as_dicts()
+
+### Community 81 - "Community 81"
 Cohesion: 0.2
-Nodes (8): ConfirmDeleteModal(), ConfirmDeleteModalProps, ConfirmModal(), ConfirmModalProps, ConfirmQuestionModal(), GlassModal(), GlassModalProps, ModalPortalProps
+Nodes (3): FakeLob, PreviewCursor, test_json_safe_reads_lobs_and_serializes_runtime_values()
 
 ### Community 82 - "Community 82"
-Cohesion: 0.39
-Nodes (8): _analytics_http_exception(), ask_analytics(), AskAnalyticsRequest, delete_analytics_conversation(), get_analytics_conversation(), get_question_recommendations(), list_analytics_conversations(), rename_analytics_conversation()
+Cohesion: 0.2
+Nodes (6): api, csvFile, jsonFile, { result }, sources, uploadResult
 
 ### Community 83 - "Community 83"
 Cohesion: 0.36
 Nodes (7): extract_sql_statement(), strip_sql_comments(), validate_read_only_select(), test_validate_read_only_select_accepts_single_fenced_select(), test_validate_read_only_select_accepts_single_select(), test_validate_read_only_select_rejects_select_ai_error_text(), test_validate_read_only_select_rejects_unsafe_sql()
 
 ### Community 84 - "Community 84"
-Cohesion: 0.25
-Nodes (4): BootstrapDatabaseMixin, missing_required_privileges(), DbManager, test_missing_required_privileges_reports_data_upload_gaps()
+Cohesion: 0.39
+Nodes (8): _analytics_http_exception(), ask_analytics(), AskAnalyticsRequest, delete_analytics_conversation(), get_analytics_conversation(), get_question_recommendations(), list_analytics_conversations(), rename_analytics_conversation()
 
-### Community 86 - "Community 86"
-Cohesion: 0.25
-Nodes (5): Block runtime operations until the setup wizard has completed., require_setup_completed(), get_db_manager(), Helpers de sesion/conexion para FastAPI., Retorna singleton de DatabaseManager.
+### Community 85 - "Community 85"
+Cohesion: 0.29
+Nodes (3): _missing_required_config(), Persist DB connection chosen in setup wizard., RuntimeDBConfigStore
 
 ### Community 87 - "Community 87"
-Cohesion: 0.29
-Nodes (3): AnalyticsDashboardSurface(), { rerender }, SurfaceProps
+Cohesion: 0.25
+Nodes (7): CardProps, item, onCardMouseDown, onDelete, onRename, onToggleMenu, onViewSql
 
 ### Community 88 - "Community 88"
 Cohesion: 0.33
 Nodes (5): get_oci_bucket_name(), get_oci_namespace(), Read OCI-related configuration from config table., Get OCI namespace from config table., Get single Object Storage bucket name from config table.
 
-### Community 89 - "Community 89"
-Cohesion: 0.29
-Nodes (6): AnalyticsDashboardHeader(), AnalyticsDashboardTabs(), onDelete, onRename, onSelect, onVisibilityChange
-
 ### Community 90 - "Community 90"
+Cohesion: 0.29
+Nodes (4): client, draftItem, { result }, showToast
+
+### Community 91 - "Community 91"
 Cohesion: 0.29
 Nodes (5): csvFile, formHelpers, jsonFile, { result }, showToast
 
-### Community 91 - "Community 91"
+### Community 92 - "Community 92"
+Cohesion: 0.38
+Nodes (4): Footer(), Header(), HeaderProps, LayoutProps
+
+### Community 93 - "Community 93"
+Cohesion: 0.4
+Nodes (4): BaseSettings, get_settings(), When `_env_file=None` is explicit, force defaults/init values only., Settings
+
+### Community 94 - "Community 94"
 Cohesion: 0.33
 Nodes (5): RenameAnalyticsConversationRequest, SelectAIAnalyticsService, SelectAIAskMixin, SelectAIConversationMixin, SelectAIGenerationMixin
 
-### Community 94 - "Community 94"
+### Community 96 - "Community 96"
 Cohesion: 0.6
 Nodes (5): Get-ListeningProcessIds(), Get-MatchingProcessIds(), Get-ProcessRecord(), Get-WorkspaceRoot(), Stop-DevProcesses()
 
-### Community 97 - "Community 97"
+### Community 98 - "Community 98"
 Cohesion: 0.4
 Nodes (4): parse_tns_aliases(), select_preferred_wallet_dsn(), test_parse_tns_aliases_returns_unique_aliases_in_file_order(), test_select_preferred_wallet_dsn_prefers_medium_alias()
 
-### Community 98 - "Community 98"
-Cohesion: 0.5
-Nodes (3): Header(), HeaderProps, LayoutProps
-
 ### Community 99 - "Community 99"
+Cohesion: 0.5
+Nodes (3): createClientId(), getRandomValues, randomUUID
+
+### Community 100 - "Community 100"
 Cohesion: 0.5
 Nodes (3): Graphify, Repository Agent Instructions, Tool Usage
 
-### Community 100 - "Community 100"
+### Community 101 - "Community 101"
 Cohesion: 0.5
 Nodes (3): Bootstrap SQL, Notes, Standard
 
 ## Knowledge Gaps
-- **452 isolated node(s):** `Top-level package marker for Docker runtime imports.`, `FastAPI entrypoint for Select AI Analytics.`, `Block runtime operations until the setup wizard has completed.`, `When `_env_file=None` is explicit, force defaults/init values only.`, `Persist DB connection chosen in setup wizard.` (+447 more)
+- **465 isolated node(s):** `Top-level package marker for Docker runtime imports.`, `FastAPI entrypoint for Select AI Analytics.`, `Block runtime operations until the setup wizard has completed.`, `When `_env_file=None` is explicit, force defaults/init values only.`, `Persist DB connection chosen in setup wizard.` (+460 more)
   These have ≤1 connection - possible missing edges or undocumented components.
-- **12 thin communities (<3 nodes) omitted from report** — run `graphify query` to explore isolated nodes.
+- **10 thin communities (<3 nodes) omitted from report** — run `graphify query` to explore isolated nodes.
 
 ## Suggested Questions
 _Questions this graph is uniquely positioned to answer:_
 
-- **Why does `id` connect `Community 76` to `Community 9`, `Community 20`?**
-  _High betweenness centrality (0.432) - this node is a cross-community bridge._
-- **Why does `DatabaseManager` connect `Community 31` to `Community 70`, `Community 8`, `Community 9`, `Community 10`, `Community 76`, `Community 13`, `Community 52`, `Community 57`, `Community 26`?**
-  _High betweenness centrality (0.331) - this node is a cross-community bridge._
-- **Why does `BootstrapStatusMixin` connect `Community 76` to `Community 70`, `Community 77`, `Community 51`, `Community 92`, `Community 31`?**
-  _High betweenness centrality (0.252) - this node is a cross-community bridge._
+- **Why does `id` connect `Community 10` to `Community 3`, `Community 99`?**
+  _High betweenness centrality (0.438) - this node is a cross-community bridge._
+- **Why does `DatabaseManager` connect `Community 56` to `Community 3`, `Community 7`, `Community 8`, `Community 10`, `Community 78`, `Community 14`, `Community 85`, `Community 55`?**
+  _High betweenness centrality (0.326) - this node is a cross-community bridge._
+- **Why does `BootstrapStatusMixin` connect `Community 10` to `Community 56`, `Community 74`?**
+  _High betweenness centrality (0.257) - this node is a cross-community bridge._
 - **Are the 57 inferred relationships involving `ValueError` (e.g. with `.load()` and `.save()`) actually correct?**
   _`ValueError` has 57 INFERRED edges - model-reasoned connections that need verification._
 - **Are the 20 inferred relationships involving `DashboardService` (e.g. with `DashboardItemRequest` and `DashboardCreateRequest`) actually correct?**
@@ -550,4 +558,4 @@ _Questions this graph is uniquely positioned to answer:_
 - **Are the 17 inferred relationships involving `SelectAIDataSourceMixin` (e.g. with `SelectAIBaseService` and `SelectAIDataSourceCatalogMixin`) actually correct?**
   _`SelectAIDataSourceMixin` has 17 INFERRED edges - model-reasoned connections that need verification._
 - **What connects `Top-level package marker for Docker runtime imports.`, `FastAPI entrypoint for Select AI Analytics.`, `Block runtime operations until the setup wizard has completed.` to the rest of the system?**
-  _452 weakly-connected nodes found - possible documentation gaps or missing edges._
+  _465 weakly-connected nodes found - possible documentation gaps or missing edges._

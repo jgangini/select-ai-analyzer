@@ -348,7 +348,7 @@ export function DataSourceObjectModal({
   );
 
   const activeCsvHeaderMeta = activeCsvUpload ? (
-    <span className="block min-w-0 truncate text-xs text-oracle-medium-gray" title={activeCsvUpload.tableName}>
+    <span className="block min-w-0 truncate text-right text-xs text-oracle-medium-gray" title={activeCsvUpload.tableName}>
       {activeCsvUpload.tableName}
     </span>
   ) : null;

@@ -1,4 +1,4 @@
-import { useEffect, useMemo } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 
 import {
@@ -50,6 +50,40 @@ type DataSourcesApiForController = {
   catalogTable: (owner: string, tableName: string) => Promise<{ data: DataSourceCatalogTableDetail }>;
   rows: (dataSourceId: string, limit?: number, offset?: number) => Promise<{ data: DataSourceRowsResponse }>;
 } & Parameters<typeof useDataSourceMutations>[0]['apiClient'];
+
+function dataSourceObjectKey(source: DataSourceSummary): string {
+  return `${source.owner_name}.${source.table_name}`.toUpperCase();
+}
+
+function mergePendingCsvSources(
+  persistedSources: DataSourceSummary[],
+  pendingSources: DataSourceSummary[]
+): DataSourceSummary[] {
+  if (pendingSources.length === 0) return persistedSources;
+  const persistedKeys = new Set(persistedSources.map(dataSourceObjectKey));
+  return [
+    ...pendingSources.filter((source) => !persistedKeys.has(dataSourceObjectKey(source))),
+    ...persistedSources,
+  ];
+}
+
+function appendPendingCsvSources(
+  currentSources: DataSourceSummary[],
+  nextSources: DataSourceSummary[]
+): DataSourceSummary[] {
+  const nextByKey = new Map(currentSources.map((source) => [dataSourceObjectKey(source), source]));
+  nextSources.forEach((source) => nextByKey.set(dataSourceObjectKey(source), source));
+  return Array.from(nextByKey.values());
+}
+
+function removePendingCsvSources(
+  currentSources: DataSourceSummary[],
+  finishedSources: DataSourceSummary[]
+): DataSourceSummary[] {
+  if (finishedSources.length === 0) return currentSources;
+  const finishedKeys = new Set(finishedSources.map(dataSourceObjectKey));
+  return currentSources.filter((source) => !finishedKeys.has(dataSourceObjectKey(source)));
+}
 
 function useDataSourceQueries(
   apiClient: DataSourcesApiForController,
@@ -224,7 +258,12 @@ export function useDataSourcesController({
     queryKey: queryKeys.list,
     queryFn: () => apiClient.list().then((response) => response.data.items),
   });
-  const sources = sourcesQuery.data ?? EMPTY_DATA_SOURCES;
+  const persistedSources = sourcesQuery.data ?? EMPTY_DATA_SOURCES;
+  const [pendingCsvSources, setPendingCsvSources] = useState<DataSourceSummary[]>([]);
+  const sources = useMemo(
+    () => mergePendingCsvSources(persistedSources, pendingCsvSources),
+    [pendingCsvSources, persistedSources]
+  );
   const listHelpers = useMemo(
     () => ({ pageSize: PAGE_SIZE, filterDataSources, summarizeDataSources }),
     []
@@ -245,9 +284,11 @@ export function useDataSourcesController({
     queries.schemasQuery.data,
     selectedSchema
   );
-  const invalidateSources = () => {
-    queryClient.invalidateQueries({ queryKey: queryKeys.list });
-    queryClient.invalidateQueries({ queryKey: queryKeys.schemas });
+  const invalidateSources = async () => {
+    await Promise.all([
+      queryClient.invalidateQueries({ queryKey: queryKeys.list }),
+      queryClient.invalidateQueries({ queryKey: queryKeys.schemas }),
+    ]);
   };
   const mutations = useDataSourceMutations({
     apiClient,
@@ -257,6 +298,10 @@ export function useDataSourcesController({
     normalizedCsvSchema: objectForm.normalizedCsvSchema,
     schemasAreLoading: queries.schemasQuery.isLoading,
     invalidateSources,
+    onCsvUploadStart: (pendingSources) =>
+      setPendingCsvSources((current) => appendPendingCsvSources(current, pendingSources)),
+    onCsvUploadSettled: (finishedSources) =>
+      setPendingCsvSources((current) => removePendingCsvSources(current, finishedSources)),
     showToast,
     defaultDataSchema: DEFAULT_DATA_SCHEMA,
     getErrorMessage,

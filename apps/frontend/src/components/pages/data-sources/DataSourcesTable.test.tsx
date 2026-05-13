@@ -102,4 +102,19 @@ describe('DataSourcesTable', () => {
 
     expect(screen.getByText('Unable to load sources')).toBeInTheDocument();
   });
+
+  it('disables row actions while a source is processing', () => {
+    render(
+      <DataSourcesTable
+        {...tableProps({
+          sources: [{ ...csvSource, data_source_id: 'pending-csv', status: 'pending' }],
+          totalItems: 1,
+        })}
+      />
+    );
+
+    expect(screen.getByText('Pending')).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /view rows for app_agent_data\.card_activity/i })).toBeDisabled();
+    expect(screen.getByRole('button', { name: /delete app_agent_data\.card_activity/i })).toBeDisabled();
+  });
 });

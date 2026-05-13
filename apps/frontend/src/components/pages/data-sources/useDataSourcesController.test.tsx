@@ -1,6 +1,6 @@
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { act, renderHook, waitFor } from '@testing-library/react';
-import type { ReactNode } from 'react';
+import type { FormEvent, ReactNode } from 'react';
 import { describe, expect, it, vi } from 'vitest';
 
 import { useDataSourcesController } from './useDataSourcesController';
@@ -59,6 +59,14 @@ function apiClient(overrides = {}) {
   };
 }
 
+function deferred<T>() {
+  let resolve!: (value: T) => void;
+  const promise = new Promise<T>((innerResolve) => {
+    resolve = innerResolve;
+  });
+  return { promise, resolve };
+}
+
 describe('useDataSourcesController', () => {
   it('loads sources and exposes filtered table props', async () => {
     const api = apiClient();
@@ -83,5 +91,61 @@ describe('useDataSourcesController', () => {
 
     await waitFor(() => expect(result.current.tableProps.sources).toHaveLength(1));
     expect(result.current.tableProps.sources[0].data_source_id).toBe('table-1');
+  });
+
+  it('shows CSV uploads as pending rows after the modal closes', async () => {
+    const uploadResult = deferred<{ data: { metadata_warnings?: string[] } }>();
+    const api = apiClient({
+      list: vi.fn().mockResolvedValue({ data: { items: [] } }),
+      schemas: vi.fn().mockResolvedValue({
+        data: {
+          items: [
+            { schema_name: 'APP_AGENT_DATA', exists: true, is_app_schema: false, source_count: 0 },
+          ],
+        },
+      }),
+      uploadCsv: vi.fn(() => uploadResult.promise),
+    });
+    const { result } = renderHook(
+      () =>
+        useDataSourcesController({
+          apiClient: api,
+          queryKeys: {
+            list: ['data-sources', 'list'],
+            schemas: ['data-sources', 'schemas'],
+            rows: (dataSourceId: string | null, page: number) => ['data-sources', 'rows', dataSourceId, page],
+          },
+          showToast: vi.fn(),
+        }),
+      { wrapper: wrapper() }
+    );
+
+    await waitFor(() => expect(result.current.tableProps.sources).toHaveLength(0));
+
+    act(() => result.current.openObjectModal());
+    await waitFor(() => expect(api.schemas).toHaveBeenCalled());
+
+    const csvFile = new File(['ACCOUNT_ID\n1'], 'accounts.csv', { type: 'text/csv' });
+    const jsonFile = new File(
+      [JSON.stringify({ columns: [{ column_name: 'ACCOUNT_ID', comment: 'Account key' }] })],
+      'accounts.json',
+      { type: 'application/json' }
+    );
+
+    act(() => result.current.objectModalProps.onCsvUploadFilesChange([csvFile, jsonFile]));
+    await waitFor(() => expect(result.current.objectModalProps.csvUploadDrafts).toHaveLength(1));
+
+    act(() => {
+      result.current.objectModalProps.onSubmit({ preventDefault: vi.fn() } as unknown as FormEvent<HTMLFormElement>);
+    });
+
+    await waitFor(() => expect(result.current.objectModalProps.open).toBe(false));
+    await waitFor(() => expect(result.current.tableProps.sources).toHaveLength(1));
+    expect(result.current.tableProps.sources[0]).toMatchObject({
+      owner_name: 'APP_AGENT_DATA',
+      table_name: 'ACCOUNTS',
+      status: 'pending',
+      source_type: 'csv',
+    });
   });
 });

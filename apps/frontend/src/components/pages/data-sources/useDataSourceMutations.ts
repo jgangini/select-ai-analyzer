@@ -1,32 +1,7 @@
 import type { Dispatch, FormEvent, SetStateAction } from 'react';
 import { useMutation } from '@tanstack/react-query';
 
-import type { DataSourceCsvUploadDraft } from './dataSourceUtils';
-
-type DataSourceColumnMetadata = {
-  column_name: string;
-  data_type?: string;
-  data_length?: number;
-  nullable?: string;
-  ordinal_position?: number;
-  comment?: string;
-  ui_display?: string;
-  classification?: string;
-  primary_key?: boolean;
-};
-
-type DataSourceSummary = {
-  data_source_id: string;
-  source_name: string;
-  source_type: 'csv' | 'existing_table';
-  owner_name: string;
-  table_name: string;
-  access_scope: 'all' | 'private';
-  row_count: number;
-  column_count: number;
-  status: string;
-  created_at: string;
-};
+import type { DataSourceColumnMetadata, DataSourceCsvUploadDraft, DataSourceSummary } from './dataSourceUtils';
 
 type ShowToast = (message: string, variant?: 'success' | 'error' | 'info' | 'warning') => void;
 
@@ -76,6 +51,21 @@ type DataSourceMutationListState = {
   setDeletingSource: Dispatch<SetStateAction<DataSourceSummary | null>>;
 };
 
+type CsvUploadMutationVariables = {
+  createSchema: boolean;
+  drafts: DataSourceCsvUploadDraft[];
+  normalizedCsvSchema: string;
+  pendingSources: DataSourceSummary[];
+};
+
+type CsvUploadStarter = {
+  objectForm: DataSourceObjectFormForMutations;
+  defaultDataSchema: string;
+  onCsvUploadStart: (sources: DataSourceSummary[]) => void;
+  showToast: ShowToast;
+  uploadMutation: { mutate: (variables: CsvUploadMutationVariables) => void };
+};
+
 function showMetadataWarnings(
   showToast: ShowToast,
   metadataWarningMessage: (warnings?: string[]) => string | null,
@@ -116,6 +106,50 @@ async function uploadCsvDrafts({
   return { data: { metadata_warnings: metadataWarnings } };
 }
 
+function cloneCsvUploadDrafts(drafts: DataSourceCsvUploadDraft[]): DataSourceCsvUploadDraft[] {
+  return drafts.map((draft) => ({
+    ...draft,
+    columnMetadata: draft.columnMetadata.map((column) => ({ ...column })),
+  }));
+}
+
+function pendingDataSourceFromDraft(
+  draft: DataSourceCsvUploadDraft,
+  normalizedCsvSchema: string,
+  startedAt: string
+): DataSourceSummary {
+  return {
+    data_source_id: `pending:${normalizedCsvSchema}.${draft.tableName}:${draft.id}`,
+    source_name: draft.tableName,
+    source_type: 'csv',
+    owner_name: normalizedCsvSchema,
+    table_name: draft.tableName,
+    access_scope: 'all',
+    row_count: 0,
+    column_count: draft.columnMetadata.length,
+    status: 'pending',
+    created_at: startedAt,
+  };
+}
+
+function startCsvUpload(
+  { objectForm, defaultDataSchema, onCsvUploadStart, showToast, uploadMutation }: CsvUploadStarter,
+  createSchema: boolean,
+  targetSchema: string
+) {
+  const drafts = cloneCsvUploadDrafts(objectForm.csvUploadDrafts);
+  const startedAt = new Date().toISOString();
+  const pendingSources = drafts.map((draft) => pendingDataSourceFromDraft(draft, targetSchema, startedAt));
+
+  objectForm.setPendingSchemaCreation(null);
+  objectForm.setIsObjectModalOpen(false);
+  objectForm.resetObjectMetadata();
+  objectForm.setCsvSchemaName(defaultDataSchema);
+  onCsvUploadStart(pendingSources);
+  showToast('CSV upload started. Objects will become active when processing finishes.', 'info');
+  uploadMutation.mutate({ createSchema, drafts, normalizedCsvSchema: targetSchema, pendingSources });
+}
+
 export function useDataSourceMutations({
   apiClient,
   objectForm,
@@ -124,6 +158,8 @@ export function useDataSourceMutations({
   normalizedCsvSchema,
   schemasAreLoading,
   invalidateSources,
+  onCsvUploadStart,
+  onCsvUploadSettled,
   showToast,
   defaultDataSchema,
   getErrorMessage,
@@ -135,25 +171,28 @@ export function useDataSourceMutations({
   schemaNeedsCreation: boolean;
   normalizedCsvSchema: string;
   schemasAreLoading: boolean;
-  invalidateSources: () => void;
+  invalidateSources: () => Promise<void>;
+  onCsvUploadStart: (sources: DataSourceSummary[]) => void;
+  onCsvUploadSettled: (sources: DataSourceSummary[]) => void;
   showToast: ShowToast;
   defaultDataSchema: string;
   getErrorMessage: (error: unknown) => string;
   metadataWarningMessage: (warnings?: string[]) => string | null;
 }) {
   const uploadMutation = useMutation({
-    mutationFn: ({ createSchema }: { createSchema: boolean }) =>
-      uploadCsvDrafts({ apiClient, drafts: objectForm.csvUploadDrafts, normalizedCsvSchema, createSchema }),
-    onSuccess: (response) => {
-      objectForm.setCsvSchemaName(defaultDataSchema);
-      objectForm.resetObjectMetadata();
-      objectForm.setPendingSchemaCreation(null);
-      objectForm.setIsObjectModalOpen(false);
-      invalidateSources();
+    mutationFn: ({ createSchema, drafts, normalizedCsvSchema: targetSchema }: CsvUploadMutationVariables) =>
+      uploadCsvDrafts({ apiClient, drafts, normalizedCsvSchema: targetSchema, createSchema }),
+    onSuccess: async (response, variables) => {
+      await invalidateSources();
+      onCsvUploadSettled(variables.pendingSources);
       showToast('CSV files loaded and Select AI profile updated.', 'success');
       showMetadataWarnings(showToast, metadataWarningMessage, response.data.metadata_warnings);
     },
-    onError: (error) => showToast(getErrorMessage(error), 'error'),
+    onError: async (error, variables) => {
+      await invalidateSources();
+      onCsvUploadSettled(variables?.pendingSources || []);
+      showToast(getErrorMessage(error), 'error');
+    },
   });
   const registerMutation = useMutation({
     mutationFn: () =>
@@ -170,7 +209,7 @@ export function useDataSourceMutations({
       objectForm.setTableComment('');
       objectForm.setColumnMetadata([]);
       objectForm.setIsObjectModalOpen(false);
-      invalidateSources();
+      void invalidateSources();
       showToast('Table registered and Select AI profile updated.', 'success');
       showMetadataWarnings(showToast, metadataWarningMessage, response.data.metadata_warnings);
     },
@@ -182,7 +221,7 @@ export function useDataSourceMutations({
       listState.setSelectedDataSourceIds((current) => current.filter((id) => id !== source.data_source_id));
       if (listState.viewingSource?.data_source_id === source.data_source_id) listState.setViewingSource(null);
       listState.setDeletingSource(null);
-      invalidateSources();
+      void invalidateSources();
       showToast(source.source_type === 'csv' ? 'Data source and managed table deleted.' : 'Table unregistered from Select AI.', 'success');
     },
     onError: (error) => showToast(getErrorMessage(error), 'error'),
@@ -193,6 +232,8 @@ export function useDataSourceMutations({
     if (!objectForm.tableOwner.trim() || !objectForm.tableName.trim() || registerMutation.isPending) return;
     registerMutation.mutate();
   };
+
+  const csvUploadStarter = { objectForm, defaultDataSchema, onCsvUploadStart, showToast, uploadMutation };
 
   const submitCsv = (event: FormEvent) => {
     event.preventDefault();
@@ -209,13 +250,12 @@ export function useDataSourceMutations({
       objectForm.setPendingSchemaCreation(normalizedCsvSchema);
       return;
     }
-    uploadMutation.mutate({ createSchema: false });
+    startCsvUpload(csvUploadStarter, false, normalizedCsvSchema);
   };
 
   const confirmSchemaCreation = () => {
     if (!objectForm.pendingSchemaCreation || uploadMutation.isPending) return;
-    objectForm.setCsvSchemaName(objectForm.pendingSchemaCreation);
-    uploadMutation.mutate({ createSchema: true });
+    startCsvUpload(csvUploadStarter, true, objectForm.pendingSchemaCreation);
   };
 
   const closeObjectModal = () => {
