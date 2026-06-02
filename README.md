@@ -1,10 +1,6 @@
 # Select AI Analytics
 
-## Demo
-
-<video controls src="docs/media/oci-select-analyzer-ai-ora26ai-git.mp4" width="100%" title="Select AI Analytics functionality demo"></video>
-
-[Download the demo video](docs/media/oci-select-analyzer-ai-ora26ai-git.mp4)
+https://github.com/user-attachments/assets/c7d1c2b8-8063-408b-a00d-a7ec65fd7ed9
 
 Full-stack application for querying Oracle schemas with Select AI, loading test CSV files, and generating governed analytics through the `APP_AGENT` Oracle user.
 
