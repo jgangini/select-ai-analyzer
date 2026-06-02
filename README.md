@@ -84,3 +84,9 @@ After that, run the full suite with:
 ```
 
 The script validates backend syntax, runs `pytest`, validates the FastAPI import, runs frontend `vitest`, and builds the frontend.
+
+## License
+
+This project is licensed under the [MIT License](LICENSE).
+
+Select AI Analytics is an independent project and is not an official Oracle product. It is not affiliated with, endorsed by, or sponsored by Oracle Corporation. Oracle, OCI, and related marks are trademarks or registered trademarks of Oracle and/or its affiliates. Third-party trademarks, logos, service names, and assets remain the property of their respective owners.
