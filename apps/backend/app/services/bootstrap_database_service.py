@@ -3,7 +3,7 @@ from pathlib import Path
 
 import oracledb
 
-from apps.backend.app.select_ai.constants import DEFAULT_DATA_SCHEMA
+from apps.backend.app.select_ai.constants import APP_SCHEMA, DEFAULT_DATA_SCHEMA, is_app_schema_name
 from apps.backend.app.services.bootstrap_support import (
     parse_tns_aliases,
     select_preferred_wallet_dsn,
@@ -43,13 +43,13 @@ class BootstrapDatabaseMixin:
             cursor = connection.cursor()
             cursor.execute("SELECT USER FROM DUAL")
             db_user = cursor.fetchone()[0]
-            if str(db_user).upper() != "APP_AGENT":
+            if not is_app_schema_name(str(db_user)):
                 cursor.close()
                 connection.close()
                 return {
                     "success": False,
                     "message": (
-                        "This application must be installed with the APP_AGENT database user "
+                        f"This application must be installed with the {APP_SCHEMA} database user or a numbered deployment schema "
                         f"to avoid impacting other schemas. Connected user: {db_user}."
                     ),
                 }

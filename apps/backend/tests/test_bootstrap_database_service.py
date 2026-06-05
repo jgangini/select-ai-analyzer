@@ -168,3 +168,31 @@ def test_db_connection_accepts_app_agent_runtime_privileges(tmp_path, monkeypatc
         "message": "Database connection successful",
         "connected_user": "APP_AGENT",
     }
+
+
+def test_db_connection_accepts_numbered_app_agent_runtime_schema(tmp_path, monkeypatch) -> None:
+    (tmp_path / "tnsnames.ora").write_text("db_medium = (DESCRIPTION = ...)", encoding="utf-8")
+    cursor = FakeOracleCursor(
+        connected_user="APP_AGENT_1",
+        privileges=set(REQUIRED_APP_AGENT_PRIVILEGES),
+        data_schema_exists=True,
+    )
+    connection = FakeOracleConnection(cursor)
+    monkeypatch.setattr(
+        "apps.backend.app.services.bootstrap_database_service.oracledb.connect",
+        lambda **_kwargs: connection,
+    )
+
+    result = DatabaseBootstrapper().test_db_connection(
+        wallet_path=str(tmp_path),
+        wallet_password="wallet-secret",
+        user="APP_AGENT_1",
+        password="secret",
+        dsn="db_medium",
+    )
+
+    assert result == {
+        "success": True,
+        "message": "Database connection successful",
+        "connected_user": "APP_AGENT_1",
+    }

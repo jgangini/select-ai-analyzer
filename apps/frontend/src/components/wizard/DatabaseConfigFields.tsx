@@ -44,7 +44,7 @@ export function DatabaseSetupNotice() {
         <div className="text-xs text-blue-800">
           <strong>Configure the Oracle 26ai database connection for APP_AGENT.</strong>
           <br />
-          The connected database user must be APP_AGENT; setup will stop if another schema is used.
+          The connected database user must be APP_AGENT or a numbered deployment schema such as APP_AGENT_1.
           <br />
           Later these can be changed to install to a production ready database.
         </div>

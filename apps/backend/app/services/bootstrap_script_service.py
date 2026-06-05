@@ -1,5 +1,6 @@
 import logging
 
+from apps.backend.app.select_ai.constants import APP_SCHEMA, is_app_schema_name
 from apps.backend.app.core.tracing import trace
 from apps.backend.app.services.bootstrap_support import (
     is_ignorable_bootstrap_sql_error,
@@ -28,10 +29,10 @@ def schema_guard_result(discovered: list[str], connected_user: str) -> dict:
         "errors": [
             {
                 "file": "schema_guard",
-                "error": f"Expected APP_AGENT database user, connected as {connected_user}.",
+                "error": f"Expected {APP_SCHEMA} database user or numbered deployment schema, connected as {connected_user}.",
             }
         ],
-        "message": "Installation stopped because the connected schema is not APP_AGENT.",
+        "message": f"Installation stopped because the connected schema is not {APP_SCHEMA} or a numbered deployment schema.",
     }
 
 
@@ -66,7 +67,7 @@ class BootstrapScriptMixin:
 
         cursor.execute("SELECT USER FROM DUAL")
         connected_user = str(cursor.fetchone()[0]).upper()
-        if connected_user != "APP_AGENT":
+        if not is_app_schema_name(connected_user):
             cursor.close()
             conn.close()
             return schema_guard_result(discovered, connected_user)

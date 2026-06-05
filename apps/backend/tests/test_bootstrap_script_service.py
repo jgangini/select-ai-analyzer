@@ -27,7 +27,7 @@ def test_schema_guard_result_reports_connected_user() -> None:
     assert result["errors"] == [
         {
             "file": "schema_guard",
-            "error": "Expected APP_AGENT database user, connected as HR.",
+            "error": "Expected APP_AGENT database user or numbered deployment schema, connected as HR.",
         }
     ]
-    assert result["message"] == "Installation stopped because the connected schema is not APP_AGENT."
+    assert result["message"] == "Installation stopped because the connected schema is not APP_AGENT or a numbered deployment schema."

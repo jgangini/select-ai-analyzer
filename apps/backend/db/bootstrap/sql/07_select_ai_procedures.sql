@@ -30,7 +30,7 @@ BEGIN
           FROM data_sources
          WHERE status = 'active'
            AND access_scope = 'all'
-           AND owner_name <> 'APP_AGENT'
+           AND owner_name <> SYS_CONTEXT('USERENV', 'CURRENT_SCHEMA')
          ORDER BY owner_name, table_name
     ) LOOP
         IF l_object_count > 0 THEN
