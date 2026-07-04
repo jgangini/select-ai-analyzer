@@ -3,7 +3,7 @@ from pathlib import Path
 
 import oracledb
 
-from apps.backend.app.select_ai.constants import APP_SCHEMA, DEFAULT_DATA_SCHEMA, is_app_schema_name
+from apps.backend.app.core.select_ai_constants import APP_SCHEMA, DEFAULT_DATA_SCHEMA, is_app_schema_name
 from apps.backend.app.services.bootstrap_support import (
     parse_tns_aliases,
     select_preferred_wallet_dsn,

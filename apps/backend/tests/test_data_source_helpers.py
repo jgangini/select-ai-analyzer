@@ -5,7 +5,7 @@ import pytest
 
 from apps.backend.app.select_ai.data_source_operations import SelectAIDataSourceMixin
 from apps.backend.app.select_ai.data_source_preview import SelectAIDataSourcePreviewMixin
-from apps.backend.app.select_ai.constants import DEFAULT_DATA_SCHEMA
+from apps.backend.app.core.select_ai_constants import DEFAULT_DATA_SCHEMA
 from apps.backend.app.select_ai.sql_names import (
     _clean_optional_text,
     _qualified_name,

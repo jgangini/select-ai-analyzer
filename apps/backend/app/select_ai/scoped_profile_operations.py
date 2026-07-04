@@ -4,7 +4,7 @@ import hashlib
 import json
 from typing import Any
 
-from apps.backend.app.select_ai.constants import APP_SCHEMA, SCOPED_PROFILE_LIMIT
+from apps.backend.app.core.select_ai_constants import APP_SCHEMA, SCOPED_PROFILE_LIMIT
 from apps.backend.app.select_ai.source_intents import (
     TRANSACTION_INTENT_TOKENS,
     _expanded_question_tokens,

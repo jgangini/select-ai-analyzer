@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from apps.backend.app.select_ai.base_service import SelectAIBaseService
-from apps.backend.app.select_ai.constants import DEFAULT_PROFILE
+from apps.backend.app.core.select_ai_constants import DEFAULT_PROFILE
 
 
 class FakeLob:

@@ -5,7 +5,7 @@ from typing import Any, Self
 
 from apps.backend.app.core.config import get_settings
 from apps.backend.app.core.database import DatabaseManager
-from apps.backend.app.select_ai.constants import DEFAULT_PROFILE
+from apps.backend.app.core.select_ai_constants import DEFAULT_PROFILE
 
 
 class SelectAIBaseService:

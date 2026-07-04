@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import re
 
+
 APP_SCHEMA = "APP_AGENT"
 APP_SCHEMA_PATTERN = re.compile(r"^APP_AGENT(?:_\d+)?$")
 DEFAULT_DATA_SCHEMA = "APP_AGENT_DATA"

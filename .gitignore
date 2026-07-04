@@ -37,7 +37,6 @@ apps/frontend/dist/
 apps/frontend/logs/
 
 # Local scratch / reports
-.codex/
 .oci/
 .source/
 .data/*
@@ -50,6 +49,9 @@ test-results/
 *.log
 *.out.log
 *.err.log
+**/.terraform/
+*.tfstate
+*.tfstate.*
 apps/backend/tests/reports/
 /oci/
 tests_docs/

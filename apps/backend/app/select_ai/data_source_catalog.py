@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from typing import Any
 
-from apps.backend.app.select_ai.constants import APP_SCHEMA
+from apps.backend.app.core.select_ai_constants import APP_SCHEMA
 from apps.backend.app.select_ai.data_source_catalog_store import (
     _assert_catalog_table_selectable,
     _select_catalog_columns,

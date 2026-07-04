@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from typing import Any
 
-from apps.backend.app.select_ai.constants import APP_SCHEMA, DEFAULT_DATA_SCHEMA
+from apps.backend.app.core.select_ai_constants import APP_SCHEMA, DEFAULT_DATA_SCHEMA
 from apps.backend.app.select_ai.sql_names import (
     _generated_schema_password,
     _safe_identifier,

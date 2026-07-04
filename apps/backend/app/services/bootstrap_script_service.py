@@ -1,6 +1,6 @@
 import logging
 
-from apps.backend.app.select_ai.constants import APP_SCHEMA, is_app_schema_name
+from apps.backend.app.core.select_ai_constants import APP_SCHEMA, is_app_schema_name
 from apps.backend.app.core.tracing import trace
 from apps.backend.app.services.bootstrap_support import (
     is_ignorable_bootstrap_sql_error,

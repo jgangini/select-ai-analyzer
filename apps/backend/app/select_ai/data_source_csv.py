@@ -9,7 +9,7 @@ from typing import Any
 import uuid
 
 from apps.backend.app.core.config import get_settings
-from apps.backend.app.select_ai.constants import DEFAULT_DATA_SCHEMA
+from apps.backend.app.core.select_ai_constants import DEFAULT_DATA_SCHEMA
 from apps.backend.app.select_ai.metadata_payload import parse_metadata_payload
 from apps.backend.app.select_ai.sql_names import _qualified_name, _safe_identifier
 

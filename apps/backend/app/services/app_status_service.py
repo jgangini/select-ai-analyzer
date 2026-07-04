@@ -5,7 +5,7 @@ from typing import TYPE_CHECKING
 from apps.backend.app.core.config import Settings, get_settings
 from apps.backend.app.core.oci_db_config import get_oci_bucket_name, get_oci_namespace
 from apps.backend.app.core.session import get_db_manager
-from apps.backend.app.select_ai.constants import APP_SCHEMA
+from apps.backend.app.core.select_ai_constants import APP_SCHEMA
 from apps.backend.app.services.runtime_config_service import ConfigService
 
 if TYPE_CHECKING:
