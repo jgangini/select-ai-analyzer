@@ -17,7 +17,7 @@
     "fields": [
       {
         "name": "autonomous_database_mode",
-        "label": "Autonomous Database mode",
+        "label": "Database mode",
         "type": "select",
         "required": true,
         "default": "new",
@@ -34,61 +34,55 @@
       },
       {
         "name": "existing_autonomous_database_ocid",
-        "label": "Existing Autonomous Database OCID",
+        "label": "Existing database OCID",
         "type": "text",
-        "required": false
+        "required": true,
+        "visible_when": {
+          "field": "autonomous_database_mode",
+          "equals": "existing"
+        }
       },
       {
         "name": "autonomous_database_version",
-        "label": "Autonomous Database version",
+        "label": "Database profile",
         "type": "select",
         "required": true,
-        "default": "26ai",
+        "default": "26ai:DW",
+        "transform": "database_profile",
+        "visible_when": {
+          "field": "autonomous_database_mode",
+          "equals": "new"
+        },
+        "span": 2,
         "options": [
           {
-            "value": "26ai",
-            "label": "Oracle AI Database 26ai"
+            "value": "26ai:DW",
+            "label": "Oracle AI Database 26ai â€” Data Warehouse"
           },
           {
-            "value": "19c",
-            "label": "Oracle Database 19c"
-          }
-        ]
-      },
-      {
-        "name": "autonomous_database_workload",
-        "label": "Autonomous Database workload",
-        "type": "select",
-        "required": true,
-        "default": "DW",
-        "options": [
-          {
-            "value": "DW",
-            "label": "Data Warehouse"
+            "value": "26ai:OLTP",
+            "label": "Oracle AI Database 26ai â€” Transaction Processing"
           },
           {
-            "value": "OLTP",
-            "label": "Transaction Processing"
+            "value": "19c:DW",
+            "label": "Oracle Database 19c â€” Data Warehouse"
+          },
+          {
+            "value": "19c:OLTP",
+            "label": "Oracle Database 19c â€” Transaction Processing"
           }
         ]
       },
       {
         "name": "autonomous_database_admin_password",
-        "label": "Autonomous Database ADMIN password",
+        "label": "Database ADMIN password",
         "type": "password",
         "required": true,
         "secret": true
       },
       {
         "name": "autonomous_database_wallet_password",
-        "label": "Autonomous Database wallet password",
-        "type": "password",
-        "required": true,
-        "secret": true
-      },
-      {
-        "name": "autonomous_database_developer_password",
-        "label": "Select AI Analyzer password",
+        "label": "Database wallet password",
         "type": "password",
         "required": true,
         "secret": true
@@ -99,6 +93,13 @@
         "type": "text",
         "required": true,
         "default": "admin"
+      },
+      {
+        "name": "autonomous_database_developer_password",
+        "label": "Application password",
+        "type": "password",
+        "required": true,
+        "secret": true
       }
     ]
   },
