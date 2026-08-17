@@ -8,7 +8,7 @@ Keep this file repo-specific. Do not duplicate universal rules that already live
 
 - Purpose: Select AI analytics application and its OCI Resource Manager deployment package.
 - Technical audience: OCI solution engineers and Deploy Studio maintainers.
-- Primary surfaces: `apps`, `infra/terraform`, and `deploy-studio.json`.
+- Primary surfaces: `apps` and root `terraform/`, including `terraform/deploy-studio.json`.
 
 ## Repo Operating Defaults
 
@@ -18,13 +18,13 @@ Keep this file repo-specific. Do not duplicate universal rules that already live
 
 ## Local Validation Policy
 
-- Required checks beyond global Graphify and Sentrux: validate `deploy-studio.json` and Terraform without real credentials.
+- Required checks beyond global Graphify and Sentrux: validate `terraform/deploy-studio.json` and Terraform without real credentials.
 - Safe shortcuts for docs-only work:
 - Release, deploy, or approval gates: never tag or publish a release unless application and Terraform CI pass.
 
 ## Repo-Specific Friction
 
-- Sensitive paths or fragile areas: `infra/terraform/templatefile` installs the application and configures Autonomous Database.
+- Sensitive paths or fragile areas: `terraform/templatefile` installs the application and configures Autonomous Database.
 - Credentials, external systems, or approval boundaries: `.oci`, PEM, wallet and state files are local-only; OCI APPLY requires explicit authorization.
 - Noisy, slow, or expensive commands to avoid by default:
 
