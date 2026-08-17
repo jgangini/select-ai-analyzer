@@ -103,6 +103,32 @@
       }
     ]
   },
+  "presentation": {
+    "title": "Select AI Analyzer",
+    "summary": "Deploys a Select AI workspace for governed natural-language questions over relational data and uploaded CSV sources.",
+    "tags": ["Autonomous AI Database", "Generative AI", "Select AI", "Compute VM"],
+    "image": "/assets/select-ai-analyzer.png",
+    "image_alt": "Select AI Analyzer application preview",
+    "href": "https://github.com/jgangini/select-ai-analyzer"
+  },
+  "run_steps": [
+    {"key": "queue", "label": "Queue"},
+    {"key": "credentials", "label": "OCI credentials"},
+    {"key": "compartment", "label": "Compartment"},
+    {"key": "policies", "label": "IAM policies"},
+    {"key": "stack", "label": "Resource Manager stack"},
+    {"key": "plan", "label": "Terraform plan"},
+    {"key": "apply", "label": "Terraform apply"},
+    {"key": "network", "label": "Network and VCN"},
+    {"key": "bucket", "label": "Object Storage"},
+    {"key": "compute", "label": "Application VM"},
+    {"key": "database", "label": "Autonomous Database"},
+    {"key": "wallet", "label": "Database wallet"},
+    {"key": "application", "label": "Application setup"},
+    {"key": "artifacts", "label": "Access artifacts"},
+    {"key": "email", "label": "Access email"},
+    {"key": "complete", "label": "Ready"}
+  ],
   "outputs": [
     "application_url",
     "ssh_user",
