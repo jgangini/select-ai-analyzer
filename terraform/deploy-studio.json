@@ -21,6 +21,7 @@
         "type": "select",
         "required": true,
         "default": "new",
+        "group": "database",
         "options": [
           {
             "value": "new",
@@ -37,6 +38,7 @@
         "label": "Existing database OCID",
         "type": "text",
         "required": true,
+        "group": "database",
         "visible_when": {
           "field": "autonomous_database_mode",
           "equals": "existing"
@@ -49,6 +51,7 @@
         "required": true,
         "default": "26ai:DW",
         "transform": "database_profile",
+        "group": "database",
         "visible_when": {
           "field": "autonomous_database_mode",
           "equals": "new"
@@ -57,19 +60,19 @@
         "options": [
           {
             "value": "26ai:DW",
-            "label": "Oracle AI Database 26ai â€” Data Warehouse"
+            "label": "Oracle AI Database 26ai — Data Warehouse"
           },
           {
             "value": "26ai:OLTP",
-            "label": "Oracle AI Database 26ai â€” Transaction Processing"
+            "label": "Oracle AI Database 26ai — Transaction Processing"
           },
           {
             "value": "19c:DW",
-            "label": "Oracle Database 19c â€” Data Warehouse"
+            "label": "Oracle Database 19c — Data Warehouse"
           },
           {
             "value": "19c:OLTP",
-            "label": "Oracle Database 19c â€” Transaction Processing"
+            "label": "Oracle Database 19c — Transaction Processing"
           }
         ]
       },
@@ -78,28 +81,32 @@
         "label": "Database ADMIN password",
         "type": "password",
         "required": true,
-        "secret": true
+        "secret": true,
+        "group": "database"
       },
       {
         "name": "autonomous_database_wallet_password",
         "label": "Database wallet password",
         "type": "password",
         "required": true,
-        "secret": true
+        "secret": true,
+        "group": "database"
       },
       {
         "name": "application_username",
         "label": "Application username",
         "type": "text",
         "required": true,
-        "default": "admin"
+        "default": "admin",
+        "group": "application_vm"
       },
       {
         "name": "autonomous_database_developer_password",
         "label": "Application password",
         "type": "password",
         "required": true,
-        "secret": true
+        "secret": true,
+        "group": "application_vm"
       }
     ]
   },
