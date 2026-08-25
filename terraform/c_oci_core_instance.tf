@@ -2,6 +2,10 @@
 # Compute host for Select AI Analyzer
 ############################################
 
+locals {
+  selected_demo_schemas = var.autonomous_database_mode == "new" ? var.select_ai_grant_schemas : ""
+}
+
 resource "tls_private_key" "instance_ssh" {
   algorithm = "RSA"
   rsa_bits  = 2048
@@ -107,9 +111,10 @@ resource "null_resource" "configure_select_ai_analyzer" {
   ]
 
   triggers = {
-    instance_id = oci_core_instance.linux_instance.id
-    wallet_hash = sha256(local.autonomous_database_wallet_b64)
-    bucket_name = oci_objectstorage_bucket.bucket.name
+    instance_id  = oci_core_instance.linux_instance.id
+    wallet_hash  = sha256(local.autonomous_database_wallet_b64)
+    bucket_name  = oci_objectstorage_bucket.bucket.name
+    demo_schemas = local.selected_demo_schemas
   }
 
   connection {
@@ -147,6 +152,7 @@ resource "null_resource" "configure_select_ai_analyzer" {
         compartment_ocid        = var.compartment_ocid
         objectstorage_namespace = var.objectstorage_namespace
         region                  = var.region
+        select_ai_grant_schemas = local.selected_demo_schemas
       })
     ]
   }

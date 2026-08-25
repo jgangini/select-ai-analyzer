@@ -93,6 +93,30 @@
         "group": "database"
       },
       {
+        "name": "select_ai_grant_schemas",
+        "label": "Schemas exposed to Select AI",
+        "type": "select",
+        "required": true,
+        "default": "SH_DEMO,FLEXCUBE_DEMO",
+        "multiple": true,
+        "group": "database",
+        "visible_when": {
+          "field": "autonomous_database_mode",
+          "equals": "new"
+        },
+        "span": 2,
+        "options": [
+          {
+            "value": "SH_DEMO",
+            "label": "Sales History (SH_DEMO)"
+          },
+          {
+            "value": "FLEXCUBE_DEMO",
+            "label": "Core Banking (FLEXCUBE_DEMO)"
+          }
+        ]
+      },
+      {
         "name": "application_username",
         "label": "Application username",
         "type": "text",

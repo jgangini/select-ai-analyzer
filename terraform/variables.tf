@@ -82,6 +82,20 @@ variable "autonomous_database_mode" {
   }
 }
 
+variable "select_ai_grant_schemas" {
+  description = "Versioned demo schemas to load and expose to Select AI for a new Autonomous Database."
+  type        = string
+  default     = "SH_DEMO,FLEXCUBE_DEMO"
+
+  validation {
+    condition = (
+      can(regex("^(SH_DEMO|FLEXCUBE_DEMO)(,(SH_DEMO|FLEXCUBE_DEMO))*$", var.select_ai_grant_schemas)) &&
+      length(toset(split(",", var.select_ai_grant_schemas))) == length(split(",", var.select_ai_grant_schemas))
+    )
+    error_message = "select_ai_grant_schemas must be a comma-separated selection of SH_DEMO and FLEXCUBE_DEMO without duplicates."
+  }
+}
+
 variable "existing_autonomous_database_ocid" {
   description = "Existing Autonomous Database OCID when autonomous_database_mode is existing."
   type        = string

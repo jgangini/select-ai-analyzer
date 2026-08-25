@@ -25,6 +25,7 @@ ADB_WALLET_PASSWORD=${adb_wallet_password}
 APP_AGENT_PASSWORD=${app_agent_password}
 APPLICATION_USERNAME=${application_username}
 APPLICATION_PASSWORD=${application_password}
+DEMO_SCHEMAS=${select_ai_grant_schemas}
 CTN_SECRETS
 chmod 600 "$BOOTSTRAP_DIR/secrets.env"
 
@@ -250,6 +251,26 @@ request_json("POST", "/setup/test-generative-ai", genai_payload, attempts=3)
 request_json("POST", "/setup/save-generative-ai-config", genai_payload, attempts=3)
 request_json("POST", "/setup/complete", attempts=3)
 
+demo_schemas = secrets.get("DEMO_SCHEMAS", "")
+if demo_schemas:
+    demo_load = subprocess.run(
+        [
+            "sudo",
+            "docker",
+            "exec",
+            "-e",
+            f"SELECT_AI_DEMO_SCHEMAS={demo_schemas}",
+            app_name,
+            "python",
+            "/app/scripts/load_demo_data.py",
+        ],
+        text=True,
+        capture_output=True,
+    )
+    if demo_load.returncode:
+        raise RuntimeError(f"Demo data load failed: {demo_load.stderr[-4000:]}")
+    print(demo_load.stdout)
+
 summary = {
     "application_url": "http://[PUBLIC-IP]",
     "login_user": secrets["APPLICATION_USERNAME"],
@@ -257,6 +278,7 @@ summary = {
     "wallet_dsn": dsn,
     "bucket_name": "${bucket_name}",
     "namespace": "${objectstorage_namespace}",
+    "demo_schemas": [schema for schema in demo_schemas.split(",") if schema],
     "setup": "automated",
 }
 (bootstrap_dir / "automation-summary.json").write_text(json.dumps(summary, indent=2), encoding="utf-8")

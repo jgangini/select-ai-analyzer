@@ -45,6 +45,8 @@ RUN apt-get update \
 COPY --from=backend-builder /install /usr/local
 COPY apps/backend /app/apps/backend
 COPY apps/__init__.py /app/apps/__init__.py
+COPY scripts /app/scripts
+COPY data /app/data
 COPY --from=frontend-builder /build/frontend/dist /usr/share/nginx/html
 COPY docker/nginx.conf /etc/nginx/conf.d/select-ai-analyzer.conf
 COPY docker/start.sh /app/docker/start.sh

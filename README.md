@@ -25,6 +25,8 @@ Then open `http://localhost:8080`.
 
 The repository follows the same deployment shape as `doc_agent`: the `Dockerfile` lives at the repository root, the frontend lives in `apps/frontend`, the backend lives in `apps/backend`, nginx configuration lives in `docker/`, and `/api/health` exposes the health check. CloudTechNext can clone `https://github.com/jgangini/select-ai-analyzer.git`, build the image from the repository root, and mount persistent volumes for `data`, `wallet`, `keys`, and `logs`.
 
+For a new Autonomous Database, Deploy Studio presents **Schemas exposed to Select AI**. It can load `SH_DEMO` (Sales History) and `FLEXCUBE_DEMO` (Core Banking); both are selected by default. Their versioned CSV and metadata package is in [`data/`](data/README.md). Existing-database deployments leave its schemas unchanged.
+
 ## Wizard
 
 1. Upload `wallet.zip`.
