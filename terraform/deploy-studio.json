@@ -99,12 +99,12 @@
         "required": true,
         "default": "SH_DEMO,FLEXCUBE_DEMO",
         "multiple": true,
-        "group": "database",
+        "group": "application_vm",
         "visible_when": {
           "field": "autonomous_database_mode",
           "equals": "new"
         },
-        "span": 2,
+        "span": 1,
         "options": [
           {
             "value": "SH_DEMO",
