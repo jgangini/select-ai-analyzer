@@ -23,6 +23,10 @@ class DeployStudioContractTests(unittest.TestCase):
         password_fields = [field for field in self.contract["form"]["fields"] if field["type"] == "password"]
         self.assertTrue(password_fields)
         self.assertTrue(all(field.get("secret") is True for field in password_fields))
+        self.assertEqual(
+            self.contract["form"]["email_access_fields"],
+            ["application_username", "autonomous_database_developer_password"],
+        )
         schema_field = next(field for field in self.contract["form"]["fields"] if field["name"] == "select_ai_grant_schemas")
         self.assertTrue(schema_field["multiple"])
         self.assertEqual(schema_field["default"], "SH_DEMO,FLEXCUBE_DEMO")

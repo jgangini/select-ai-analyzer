@@ -14,6 +14,10 @@
     "database_profile": "new_or_existing"
   },
   "form": {
+    "email_access_fields": [
+      "application_username",
+      "autonomous_database_developer_password"
+    ],
     "fields": [
       {
         "name": "autonomous_database_mode",
