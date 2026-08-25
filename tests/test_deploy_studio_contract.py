@@ -28,6 +28,9 @@ class DeployStudioContractTests(unittest.TestCase):
         self.assertEqual(schema_field["default"], "SH_DEMO,FLEXCUBE_DEMO")
         self.assertEqual(schema_field["group"], "application_vm")
         self.assertEqual(schema_field["span"], 1)
+        field_names = [field["name"] for field in self.contract["form"]["fields"]]
+        password_index = field_names.index("autonomous_database_developer_password")
+        self.assertEqual(field_names[password_index + 1], "select_ai_grant_schemas")
         self.assertEqual(
             [option["value"] for option in schema_field["options"]],
             ["SH_DEMO", "FLEXCUBE_DEMO"],

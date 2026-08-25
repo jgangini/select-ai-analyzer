@@ -93,6 +93,22 @@
         "group": "database"
       },
       {
+        "name": "application_username",
+        "label": "Application username",
+        "type": "text",
+        "required": true,
+        "default": "admin",
+        "group": "application_vm"
+      },
+      {
+        "name": "autonomous_database_developer_password",
+        "label": "Application password",
+        "type": "password",
+        "required": true,
+        "secret": true,
+        "group": "application_vm"
+      },
+      {
         "name": "select_ai_grant_schemas",
         "label": "Schemas exposed to Select AI",
         "type": "select",
@@ -115,22 +131,6 @@
             "label": "Core Banking (FLEXCUBE_DEMO)"
           }
         ]
-      },
-      {
-        "name": "application_username",
-        "label": "Application username",
-        "type": "text",
-        "required": true,
-        "default": "admin",
-        "group": "application_vm"
-      },
-      {
-        "name": "autonomous_database_developer_password",
-        "label": "Application password",
-        "type": "password",
-        "required": true,
-        "secret": true,
-        "group": "application_vm"
       }
     ]
   },
