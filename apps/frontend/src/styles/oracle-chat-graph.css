@@ -1,0 +1,117 @@
+﻿.app-shell-dark .chat-graph-panel {
+
+  background: #ffffff !important;
+
+  color: #312d2a !important;
+
+}
+
+.app-shell-dark .chat-graph-panel .bg-oracle-bg-gray {
+
+  background-color: var(--oracle-bg-gray) !important;
+
+}
+
+.app-shell-dark .chat-graph-panel .bg-white {
+
+  background-color: #ffffff !important;
+
+}
+
+.app-shell-dark .chat-graph-panel .bg-gray-50 {
+
+  background-color: #f9fafb !important;
+
+}
+
+.app-shell-dark .chat-graph-panel .border-gray-200,
+
+.app-shell-dark .chat-graph-panel .border-oracle-border {
+
+  border-color: #d9d9d9 !important;
+
+}
+
+.app-shell-dark .chat-graph-panel .text-oracle-medium-gray,
+
+.app-shell-dark .chat-graph-panel .text-oracle-light-gray {
+
+  color: #767676 !important;
+
+}
+
+.app-shell-dark .chat-graph-panel .graph-status-dot {
+
+  display: inline-block;
+
+  width: 0.5rem;
+
+  height: 0.5rem;
+
+  border-radius: 9999px;
+
+  box-shadow: 0 0 0 1px rgba(49, 45, 42, 0.08);
+
+}
+
+.app-shell-dark .chat-graph-panel .graph-status-dot--idle {
+
+  background-color: #9ca3af !important;
+
+}
+
+.app-shell-dark .chat-graph-panel .graph-status-dot--running {
+
+  background-color: #2563eb !important;
+
+}
+
+.app-shell-dark .chat-graph-panel .graph-status-dot--completed {
+
+  background-color: #10b981 !important;
+
+}
+
+.app-shell-dark .chat-graph-panel .graph-status-dot--failed {
+
+  background-color: #dc2626 !important;
+
+}
+
+.app-shell-dark .settings-section-card--neutral {
+
+  background-color: #f3f4f6 !important;
+
+  border-color: #d1d5db !important;
+
+}
+
+.app-shell-dark .settings-section-card--accent {
+
+  background-color: #fff4f1 !important;
+
+  border-color: #f1c7bd !important;
+
+}
+
+.app-shell-dark .settings-section-card--accent svg {
+
+  color: var(--oracle-red) !important;
+
+}
+
+.app-shell-dark .app-light-surface .btn-secondary {
+
+  background-color: #ffffff !important;
+
+  border-color: #d9d2cb !important;
+
+  color: #312d2a !important;
+
+}
+
+.app-shell-dark .app-light-surface .btn-secondary:hover {
+
+  background-color: #f8f4f1 !important;
+
+}

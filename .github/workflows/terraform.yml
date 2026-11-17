@@ -1,0 +1,54 @@
+name: Validate Terraform
+
+on:
+  pull_request:
+    paths:
+      - "terraform/**"
+      - "tests/test_deploy_studio_contract.py"
+      - ".github/workflows/terraform.yml"
+  push:
+    branches:
+      - main
+    tags:
+      - "v*"
+    paths:
+      - "terraform/**"
+      - "tests/test_deploy_studio_contract.py"
+      - ".github/workflows/terraform.yml"
+
+permissions:
+  contents: read
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    env:
+      TF_IN_AUTOMATION: "true"
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Terraform
+        uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: 1.9.8
+
+      - name: Validate Deploy Studio contract
+        run: python -m unittest discover -s tests -p 'test_deploy_studio_contract.py' -v
+
+      - name: Prepare synthetic credential placeholders
+        shell: bash
+        run: |
+          mkdir -p terraform/.oci
+          printf '%s\n' '[DEFAULT]' 'region=us-chicago-1' 'key_file=.oci/key.pem' > terraform/.oci/config
+          printf '%s\n' 'synthetic-ci-placeholder' > terraform/.oci/key.pem
+
+      - name: Check Terraform formatting
+        run: terraform fmt -check -recursive terraform
+
+      - name: Initialize Terraform
+        run: terraform -chdir=terraform init -backend=false -input=false
+
+      - name: Validate Terraform
+        run: terraform -chdir=terraform validate

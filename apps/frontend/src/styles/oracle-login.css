@@ -1,0 +1,92 @@
+﻿.login-shell-dark {
+  background:
+    radial-gradient(circle at 22% 20%, rgba(199, 70, 52, 0.08), transparent 30%),
+    radial-gradient(circle at 86% 86%, rgba(199, 70, 52, 0.11), transparent 32%),
+    radial-gradient(circle at 78% 82%, rgba(255, 255, 255, 0.032), transparent 34%),
+    linear-gradient(135deg, #201d1b 0%, #2d2926 48%, #151413 100%);
+}
+
+.login-card-shell {
+  position: relative;
+  isolation: isolate;
+  border-radius: 1.65rem;
+  background: transparent;
+  box-shadow:
+    0 38px 120px rgba(0, 0, 0, 0.32),
+    0 16px 46px rgba(0, 0, 0, 0.18);
+  transform: translateZ(0);
+}
+
+.login-card-panel {
+  overflow: hidden;
+}
+
+.login-card-panel--hero {
+  border-radius: 1.65rem 1.65rem 0 0;
+}
+
+.login-card-panel--form {
+  border-radius: 0 0 1.65rem 1.65rem;
+}
+
+@media (min-width: 768px) {
+  .login-card-panel--hero {
+    border-radius: 1.65rem 0 0 1.65rem;
+  }
+
+  .login-card-panel--form {
+    border-radius: 0 1.65rem 1.65rem 0;
+  }
+}
+
+@media (min-width: 1024px) {
+  .login-card-shell,
+  .login-card-panel--hero,
+  .login-card-panel--form {
+    border-radius: 1.75rem;
+  }
+
+  .login-card-panel--hero {
+    border-radius: 1.75rem 0 0 1.75rem;
+  }
+
+  .login-card-panel--form {
+    border-radius: 0 1.75rem 1.75rem 0;
+  }
+}
+
+.login-input-oracle {
+  @apply h-12 w-full rounded-lg border bg-white px-3.5 text-[15px] text-gray-900 shadow-sm transition;
+  border-color: #d9d2cb;
+  caret-color: var(--oracle-red);
+  outline: none;
+}
+
+.login-input-oracle:focus,
+.login-input-oracle:focus-visible,
+.login-input-oracle:active,
+.login-input-oracle--focused {
+  background: #fffdfa !important;
+  border-color: var(--oracle-red) !important;
+  border-width: 2px !important;
+  box-shadow:
+    0 0 0 4px rgba(199, 70, 52, 0.2),
+    0 1px 2px rgba(49, 45, 42, 0.08) !important;
+  outline: none !important;
+}
+
+.login-input-oracle::selection {
+  background: rgba(199, 70, 52, 0.22);
+  color: #171412;
+}
+
+.login-input-oracle::-moz-selection {
+  background: rgba(199, 70, 52, 0.22);
+  color: #171412;
+}
+
+.input-focus-gray:focus {
+  outline: none !important;
+  box-shadow: 0 0 0 2px rgba(199, 70, 52, 0.5) !important;
+  border-color: var(--oracle-red) !important;
+}

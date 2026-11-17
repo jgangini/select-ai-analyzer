@@ -1,0 +1,62 @@
+﻿@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --oracle-red: #C74634;
+  --oracle-dark-gray: #312D2A;
+  --oracle-medium-gray: #4D4D4D;
+  --oracle-light-gray: #767676;
+  --oracle-bg-gray: #F6F6F6;
+  --oracle-white: #FFFFFF;
+  --oracle-border: #D9D9D9;
+  --oracle-table-header: #F5F2F0;
+  --oracle-blue-link: #0572CE;
+  --oracle-green-accent: #33553c;
+  --app-bg-start: #181514;
+  --app-bg-mid: #24201e;
+  --app-bg-end: #11100f;
+  --app-surface: rgba(37, 33, 30, 0.92);
+  --app-surface-strong: rgba(45, 40, 36, 0.96);
+  --app-surface-soft: rgba(255, 255, 255, 0.055);
+  --app-border: rgba(255, 255, 255, 0.11);
+  --app-border-strong: rgba(255, 255, 255, 0.17);
+  --app-text: #fbf7f2;
+  --app-text-muted: rgba(236, 227, 219, 0.72);
+  --app-text-subtle: rgba(236, 227, 219, 0.54);
+}
+
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+body {
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Helvetica Neue', Arial, sans-serif;
+  background: var(--oracle-bg-gray);
+  min-height: 100vh;
+  color: #333;
+}
+
+::selection {
+  background: rgba(232, 226, 220, 0.34);
+  color: #1d1917;
+}
+
+::-moz-selection {
+  background: rgba(232, 226, 220, 0.34);
+  color: #1d1917;
+}
+
+.btn-primary {
+  @apply bg-oracle-red text-white px-6 py-2 rounded hover:opacity-90 transition-opacity disabled:opacity-50 disabled:cursor-not-allowed;
+}
+
+.btn-secondary {
+  @apply bg-white border border-oracle-border text-oracle-dark-gray px-6 py-2 rounded hover:bg-gray-50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed;
+}
+
+.input-oracle {
+  @apply w-full border border-oracle-border rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-oracle-red/50 focus:border-oracle-red;
+}
