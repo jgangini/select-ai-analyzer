@@ -7,7 +7,10 @@ import json
 import os
 import re
 import sys
+from collections import Counter
+from contextlib import ExitStack
 from dataclasses import dataclass
+from datetime import datetime, time
 from pathlib import Path
 from typing import Any, Iterable
 
@@ -230,52 +233,74 @@ def _chunks(rows: list[list[object]], size: int) -> Iterable[list[list[object]]]
         yield rows[index : index + size]
 
 
-def _load_rows(cursor: Any, entry: DemoSchemaEntry, metadata_path: Path, table: dict[str, Any]) -> int:
+def _demo_rows(metadata_path: Path, table: dict[str, Any]) -> tuple[list[str], list[str], list[list[object]]]:
     ordered_columns = sorted(table["columns"], key=lambda item: int(item.get("ordinal_position", 0)))
     names = [_identifier(column["column_name"], label="column name") for column in ordered_columns]
-    data_types = {name: _data_type(column["data_type"]) for name, column in zip(names, ordered_columns)}
-    insert_sql = (
-        f"INSERT INTO {_sql_identifier(entry.schema, label='schema')}."
-        f"{_sql_identifier(table['table_name'], label='table name')} "
-        f"({', '.join(_sql_identifier(name, label='column name') for name in names)}) "
-        f"VALUES ({', '.join(f':{index}' for index in range(1, len(names) + 1))})"
-    )
+    data_types = [_data_type(column["data_type"]) for column in ordered_columns]
     rows: list[list[object]] = []
-    with metadata_path.with_suffix(".csv").open("r", encoding="utf-8-sig", newline="") as handle:
+    csv_path = metadata_path.with_suffix(".csv")
+    with csv_path.open("r", encoding="utf-8-sig", newline="") as handle:
         reader = csv.DictReader(handle)
         headers = [str(header or "").upper() for header in reader.fieldnames or []]
         if headers != names:
-            raise ValueError(f"{metadata_path.with_suffix('.csv')}: CSV header does not match metadata columns")
+            raise ValueError(f"{csv_path}: CSV header does not match metadata columns")
         for line_number, row in enumerate(reader, start=2):
             try:
-                rows.append([convert_csv_value(row.get(name), data_types[name]) for name in names])
+                rows.append([convert_csv_value(row.get(name), data_type) for name, data_type in zip(names, data_types)])
             except Exception as exc:
-                raise ValueError(f"{metadata_path.with_suffix('.csv')}:{line_number}: {exc}") from exc
+                raise ValueError(f"{csv_path}:{line_number}: {exc}") from exc
+    return names, data_types, rows
+
+
+def _qualified_table(entry: DemoSchemaEntry, table_name: str) -> str:
+    return f"{_sql_identifier(entry.schema, label='schema')}.{_sql_identifier(table_name, label='table name')}"
+
+
+def _insert_rows(cursor: Any, qualified_table: str, names: list[str], rows: list[list[object]]) -> None:
+    insert_sql = (
+        f"INSERT INTO {qualified_table} "
+        f"({', '.join(_sql_identifier(name, label='column name') for name in names)}) "
+        f"VALUES ({', '.join(f':{index}' for index in range(1, len(names) + 1))})"
+    )
     for batch in _chunks(rows, 1000):
         cursor.executemany(insert_sql, batch)
+
+
+def _load_rows(cursor: Any, entry: DemoSchemaEntry, metadata_path: Path, table: dict[str, Any]) -> int:
+    names, _, rows = _demo_rows(metadata_path, table)
+    _insert_rows(cursor, _qualified_table(entry, table["table_name"]), names, rows)
     return len(rows)
 
 
-def _assert_app_schema(cursor: Any) -> None:
-    cursor.execute("SELECT USER FROM DUAL")
+def _session_user(cursor: Any) -> str:
+    cursor.execute("SELECT SYS_CONTEXT('USERENV', 'SESSION_USER') FROM DUAL")
     row = cursor.fetchone()
-    user = str(row[0] if row else "").upper()
+    return str(row[0] if row else "").upper()
+
+
+def _assert_app_schema(cursor: Any) -> str:
+    user = _session_user(cursor)
     if not APP_SCHEMA_RE.fullmatch(user):
         raise RuntimeError(f"Demo loader must connect as APP_AGENT; connected as {user or 'unknown'}.")
+    return user
 
 
-def _connect():
+def _connect_db(config: dict[str, str], *, user: str, password: str):
     import oracledb
 
-    config = runtime_connection_config(BACKEND_ROOT)
     return oracledb.connect(
-        user=config["user"],
-        password=config["password"],
+        user=user,
+        password=password,
         dsn=config["dsn"],
         config_dir=config["wallet_path"],
         wallet_location=config["wallet_path"],
         wallet_password=config["wallet_password"],
     )
+
+
+def _connect():
+    config = runtime_connection_config(BACKEND_ROOT)
+    return _connect_db(config, user=config["user"], password=config["password"])
 
 
 def validate_demo_assets() -> list[str]:
@@ -344,16 +369,183 @@ def load_demo_schemas(raw_schemas: str) -> list[dict[str, Any]]:
         connection.close()
 
 
+def _enable_demo_proxy(cursor: Any, owner: str, cleanup: ExitStack) -> None:
+    quoted_owner = _sql_identifier(owner, label="demo owner")
+    cursor.execute("SELECT 1 FROM dba_users WHERE username = :owner", owner=owner)
+    if cursor.fetchone() is None:
+        cursor.execute(f"CREATE USER {quoted_owner} NO AUTHENTICATION DEFAULT TABLESPACE USERS QUOTA UNLIMITED ON USERS")
+
+    cursor.execute(
+        "SELECT privilege FROM dba_sys_privs WHERE grantee = :owner AND privilege IN ('CREATE SESSION', 'CREATE TABLE')",
+        owner=owner,
+    )
+    existing = {row[0] for row in cursor.fetchall()}
+    for privilege in ("CREATE SESSION", "CREATE TABLE"):
+        if privilege not in existing:
+            cursor.execute(f"GRANT {privilege} TO {quoted_owner}")
+            cleanup.callback(cursor.execute, f"REVOKE {privilege} FROM {quoted_owner}")
+
+    cursor.execute("SELECT 1 FROM proxy_users WHERE proxy = 'ADMIN' AND client = :owner", owner=owner)
+    if cursor.fetchone() is None:
+        cursor.execute(f"ALTER USER {quoted_owner} GRANT CONNECT THROUGH ADMIN WITH NO ROLES")
+        cleanup.callback(cursor.execute, f"ALTER USER {quoted_owner} REVOKE CONNECT THROUGH ADMIN")
+
+
+def _stored_demo_value(value: object, data_type: str) -> object:
+    if isinstance(value, str) and data_type.startswith(("CHAR(", "NCHAR(")):
+        return value.rstrip(" ")
+    if isinstance(value, datetime) and data_type == "DATE" and value.time() == time.min:
+        return value.date()
+    return value
+
+
+def _existing_demo_rows_match(
+    cursor: Any,
+    qualified_table: str,
+    names: list[str],
+    data_types: list[str],
+    rows: list[list[object]],
+) -> bool:
+    cursor.execute(f"SELECT * FROM {qualified_table}", fetch_decimals=True)
+    if [column[0] for column in cursor.description] != names:
+        raise RuntimeError(f"Existing table {qualified_table} does not match the demo columns.")
+    first_row = cursor.fetchone()
+    if first_row is None:
+        return False
+
+    expected = Counter(map(tuple, rows))
+    row = first_row
+    while row is not None:
+        value = tuple(_stored_demo_value(cell, data_type) for cell, data_type in zip(row, data_types))
+        if expected[value] <= 0:
+            break
+        expected[value] -= 1
+        row = cursor.fetchone()
+    if row is not None or any(expected.values()):
+        raise RuntimeError(f"Existing data in {qualified_table} differs from the packaged demo.")
+    return True
+
+
+def _seed_as_demo_owner(
+    cursor: Any,
+    entry: DemoSchemaEntry,
+    metadata: list[tuple[Path, dict[str, Any]]],
+    app_user: str,
+) -> tuple[dict[str, int], list[str]]:
+    if _session_user(cursor) != entry.schema:
+        raise RuntimeError(f"Expected a proxy session as {entry.schema}.")
+    cursor.execute("SELECT table_name FROM user_tables")
+    existing_tables = {row[0] for row in cursor.fetchall()}
+    warnings: list[str] = []
+    pending_inserts = []
+    counts: dict[str, int] = {}
+    # Finish DDL before inserting any rows. Oracle DDL commits transactions.
+    for metadata_path, table in metadata:
+        table_name = table["table_name"]
+        qualified_table = _qualified_table(entry, table_name)
+        names, data_types, rows = _demo_rows(metadata_path, table)
+        already_seeded = False
+        if table_name in existing_tables:
+            already_seeded = _existing_demo_rows_match(cursor, qualified_table, names, data_types, rows)
+        else:
+            cursor.execute(_render_create_table(entry, table))
+        if not already_seeded:
+            warnings.extend(apply_metadata(
+                cursor,
+                table_name,
+                data_schema=entry.schema,
+                table_comment=str(table.get("table_comment") or ""),
+                column_metadata=table["columns"],
+            ))
+            pending_inserts.append((qualified_table, names, rows))
+        cursor.execute(f"GRANT SELECT ON {qualified_table} TO {_sql_identifier(app_user, label='app user')}")
+        counts[table_name] = len(rows)
+    for qualified_table, names, rows in pending_inserts:
+        _insert_rows(cursor, qualified_table, names, rows)
+    return counts, warnings
+
+
+def _register_managed_demo(
+    cursor: Any,
+    entry: DemoSchemaEntry,
+    table: dict[str, Any],
+    row_count: int,
+) -> None:
+    table_name = table["table_name"]
+    cursor.execute(
+        """
+        SELECT source_type, source_file_name, access_scope, status, created_by_user_id, row_count
+        FROM data_sources
+        WHERE owner_name = :owner AND table_name = :table_name
+        """,
+        owner=entry.schema,
+        table_name=table_name,
+    )
+    existing = cursor.fetchone()
+    if existing is None:
+        replace_data_source(
+            cursor, table_name, row_count, table_columns(cursor, table_name, entry.schema),
+            table["columns"], data_schema=entry.schema,
+        )
+    elif existing != ("csv", f"{table_name}.csv", "all", "active", 0, row_count):
+        raise RuntimeError(f"Existing source registration for {entry.schema}.{table_name} differs from the packaged demo.")
+
+
+def load_managed_demo_schemas(raw_schemas: str, admin_password: str) -> list[dict[str, Any]]:
+    entries = selected_demo_entries(raw_schemas)
+    if not entries:
+        return []
+    if not admin_password:
+        raise ValueError("The ADMIN password on stdin is empty.")
+    # Only the dedicated owner names from the shipped demo catalog may receive temporary privileges.
+    if any(not entry.schema.endswith("_DEMO") for entry in entries):
+        raise ValueError("Managed demo schemas must use dedicated _DEMO owners.")
+
+    config = runtime_connection_config(BACKEND_ROOT)
+    results: list[dict[str, Any]] = []
+    with (
+        _connect_db(config, user=config["user"], password=config["password"]) as app_connection,
+        app_connection.cursor() as app_cursor,
+        _connect_db(config, user="ADMIN", password=admin_password) as admin_connection,
+        admin_connection.cursor() as admin_cursor,
+    ):
+        app_user = _assert_app_schema(app_cursor)
+        for entry in entries:
+            metadata = table_metadata(entry)
+            with ExitStack() as cleanup:
+                _enable_demo_proxy(admin_cursor, entry.schema, cleanup)
+                with (
+                    _connect_db(config, user=f"ADMIN[{entry.schema}]", password=admin_password) as owner_connection,
+                    owner_connection.cursor() as owner_cursor,
+                ):
+                    counts, warnings = _seed_as_demo_owner(owner_cursor, entry, metadata, app_user)
+                    owner_connection.commit()
+            for _, table in metadata:
+                _register_managed_demo(app_cursor, entry, table, counts[table["table_name"]])
+            results.append({"schema": entry.schema, "tables": len(counts), "rows": sum(counts.values()), "warnings": warnings})
+        app_connection.commit()
+        app_cursor.callproc("SP_SEL_AI_PROFILE", ["APP_AGENT_ANALYTICS", 0])
+        app_connection.commit()
+    return results
+
+
 def main() -> int:
     parser = argparse.ArgumentParser(description="Load the selected versioned Select AI demo schemas.")
     parser.add_argument("--schemas", default=os.environ.get("SELECT_AI_DEMO_SCHEMAS", ""))
+    parser.add_argument(
+        "--admin-password-stdin", action="store_true",
+        help="Read the ADMIN password exactly from stdin and load demos through temporary owner proxy sessions.",
+    )
     parser.add_argument("--validate", action="store_true", help="Validate packaged demo metadata and CSV files without a database.")
     args = parser.parse_args()
     if args.validate:
         for message in validate_demo_assets():
             print(message)
         return 0
-    results = load_demo_schemas(args.schemas)
+    if args.admin_password_stdin:
+        results = load_managed_demo_schemas(args.schemas, sys.stdin.read())
+    else:
+        results = load_demo_schemas(args.schemas)
     print(f"DEMO_SCHEMAS_LOADED={len(results)}")
     for result in results:
         print(f"{result['schema']}: {result['tables']} tables, {result['rows']} rows")

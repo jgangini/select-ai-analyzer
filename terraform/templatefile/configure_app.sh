@@ -295,25 +295,16 @@ request_json("POST", "/setup/complete", attempts=3)
 
 demo_schemas = secrets.get("DEMO_SCHEMAS", "")
 if demo_schemas:
-    demo_load = subprocess.run(
-        [
-            "sudo",
-            "docker",
-            "exec",
-            "-e",
-            f"SELECT_AI_DEMO_SCHEMAS={demo_schemas}",
-            app_name,
-            "python",
-            "/app/scripts/load_demo_data.py",
-        ],
-        text=True,
-        capture_output=True,
+    demo_load = docker_exec(
+        ["python", "/app/scripts/load_demo_data.py", "--schemas", demo_schemas, "--admin-password-stdin"],
+        secrets["ADB_ADMIN_PASSWORD"].encode("utf-8"),
+        timeout=None,
     )
     if demo_load.returncode:
-        codes = oracle_error_codes(demo_load.stderr.encode("utf-8"))
+        codes = oracle_error_codes(demo_load.stderr)
         detail = f": {codes}" if codes else ""
         raise RuntimeError(f"Demo data load failed{detail}")
-    print(demo_load.stdout)
+    print(demo_load.stdout.decode("utf-8").rstrip())
 
 setup_status = request_json("GET", "/setup/check")
 if setup_status.get("completed") is not True:

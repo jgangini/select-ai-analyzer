@@ -29,6 +29,29 @@ class PostApplyTests(unittest.TestCase):
         self.assertIn("-chmod 0600 /home/opc/ctn-bootstrap/payload.part", command)
         self.assertIn("-rename /home/opc/ctn-bootstrap/payload.part /home/opc/ctn-bootstrap/payload.json", command)
 
+    def test_console_history_response_uses_raw_sdk_bytes_and_cleans_up(self):
+        host_key = b"synthetic SSH host public key for console verification"
+        history = b"CTN_ANALYZER_HOST_KEY " + base64.b64encode(host_key) + b"\n"
+        pin = base64.b64encode(hashlib.sha256(host_key).digest()).decode()
+        client = Mock()
+        client.create_instance_console_connection.return_value.data.id = "console-fixture"
+        client.get_instance_console_connection.return_value.data.lifecycle_state = "ACTIVE"
+        client.capture_console_history.return_value.data.id = "history-fixture"
+        client.get_console_history.return_value.data.lifecycle_state = "SUCCEEDED"
+        def read_history(history_id, *, offset, length):
+            self.assertEqual((history_id, offset), ("history-fixture", 0))
+            self.assertGreaterEqual(length, 1024 * 1024)
+            return SimpleNamespace(data=history)
+
+        client.get_console_history_content.side_effect = read_history
+
+        with patch.object(post_apply.oci.pagination, "list_call_get_all_results", return_value=SimpleNamespace(data=[])):
+            pins = post_apply.authenticated_host_pins(client, "compartment-fixture", "instance-fixture", "public-fixture")
+
+        self.assertEqual(pins, [pin])
+        client.delete_console_history.assert_called_once_with("history-fixture")
+        client.delete_instance_console_connection.assert_called_once_with("console-fixture")
+
     def test_host_mismatch_cannot_upload(self):
         refusal = CompletedProcess([], 60, b"", b"")
         with patch.object(post_apply, "transfer", return_value=refusal) as transfer:

@@ -114,7 +114,8 @@ def authenticated_host_pins(client, compartment, instance_id, client_public_key)
         )).data
         history_id = capture.id
         wait_for_state(client.get_console_history, history_id, "SUCCEEDED", {"REQUESTED", "GETTING-HISTORY"}, 90)
-        return host_pins(client.get_console_history_content(history_id).data.content)
+        history = client.get_console_history_content(history_id, offset=0, length=1024 * 1024).data
+        return host_pins(history)
     finally:
         if history_id:
             with suppress(oci.exceptions.ServiceError):
