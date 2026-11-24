@@ -178,18 +178,21 @@ def provision(host, key_path, pins, payload):
         if receipt.returncode not in {7, 28, 78}:
             raise BootstrapError("Could not read application setup status over verified SFTP.")
         time.sleep(5)
-    raise BootstrapError("Timed out waiting for the VM to verify application login.")
+    raise BootstrapError("Timed out waiting for application login and selected demo checks.")
+
+
+def selected_demo_schemas(inputs):
+    if inputs["autonomous_database_mode"] != "new":
+        return []
+    demos = inputs["select_ai_grant_schemas"].split(",")
+    if len(demos) != len(set(demos)) or not set(demos) <= {"SH_DEMO", "FLEXCUBE_DEMO"}:
+        raise BootstrapError("The requested demo schemas are invalid.")
+    return demos
 
 
 def bootstrap_payload(context, private_inputs, config_path, key_path, wallet_path):
     inputs = context["inputs"]
     outputs = context["terraform_outputs"]
-    demo_schemas = ""
-    if inputs["autonomous_database_mode"] == "new":
-        demos = inputs["select_ai_grant_schemas"].split(",")
-        if len(demos) != len(set(demos)) or not set(demos) <= {"SH_DEMO", "FLEXCUBE_DEMO"}:
-            raise BootstrapError("The requested demo schemas are invalid.")
-        demo_schemas = ",".join(demos)
     return json.dumps({
         "config": config_path.read_text(encoding="utf-8"),
         "key": key_path.read_text(encoding="utf-8"),
@@ -202,7 +205,7 @@ def bootstrap_payload(context, private_inputs, config_path, key_path, wallet_pat
             **{target: private_inputs[source] for target, source in SECRET_FIELDS.items()},
             "APP_AGENT_PASSWORD": f"Aa1{secrets.token_hex(11)}",
             "APPLICATION_USERNAME": inputs["application_username"],
-            "DEMO_SCHEMAS": demo_schemas,
+            "DEMO_SCHEMAS": ",".join(selected_demo_schemas(inputs)),
             "GENERATIVE_MODEL": inputs["select_ai_model"],
         },
     }, separators=(",", ":")).encode("utf-8")
@@ -224,13 +227,16 @@ def run(environment):
         client_key_path.write_text(client_key, encoding="ascii")
         client_key_path.chmod(0o600)
         provision(host, client_key_path, pins, payload)
+    return selected_demo_schemas(context["inputs"])
 
 
 def main():
     output = Path(os.environ["DEPLOY_STUDIO_OUTPUT"])
     try:
-        run(os.environ)
+        demos = run(os.environ)
         level, message, exit_code = "success", "Select AI Analyzer setup and application login verified.", 0
+        if demos:
+            message += f" Select AI demo queries verified for {', '.join(demos)}."
     except BootstrapError as exc:
         level, message, exit_code = "error", str(exc), 1
     except oci.exceptions.ServiceError as exc:

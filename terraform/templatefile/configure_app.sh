@@ -316,8 +316,20 @@ login = request_json(
     {"username": secrets["APPLICATION_USERNAME"], "password": secrets["APPLICATION_PASSWORD"]},
     attempts=3,
 )
-if not login.get("access_token"):
+access_token = login.get("access_token")
+if not access_token:
     raise RuntimeError("Select AI Analyzer login did not return an access token")
+
+selected_demos = demo_schemas.split(",") if demo_schemas else []
+if selected_demos:
+    demo_check = docker_exec(
+        ["python", "/app/scripts/check_deployed_demos.py"],
+        json.dumps({"token": access_token, "schemas": selected_demos}).encode("utf-8"),
+        timeout=350,
+    )
+    if demo_check.returncode:
+        raise RuntimeError(demo_check.stderr.decode("utf-8").strip() or "Select AI demo query verification failed")
+    print(demo_check.stdout.decode("utf-8").rstrip())
 
 summary = {
     "application_url": "http://[PUBLIC-IP]",
@@ -326,7 +338,8 @@ summary = {
     "wallet_dsn": dsn,
     "bucket_name": payload["bucket_name"],
     "namespace": payload["namespace"],
-    "demo_schemas": [schema for schema in demo_schemas.split(",") if schema],
+    "demo_schemas": selected_demos,
+    "verified_demo_queries": selected_demos,
     "setup": "automated",
     "login_verified": True,
 }

@@ -1,6 +1,10 @@
+import io
 import json
 import unittest
 from pathlib import Path
+from unittest.mock import patch
+
+from scripts import check_deployed_demos
 
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -66,6 +70,7 @@ class DeployStudioContractTests(unittest.TestCase):
         self.assertEqual(database["visible_when"], {"field": "autonomous_database_mode", "equals": "existing"})
         self.assertEqual(fields["select_ai_grant_schemas"]["visible_when"]["equals"], "new")
         self.assertEqual(fields["select_ai_model"]["options_source"], "oci_genai_chat_models")
+        self.assertEqual(fields["select_ai_model"]["default"], "xai.grok-4.7")
         self.assertEqual(fields["autonomous_database_version"]["default"], "26ai:LH")
         self.assertEqual(self.contract["run_steps"][-1]["key"], "complete")
 
@@ -81,7 +86,10 @@ class DeployStudioContractTests(unittest.TestCase):
         self.assertNotIn("configure_app.sh", terraform)
         self.assertIn("CTN_ANALYZER_HOST_KEY", userdata)
         self.assertIn("payload.json", userdata)
-        self.assertIn("/auth/login", bootstrap)
+        self.assertLess(bootstrap.index('"/auth/login"'), bootstrap.index("/app/scripts/check_deployed_demos.py"))
+        self.assertLess(bootstrap.index("/app/scripts/check_deployed_demos.py"), bootstrap.index("sudo touch /var/local/select-ai-analyzer-setup.done"))
+        self.assertIn("if selected_demos:", bootstrap)
+        self.assertIn("if demo_check.returncode:", bootstrap)
 
     def test_email_links_the_vm_without_sending_database_passwords(self) -> None:
         email = self.contract["email"]
@@ -96,6 +104,61 @@ class DeployStudioContractTests(unittest.TestCase):
             set(self.contract["artifacts"]),
             {"adb_wallet.zip", "ssh-private-key.pem"},
         )
+
+
+class DemoVerificationTests(unittest.TestCase):
+    def response(self, schema, rows):
+        table, _ = check_deployed_demos.DEMO_QUERIES[schema]
+        return {
+            "sql": f'SELECT * FROM "{schema}"."{table}"',
+            "rows": rows,
+            "agent_trace": [{"stage": "select_ai.scope_profile", "objects": [{"owner": schema, "name": table}]}],
+            "conversation_id": "demo-check-123",
+        }
+
+    def run_check(self, schemas, responses):
+        payload = json.dumps({"token": "synthetic.token", "schemas": schemas})
+        stdout = io.StringIO()
+        stderr = io.StringIO()
+        with (
+            patch("sys.stdin", io.StringIO(payload)),
+            patch("sys.stdout", stdout),
+            patch("sys.stderr", stderr),
+            patch.object(check_deployed_demos, "request_json", side_effect=responses) as request,
+        ):
+            status = check_deployed_demos.main()
+        return status, request.call_args_list, stdout.getvalue(), stderr.getvalue()
+
+    def test_queries_every_selected_demo_and_removes_probe_conversations(self):
+        sales = self.response("SH_DEMO", [{"PROD_ID": 10, "TOTAL": 4797}, *[{"PROD_ID": n, "TOTAL": 1} for n in range(4)]])
+        bank = self.response("FLEXCUBE_DEMO", [{"CCY": code, "N": count} for code, count in
+                                              {"BRL": 456, "EUR": 456, "PEN": 456, "USD": 457}.items()])
+        status, calls, stdout, stderr = self.run_check(["SH_DEMO", "FLEXCUBE_DEMO"], [sales, {}, bank, {}])
+        self.assertEqual(status, 0)
+        self.assertEqual([call.args[0] for call in calls], ["POST", "DELETE", "POST", "DELETE"])
+        self.assertIn("SH_DEMO.SALES", calls[0].args[3]["question"])
+        self.assertIn("FLEXCUBE_DEMO.FLEX_ACTB_ACCBAL_HISTORY", calls[2].args[3]["question"])
+        self.assertIn("FLEXCUBE_DEMO Select AI query verified.", stdout)
+        self.assertNotIn("synthetic.token", stdout + stderr)
+
+    def test_wrong_fixture_totals_fail_even_with_http_success(self):
+        bank = self.response("FLEXCUBE_DEMO", [{"CCY": code, "N": 456} for code in ("BRL", "EUR", "PEN", "USD")])
+        status, calls, stdout, stderr = self.run_check(["FLEXCUBE_DEMO"], [bank, {}])
+        self.assertEqual(status, 1)
+        self.assertEqual(calls[1].args[0], "DELETE")
+        self.assertEqual(stdout, "")
+        self.assertIn("FLEXCUBE_DEMO query verification failed", stderr)
+
+    def test_inference_error_fails_check_and_preserves_redacted_reason(self):
+        error = check_deployed_demos.DemoCheckError("Analytics returned HTTP 400 (ORA-20400)")
+        status, calls, stdout, stderr = self.run_check(["FLEXCUBE_DEMO"], [error])
+        self.assertEqual(status, 1)
+        self.assertEqual(len(calls), 1)
+        self.assertEqual(stdout, "")
+        self.assertIn("FLEXCUBE_DEMO query verification failed: Analytics returned HTTP 400 (ORA-20400)", stderr)
+
+    def test_no_demos_makes_no_analytics_calls(self):
+        self.assertEqual(self.run_check([], []), (0, [], "", ""))
 
 
 if __name__ == "__main__":

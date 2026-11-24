@@ -225,7 +225,8 @@
         "type": "select",
         "required": true,
         "group": "enterprise_ai",
-        "options_source": "oci_genai_chat_models"
+        "options_source": "oci_genai_chat_models",
+        "default": "xai.grok-4.7"
       },
       {
         "name": "application_username",
