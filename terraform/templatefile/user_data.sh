@@ -4,6 +4,7 @@ set -euo pipefail
 APP_NAME="select-ai-analyzer"
 SOURCE_REPO_URL="${source_repo_url}"
 SOURCE_REF="${source_ref}"
+SOURCE_COMMIT_SHA="${source_commit_sha}"
 SOURCE_DIR="/opt/cloudtechnext/select-ai-analyzer"
 RUNTIME_DIR="/opt/cloudtechnext/select-ai-analyzer/runtime"
 LOCAL_IMAGE="select-ai-analyzer:cloudtechnext"
@@ -50,37 +51,25 @@ firewall-cmd --reload
 
 rm -rf "$SOURCE_DIR"
 mkdir -p "$(dirname "$SOURCE_DIR")"
-git clone --depth=1 --branch "$SOURCE_REF" "$SOURCE_REPO_URL" "$SOURCE_DIR"
+if [ -n "$SOURCE_COMMIT_SHA" ]; then
+  git init --quiet "$SOURCE_DIR"
+  git -C "$SOURCE_DIR" remote add origin "$SOURCE_REPO_URL"
+  retry 3 git -C "$SOURCE_DIR" fetch --depth=1 origin "$SOURCE_COMMIT_SHA"
+  git -C "$SOURCE_DIR" checkout --detach FETCH_HEAD
+  test "$(git -C "$SOURCE_DIR" rev-parse HEAD)" = "$SOURCE_COMMIT_SHA"
+else
+  retry 3 git clone --depth=1 --branch "$SOURCE_REF" "$SOURCE_REPO_URL" "$SOURCE_DIR"
+fi
 use_reachable_base_images
 mkdir -p "$RUNTIME_DIR/data" "$RUNTIME_DIR/wallet" "$RUNTIME_DIR/keys" "$RUNTIME_DIR/logs"
 chown -R opc:opc "$RUNTIME_DIR"
-
-# Keep the build deterministic if a public repository cut misses the OCI SVG assets.
-# Keep the installer deterministic by materializing simple monochrome icons before building.
-mkdir -p "$SOURCE_DIR/apps/frontend/src/assets/oci"
-ensure_oci_icon() {
-  local path="$1"
-  local label="$2"
-  if [ -f "$path" ]; then
-    return
-  fi
-  cat >"$path" <<SVG
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 96 96">
-  <rect class="st0" width="96" height="96" rx="18" fill="none"/>
-  <path class="st1" fill="currentColor" d="M48 14c18.8 0 34 15.2 34 34S66.8 82 48 82 14 66.8 14 48 29.2 14 48 14Zm0 12c-12.2 0-22 9.8-22 22s9.8 22 22 22 22-9.8 22-22-9.8-22-22-22Zm0 10 13 12-13 12-13-12 13-12Z"/>
-  <title>$label</title>
-</svg>
-SVG
-}
-ensure_oci_icon "$SOURCE_DIR/apps/frontend/src/assets/oci/autonomous-database.svg" "Autonomous Database"
-ensure_oci_icon "$SOURCE_DIR/apps/frontend/src/assets/oci/generative-ai.svg" "Generative AI"
-ensure_oci_icon "$SOURCE_DIR/apps/frontend/src/assets/oci/object-storage.svg" "Object Storage"
 
 retry 5 docker build -t "$LOCAL_IMAGE" "$SOURCE_DIR"
 docker rm -f "$APP_NAME" >/dev/null 2>&1 || true
 docker run -d \
   --name "$APP_NAME" \
   --restart unless-stopped \
+  -e ANALYZER_MANAGED_SETUP=1 \
   -p 80:80 \
   -v "$RUNTIME_DIR/data:/app/apps/backend/data" \
   -v "$RUNTIME_DIR/wallet:/app/apps/backend/wallet" \
@@ -100,7 +89,7 @@ for attempt in $(seq 1 60); do
 done
 
 cat >/home/opc/startup_info.txt <<'INFO'
-Select AI Analyzer is ready.
+Select AI Analyzer container is responding. Application setup is pending.
 
 Application URL: http://[PUBLIC-IP]
 SSH user: opc
@@ -117,6 +106,51 @@ Useful commands:
 INFO
 
 chown opc:opc /home/opc/startup_info.txt
+
+install -d -m 0700 -o opc -g opc /home/opc/ctn-bootstrap
+cat >/etc/systemd/system/select-ai-analyzer-bootstrap.service <<'UNIT'
+[Unit]
+Description=Configure Select AI Analyzer
+Requires=docker.service
+After=docker.service
+
+[Service]
+Type=oneshot
+User=opc
+Group=opc
+UMask=0077
+ExecStart=/bin/bash /opt/cloudtechnext/select-ai-analyzer/terraform/templatefile/configure_app.sh
+TimeoutStartSec=30min
+UNIT
+cat >/etc/systemd/system/select-ai-analyzer-bootstrap.path <<'UNIT'
+[Unit]
+Description=Watch for the private Select AI Analyzer setup payload
+
+[Path]
+PathExists=/home/opc/ctn-bootstrap/payload.json
+Unit=select-ai-analyzer-bootstrap.service
+
+[Install]
+WantedBy=multi-user.target
+UNIT
+systemctl daemon-reload
+systemctl enable --now select-ai-analyzer-bootstrap.path
+
+# The hook reads these public keys from OCI's authenticated serial console.
+host_keys=$(sshd -T | awk '$1 == "hostkey" {print $2}')
+published_keys=0
+printf '\n' >/dev/ttyS0
+while IFS= read -r host_key; do
+  if [ ! -f "$host_key" ]; then
+    continue
+  fi
+  public_key=$(ssh-keygen -y -f "$host_key" | awk '{print $2}')
+  test -n "$public_key"
+  printf 'CTN_ANALYZER_HOST_KEY %s\n' "$public_key" >/dev/ttyS0
+  published_keys=$((published_keys + 1))
+done <<<"$host_keys"
+test "$published_keys" -gt 0
+
 mkdir -p /var/local
 touch /var/local/userdata.done
 cat /home/opc/startup_info.txt

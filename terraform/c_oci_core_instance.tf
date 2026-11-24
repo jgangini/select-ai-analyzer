@@ -2,10 +2,6 @@
 # Compute host for Select AI Analyzer
 ############################################
 
-locals {
-  selected_demo_schemas = var.autonomous_database_mode == "new" ? var.select_ai_grant_schemas : ""
-}
-
 resource "tls_private_key" "instance_ssh" {
   algorithm = "RSA"
   rsa_bits  = 2048
@@ -54,8 +50,9 @@ resource "oci_core_instance" "linux_instance" {
   metadata = {
     ssh_authorized_keys = tls_private_key.instance_ssh.public_key_openssh
     user_data = base64encode(templatefile("${path.module}/templatefile/user_data.sh", {
-      source_repo_url = var.source_repo_url
-      source_ref      = var.source_ref
+      source_repo_url   = var.source_repo_url
+      source_ref        = var.source_ref
+      source_commit_sha = var.source_commit_sha
     }))
   }
 }
@@ -99,61 +96,6 @@ resource "null_resource" "wait_for_userdata" {
       EOT
       ,
       "cat /home/opc/startup_info.txt | sed 's/\\[PUBLIC-IP\\]/${oci_core_instance.linux_instance.public_ip}/g'",
-    ]
-  }
-}
-
-resource "null_resource" "configure_select_ai_analyzer" {
-  depends_on = [
-    null_resource.wait_for_userdata,
-    oci_database_autonomous_database_wallet.adb_wallet,
-    oci_objectstorage_bucket.bucket,
-  ]
-
-  triggers = {
-    instance_id  = oci_core_instance.linux_instance.id
-    wallet_hash  = sha256(local.autonomous_database_wallet_b64)
-    bucket_name  = oci_objectstorage_bucket.bucket.name
-    demo_schemas = local.selected_demo_schemas
-  }
-
-  connection {
-    type        = "ssh"
-    host        = oci_core_instance.linux_instance.public_ip
-    user        = "opc"
-    private_key = tls_private_key.instance_ssh.private_key_pem
-    timeout     = "40m"
-  }
-
-  provisioner "remote-exec" {
-    inline = ["mkdir -p /home/opc/ctn-bootstrap && chmod 700 /home/opc/ctn-bootstrap"]
-  }
-
-  provisioner "file" {
-    source      = "${path.module}/.oci/key.pem"
-    destination = "/home/opc/ctn-bootstrap/key.pem"
-  }
-
-  provisioner "file" {
-    source      = "${path.module}/.oci/config"
-    destination = "/home/opc/ctn-bootstrap/config"
-  }
-
-  provisioner "remote-exec" {
-    inline = [
-      templatefile("${path.module}/templatefile/configure_app.sh", {
-        adb_admin_password      = var.autonomous_database_admin_password
-        adb_wallet_b64          = local.autonomous_database_wallet_b64
-        adb_wallet_password     = var.autonomous_database_wallet_password
-        app_agent_password      = var.app_agent_password
-        application_username    = var.application_username
-        application_password    = var.autonomous_database_developer_password
-        bucket_name             = oci_objectstorage_bucket.bucket.name
-        compartment_ocid        = var.compartment_ocid
-        objectstorage_namespace = var.objectstorage_namespace
-        region                  = var.region
-        select_ai_grant_schemas = local.selected_demo_schemas
-      })
     ]
   }
 }

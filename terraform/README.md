@@ -1,11 +1,9 @@
-# Select AI Analyzer Terraform Package
+# OCI Resource Manager deployment
 
-This Resource Manager package creates the OCI resources and fully configures the published Select AI Analyzer container.
+The [Deploy Studio v2 manifest](deploy-studio.json) declares the OCI credentials, region, compartment, database mode, chat model, and application login fields.
 
-Runtime model:
+Resource Manager provisions an Oracle Linux 9 VM, VCN, public subnet, internet gateway, security list, private Object Storage bucket, and database wallet. Terraform provisions Autonomous AI Database in **Create new** mode. In **Use existing** mode, it resolves the chosen database OCID and generates a wallet using OCI. The form does not require a wallet upload. New databases offer Lakehouse (LH) and Transaction Processing (OLTP) profiles. [OCI workload names](https://docs.oracle.com/en-us/iaas/tools/terraform-provider-oci/latest/docs/r/database_autonomous_database.html)
 
-- CloudTechNext validates OCI credentials and creates the Resource Manager stack.
-- Terraform provisions VCN, subnet, security list, Autonomous AI Database 26ai or 19c, Object Storage bucket and one Oracle Linux VM.
-- The VM installs Docker, clones `https://github.com/jgangini/select-ai-analyzer`, builds the container locally and starts it on port 80 with persistent runtime directories.
-- The installer keeps OCI SVG assets deterministic before `docker build` if the published repository cut does not contain them yet.
-- CloudTechNext automation creates the `APP_AGENT` database user, injects the generated wallet, OCI API key, Object Storage bucket, Generative AI settings and SQL bootstrap through the application's setup API during Resource Manager apply.
+Deploy Studio resolves the release to `source_commit_sha`. Cloud-init fetches that commit, installs Docker, and waits for the application container. After Apply, a Deploy Studio hook verifies the VM's SSH host key through OCI console history and sends the database wallet and setup inputs over SFTP. The installer verifies application login before reporting success. New databases can load the chosen demo schemas. Existing databases skip demo loading.
+
+The Resource Manager package excludes the OCI config and signing key. The application retains a private copy of the signing key on the VM for OCI requests. The deploying identity also needs permission to read the Resource Manager stack state and create and read OCI instance console connections and console history. A standalone Terraform Apply provisions infrastructure and starts the container. Deploy Studio runs the application setup hook. See [access and validation](../docs/tutorial.md) and [mock Terraform checks](../docs/testing.md).

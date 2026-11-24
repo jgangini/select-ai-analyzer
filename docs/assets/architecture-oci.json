@@ -1,0 +1,265 @@
+{
+  "schema_version": 1,
+  "diagram_type": "architecture",
+  "meta": {
+    "title": "Select AI Analyzer on OCI",
+    "locale": "en",
+    "output": ".archify/architecture-select-ai-analyzer-20261124-100800/review-publish/architecture-oci.html",
+    "quality_profile": "showcase",
+    "repository": {
+      "url": "https://github.com/jgangini/select-ai-analyzer.git",
+      "revision": "7b19d19643adcf87aa75b4543392cda887f289e3",
+      "provider": "github"
+    }
+  },
+  "components": [
+    {
+      "id": "studio",
+      "type": "external",
+      "label": "Deploy Studio",
+      "sublabel": "Release and OCI inputs",
+      "pos": [
+        40,
+        48
+      ],
+      "size": [
+        150,
+        63
+      ],
+      "sources": [
+        {
+          "path": "terraform/README.md",
+          "line": 5,
+          "end_line": 9
+        }
+      ]
+    },
+    {
+      "id": "manager",
+      "type": "cloud",
+      "label": "OCI Resource Manager",
+      "sublabel": "Terraform provisioner",
+      "pos": [
+        350,
+        48
+      ],
+      "size": [
+        190,
+        63
+      ],
+      "sources": [
+        {
+          "path": "terraform/README.md",
+          "line": 5,
+          "end_line": 11
+        }
+      ]
+    },
+    {
+      "id": "reader",
+      "type": "external",
+      "label": "Analyst's browser",
+      "sublabel": "Questions and results",
+      "pos": [
+        40,
+        230
+      ],
+      "size": [
+        150,
+        64
+      ],
+      "sources": [
+        {
+          "path": "README.md",
+          "line": 3,
+          "end_line": 6
+        },
+        {
+          "path": "README.md",
+          "line": 35,
+          "end_line": 39
+        }
+      ]
+    },
+    {
+      "id": "app",
+      "type": "backend",
+      "label": "Oracle Linux VM",
+      "sublabel": "Nginx · React · FastAPI",
+      "pos": [
+        350,
+        230
+      ],
+      "size": [
+        190,
+        64
+      ],
+      "sources": [
+        {
+          "path": "terraform/templatefile/user_data.sh",
+          "line": 79,
+          "end_line": 97
+        },
+        {
+          "path": "docker/nginx.conf",
+          "line": 1,
+          "end_line": 26
+        },
+        {
+          "path": "apps/backend/app/select_ai/select_ai_ask.py",
+          "line": 7,
+          "end_line": 35
+        }
+      ]
+    },
+    {
+      "id": "adb",
+      "type": "database",
+      "label": "Autonomous AI Database",
+      "sublabel": "APP_AGENT · Select AI",
+      "pos": [
+        690,
+        230
+      ],
+      "size": [
+        184,
+        64
+      ],
+      "sources": [
+        {
+          "path": "terraform/d_oci_database_autonomous_database.tf",
+          "line": 15,
+          "end_line": 45
+        },
+        {
+          "path": "apps/backend/app/select_ai/select_ai_generation.py",
+          "line": 48,
+          "end_line": 75
+        }
+      ]
+    },
+    {
+      "id": "genai",
+      "type": "cloud",
+      "label": "OCI Generative AI",
+      "sublabel": "Regional chat model",
+      "pos": [
+        1024,
+        230
+      ],
+      "size": [
+        160,
+        64
+      ],
+      "sources": [
+        {
+          "path": "terraform/templatefile/configure_app.sh",
+          "line": 246,
+          "end_line": 252
+        },
+        {
+          "path": "apps/backend/app/select_ai/select_ai_generation.py",
+          "line": 58,
+          "end_line": 74
+        }
+      ]
+    },
+    {
+      "id": "bucket",
+      "type": "cloud",
+      "label": "OCI Object Storage",
+      "sublabel": "Private wallet bucket",
+      "pos": [
+        350,
+        409
+      ],
+      "size": [
+        190,
+        62
+      ],
+      "sources": [
+        {
+          "path": "terraform/b_oci_objectstorage_bucket.tf",
+          "line": 5,
+          "end_line": 12
+        },
+        {
+          "path": "terraform/d_oci_database_autonomous_database.tf",
+          "line": 47,
+          "end_line": 57
+        }
+      ]
+    }
+  ],
+  "boundaries": [
+    {
+      "kind": "region",
+      "label": "OCI deployment region",
+      "wraps": [
+        "manager",
+        "app",
+        "adb",
+        "genai",
+        "bucket"
+      ],
+      "pad": 22
+    }
+  ],
+  "connections": [
+    {
+      "from": "studio",
+      "to": "manager",
+      "label": "Plans and applies",
+      "variant": "emphasis"
+    },
+    {
+      "from": "manager",
+      "to": "app",
+      "label": "Provisions the VM",
+      "variant": "dashed"
+    },
+    {
+      "from": "reader",
+      "to": "app",
+      "label": "Web UI and API",
+      "variant": "emphasis"
+    },
+    {
+      "from": "app",
+      "to": "adb",
+      "label": "Wallet connection",
+      "variant": "emphasis"
+    },
+    {
+      "from": "adb",
+      "to": "genai",
+      "label": "Model inference",
+      "variant": "emphasis"
+    },
+    {
+      "from": "app",
+      "to": "bucket",
+      "label": "Checks bucket access",
+      "variant": "default"
+    }
+  ],
+  "cards": [
+    {
+      "dot": "cyan",
+      "title": "Provisioning",
+      "items": [
+        "Resource Manager creates the VCN and public subnet, a VM, private Object Storage, and a wallet.",
+        "Choose a new database or reuse a compatible database in the selected region.",
+        "After Apply, Deploy Studio sends setup inputs to the VM over verified SFTP."
+      ]
+    },
+    {
+      "dot": "emerald",
+      "title": "Query execution",
+      "items": [
+        "FastAPI asks Select AI for SQL and checks that the query is read-only.",
+        "The app returns rows and chart data to the browser."
+      ]
+    }
+  ]
+}

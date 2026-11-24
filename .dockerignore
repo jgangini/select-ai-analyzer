@@ -31,3 +31,12 @@ apps/frontend/logs
 
 tests_docs
 RUN_LOG.md
+
+.codex
+.oci
+**/.oci
+.archify
+.sentrux
+.data
+graphify-out
+docs

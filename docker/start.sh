@@ -11,6 +11,19 @@ if [[ -f /app/apps/backend/.env.example && ! -f /app/apps/backend/.env ]]; then
   cp /app/apps/backend/.env.example /app/apps/backend/.env
 fi
 
+if [[ "${ANALYZER_MANAGED_SETUP:-0}" == "1" ]]; then
+  mkdir -p /etc/nginx/analyzer-managed-setup.d
+  cat >/etc/nginx/analyzer-managed-setup.d/setup.conf <<'NGINX'
+location = /api/setup/check {
+    proxy_pass http://127.0.0.1:8012;
+}
+
+location ^~ /api/setup/ {
+    return 404;
+}
+NGINX
+fi
+
 python -m uvicorn apps.backend.app.main:app --host 127.0.0.1 --port 8012 &
 backend_pid="$!"
 

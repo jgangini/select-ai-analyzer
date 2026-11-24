@@ -19,7 +19,6 @@ from scripts.load_source_seed import load_source_seed
 APP_SCHEMA = "APP_AGENT"
 DATA_SCHEMA = "APP_AGENT_DATA"
 DEFAULT_PROFILE = "APP_AGENT_ANALYTICS"
-DEFAULT_ADMIN_EMAIL = "joel.ganggini@oracle.com"
 DEFAULT_GENERATIVE_MODEL = "google.gemini-2.5-flash"
 DEFAULT_INFERENCE_URL = "https://inference.generativeai.us-chicago-1.oci.oraclecloud.com"
 
@@ -371,7 +370,8 @@ def reinstall(
 
 def main() -> int:
     parser = argparse.ArgumentParser(description="Development-only reset of APP_AGENT runtime schema.")
-    parser.add_argument("--admin-email", default=os.environ.get("APP_ADMIN_EMAIL", DEFAULT_ADMIN_EMAIL))
+    admin_email = os.environ.get("APP_ADMIN_EMAIL")
+    parser.add_argument("--admin-email", default=admin_email, required=not admin_email)
     parser.add_argument("--admin-password", default=os.environ.get("APP_ADMIN_PASSWORD", ""))
     parser.add_argument("--source", type=Path, default=ROOT / ".source" / "decoupling_tables_structures.sql")
     parser.add_argument("--csv-dir", type=Path, default=ROOT / ".data" / "csv")

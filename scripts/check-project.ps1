@@ -35,7 +35,7 @@ if ($InstallDeps -or !(Test-Path $frontendNodeModules)) {
     Write-Host "Instalando dependencias del frontend..." -ForegroundColor Cyan
     Push-Location $frontendDir
     try {
-        npm install
+        npm ci
         if ($LASTEXITCODE -ne 0) {
             throw "No se pudieron instalar las dependencias del frontend."
         }

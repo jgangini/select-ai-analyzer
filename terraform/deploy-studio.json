@@ -1,9 +1,10 @@
 {
-  "schema_version": 1,
+  "schema_version": 2,
+  "execution_source": "oci_resource_manager",
   "project_id": "select-ai-analyzer",
   "terraform": {
     "path": "terraform",
-    "package_oci_credentials": true
+    "package_oci_credentials": false
   },
   "capabilities": {
     "compartment_modes": [
@@ -11,12 +12,123 @@
       "existing"
     ],
     "requires_genai_region": true,
-    "database_profile": "new_or_existing"
+    "database_profile": "new_or_existing",
+    "region_selection": "subscribed_compatible",
+    "regional_requirements": [
+      "genai_chat"
+    ],
+    "default_compartment_name": "select-ai-analyzer",
+    "existing_database_wallet": "oci_generated"
   },
   "form": {
-    "email_access_fields": [
-      "application_username",
-      "autonomous_database_developer_password"
+    "groups": [
+      {
+        "id": "credentials",
+        "title": "OCI credentials",
+        "items": [
+          {
+            "kind": "control",
+            "name": "oci_config",
+            "label": "OCI config"
+          },
+          {
+            "kind": "control",
+            "name": "oci_key",
+            "label": "API private key"
+          }
+        ]
+      },
+      {
+        "id": "services",
+        "title": "Services to deploy",
+        "items": [
+          {
+            "kind": "control",
+            "name": "oci_region",
+            "label": "OCI Region",
+            "span": 2
+          },
+          {
+            "kind": "control",
+            "name": "compartment_mode",
+            "label": "Compartment mode",
+            "options": [
+              {
+                "value": "new",
+                "label": "New compartment"
+              },
+              {
+                "value": "existing",
+                "label": "Existing compartment"
+              }
+            ]
+          },
+          {
+            "kind": "control",
+            "name": "new_compartment",
+            "label": "New compartment name"
+          },
+          {
+            "kind": "control",
+            "name": "existing_compartment",
+            "label": "Existing compartment"
+          }
+        ]
+      },
+      {
+        "id": "database",
+        "title": "Autonomous AI Database",
+        "items": [
+          {
+            "kind": "field",
+            "name": "autonomous_database_mode"
+          },
+          {
+            "kind": "field",
+            "name": "existing_autonomous_database_ocid"
+          },
+          {
+            "kind": "field",
+            "name": "autonomous_database_version"
+          },
+          {
+            "kind": "field",
+            "name": "autonomous_database_admin_password"
+          },
+          {
+            "kind": "field",
+            "name": "autonomous_database_wallet_password"
+          }
+        ]
+      },
+      {
+        "id": "enterprise_ai",
+        "title": "Generative AI",
+        "items": [
+          {
+            "kind": "field",
+            "name": "select_ai_model"
+          }
+        ]
+      },
+      {
+        "id": "application_vm",
+        "title": "Application VM",
+        "items": [
+          {
+            "kind": "field",
+            "name": "application_username"
+          },
+          {
+            "kind": "field",
+            "name": "autonomous_database_developer_password"
+          },
+          {
+            "kind": "field",
+            "name": "select_ai_grant_schemas"
+          }
+        ]
+      }
     ],
     "fields": [
       {
@@ -29,64 +141,72 @@
         "options": [
           {
             "value": "new",
-            "label": "Create new database"
+            "label": "Create new"
           },
           {
             "value": "existing",
-            "label": "Use existing database"
+            "label": "Use existing"
           }
         ]
       },
       {
         "name": "existing_autonomous_database_ocid",
-        "label": "Existing database OCID",
-        "type": "text",
+        "label": "Existing Autonomous Database",
+        "type": "select",
         "required": true,
         "group": "database",
+        "options_source": "oci_available_autonomous_databases",
         "visible_when": {
           "field": "autonomous_database_mode",
           "equals": "existing"
-        }
+        },
+        "pattern": "ocid1\\.autonomousdatabase\\.[a-z0-9\\-]+\\.[a-z0-9\\-]*\\.[a-z0-9]+"
       },
       {
         "name": "autonomous_database_version",
         "label": "Database profile",
         "type": "select",
         "required": true,
-        "default": "26ai:DW",
+        "default": "26ai:LH",
         "transform": "database_profile",
         "group": "database",
         "visible_when": {
           "field": "autonomous_database_mode",
           "equals": "new"
         },
-        "span": 2,
         "options": [
           {
-            "value": "26ai:DW",
-            "label": "Oracle AI Database 26ai — Data Warehouse"
+            "value": "26ai:LH",
+            "label": "Lakehouse · 26ai"
           },
           {
             "value": "26ai:OLTP",
-            "label": "Oracle AI Database 26ai — Transaction Processing"
+            "label": "Transaction Processing · 26ai"
           },
           {
-            "value": "19c:DW",
-            "label": "Oracle Database 19c — Data Warehouse"
+            "value": "19c:LH",
+            "label": "Lakehouse · 19c"
           },
           {
             "value": "19c:OLTP",
-            "label": "Oracle Database 19c — Transaction Processing"
+            "label": "Transaction Processing · 19c"
           }
         ]
       },
       {
         "name": "autonomous_database_admin_password",
-        "label": "Database ADMIN password",
+        "label": "Database admin password",
         "type": "password",
         "required": true,
         "secret": true,
-        "group": "database"
+        "group": "database",
+        "min_length": 12,
+        "max_length": 30,
+        "generate_password": true,
+        "generate_password_when": {
+          "field": "autonomous_database_mode",
+          "equals": "new"
+        }
       },
       {
         "name": "autonomous_database_wallet_password",
@@ -94,7 +214,18 @@
         "type": "password",
         "required": true,
         "secret": true,
-        "group": "database"
+        "group": "database",
+        "min_length": 12,
+        "max_length": 30,
+        "generate_password": true
+      },
+      {
+        "name": "select_ai_model",
+        "label": "Generative AI chat model",
+        "type": "select",
+        "required": true,
+        "group": "enterprise_ai",
+        "options_source": "oci_genai_chat_models"
       },
       {
         "name": "application_username",
@@ -102,7 +233,8 @@
         "type": "text",
         "required": true,
         "default": "admin",
-        "group": "application_vm"
+        "group": "application_vm",
+        "pattern": "[A-Za-z0-9][A-Za-z0-9_.@-]{0,127}"
       },
       {
         "name": "autonomous_database_developer_password",
@@ -110,7 +242,11 @@
         "type": "password",
         "required": true,
         "secret": true,
-        "group": "application_vm"
+        "group": "application_vm",
+        "min_length": 1,
+        "max_length": 128,
+        "pattern": "[^\"\\r\\n]+",
+        "generate_password": true
       },
       {
         "name": "select_ai_grant_schemas",
@@ -136,45 +272,129 @@
           }
         ]
       }
+    ],
+    "email_access_fields": [
+      "application_username",
+      "autonomous_database_developer_password"
     ]
   },
   "presentation": {
     "title": "Select AI Analyzer",
     "summary": "Deploys a Select AI workspace for governed natural-language questions over relational data and uploaded CSV sources.",
-    "tags": ["Autonomous AI Database", "Generative AI", "Select AI", "Compute VM"],
+    "tags": [
+      "Autonomous AI Database",
+      "Generative AI",
+      "Select AI",
+      "Compute VM"
+    ],
     "image": "/assets/select-ai-analyzer.png",
     "image_alt": "Select AI Analyzer application preview",
     "href": "https://github.com/jgangini/select-ai-analyzer"
   },
   "run_steps": [
-    {"key": "queue", "label": "Queue"},
-    {"key": "credentials", "label": "OCI credentials"},
-    {"key": "compartment", "label": "Compartment"},
-    {"key": "policies", "label": "IAM policies"},
-    {"key": "stack", "label": "Resource Manager stack"},
-    {"key": "plan", "label": "Terraform plan"},
-    {"key": "apply", "label": "Terraform apply"},
-    {"key": "network", "label": "Network and VCN"},
-    {"key": "bucket", "label": "Object Storage"},
-    {"key": "compute", "label": "Application VM"},
-    {"key": "database", "label": "Autonomous Database"},
-    {"key": "wallet", "label": "Database wallet"},
-    {"key": "application", "label": "Application setup"},
-    {"key": "artifacts", "label": "Access artifacts"},
-    {"key": "email", "label": "Access email"},
-    {"key": "complete", "label": "Ready"}
+    {
+      "key": "queue",
+      "label": "Queue"
+    },
+    {
+      "key": "credentials",
+      "label": "OCI credentials"
+    },
+    {
+      "key": "compartment",
+      "label": "Compartment"
+    },
+    {
+      "key": "policies",
+      "label": "IAM policies"
+    },
+    {
+      "key": "stack",
+      "label": "Resource Manager stack"
+    },
+    {
+      "key": "plan",
+      "label": "Terraform plan"
+    },
+    {
+      "key": "apply",
+      "label": "Terraform apply"
+    },
+    {
+      "key": "application",
+      "label": "Application setup"
+    },
+    {
+      "key": "artifacts",
+      "label": "Access artifacts"
+    },
+    {
+      "key": "email",
+      "label": "Access email"
+    },
+    {
+      "key": "complete",
+      "label": "Ready"
+    }
   ],
   "outputs": [
     "application_url",
     "ssh_user",
     "adb_db_name",
     "autonomous_database_id",
-    "bucket_name"
+    "bucket_name",
+    "instance_id",
+    "objectstorage_namespace"
   ],
   "artifacts": [
     "adb_wallet.zip",
-    "ssh-private-key.pem",
-    "connection-summary.txt"
+    "ssh-private-key.pem"
   ],
-  "post_apply": null
+  "email": {
+    "services": [
+      {
+        "title": "Autonomous Database",
+        "fields": [
+          {
+            "label": "Database name",
+            "output": "adb_db_name"
+          }
+        ]
+      },
+      {
+        "title": "Application VM",
+        "fields": [
+          {
+            "label": "Access URL",
+            "output": "application_url",
+            "link": true
+          },
+          {
+            "label": "User",
+            "input": "application_username"
+          },
+          {
+            "label": "Password",
+            "input": "autonomous_database_developer_password"
+          }
+        ]
+      }
+    ],
+    "attachments": [
+      "adb_wallet.zip",
+      "ssh-private-key.pem",
+      "deployment.log",
+      "resource-manager-terraform-source.zip"
+    ]
+  },
+  "post_apply": {
+    "entrypoint": "deploy/hooks/post_apply.py",
+    "timeout_seconds": 1500,
+    "requires_oci_credentials": true,
+    "secret_inputs": [
+      "autonomous_database_admin_password",
+      "autonomous_database_wallet_password",
+      "autonomous_database_developer_password"
+    ]
+  }
 }
