@@ -7,14 +7,15 @@ from apps.backend.app.services.bootstrap_script_service import (
 
 
 def test_no_setup_scripts_result_includes_discovered_files_and_directory() -> None:
-    result = no_setup_scripts_result(Path("db/bootstrap/sql"), ["01.sql"])
+    setup_dir = Path("db/bootstrap/sql")
+    result = no_setup_scripts_result(setup_dir, ["01.sql"])
 
     assert result == {
         "success": False,
         "discovered": ["01.sql"],
         "executed": [],
-        "errors": [{"file": "db\\bootstrap\\sql", "error": "No SQL setup scripts found."}],
-        "message": "No setup scripts found in db\\bootstrap\\sql",
+        "errors": [{"file": str(setup_dir), "error": "No SQL setup scripts found."}],
+        "message": f"No setup scripts found in {setup_dir}",
     }
 
 

@@ -1,12 +1,17 @@
-from pathlib import Path
+from pathlib import Path, PureWindowsPath
 from zipfile import ZipFile
 
 from fastapi import HTTPException
 
 
 def safe_upload_name(file_name: str | None, expected_suffix: str, error_message: str) -> str:
-    safe_name = Path(file_name or "").name
-    if Path(safe_name).suffix.lower() != expected_suffix.lower():
+    safe_name = PureWindowsPath(file_name or "").name
+    if (
+        ":" in safe_name
+        or "\0" in safe_name
+        or PureWindowsPath(safe_name).is_reserved()
+        or Path(safe_name).suffix.lower() != expected_suffix.lower()
+    ):
         raise HTTPException(400, error_message)
     return safe_name
 

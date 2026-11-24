@@ -27,8 +27,8 @@ def test_settings_resolves_runtime_paths_relative_to_backend_root() -> None:
     assert settings.user_data_root == BACKEND_ROOT / "data" / "users" / "tenant-a"
 
 
-def test_settings_preserves_absolute_wallet_path() -> None:
-    absolute_wallet = Path("D:/runtime/wallet")
+def test_settings_preserves_absolute_wallet_path(tmp_path: Path) -> None:
+    absolute_wallet = tmp_path / "runtime" / "wallet"
     settings = Settings(_env_file=None, ADB_WALLET_DIR=str(absolute_wallet))
 
     assert settings.wallet_dir == absolute_wallet
@@ -45,9 +45,13 @@ def test_settings_defaults_are_safe_without_env_file() -> None:
 
 def test_setup_upload_name_strips_client_path_and_requires_suffix() -> None:
     assert safe_upload_name("..\\secrets\\api.pem", ".pem", "File must be .pem") == "api.pem"
+    assert safe_upload_name("/uploads/api.pem", ".pem", "File must be .pem") == "api.pem"
 
+
+@pytest.mark.parametrize("invalid_name", [None, "nul.pem", "file:alternate.pem", "api\0.pem"])
+def test_setup_upload_name_rejects_invalid_client_names(invalid_name: str | None) -> None:
     with pytest.raises(HTTPException) as exc_info:
-        safe_upload_name(None, ".pem", "File must be .pem")
+        safe_upload_name(invalid_name, ".pem", "File must be .pem")
 
     assert exc_info.value.status_code == 400
     assert exc_info.value.detail == "File must be .pem"
