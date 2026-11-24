@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="docs/assets/select-ai-analyzer.png" alt="Magnifying glass over an analytics chart" width="224">
+  <img src="docs/assets/select-ai-analyzer-mascot.png" alt="Owl analyst pointing to the tallest bar in a chart" width="224">
 </p>
 
 <h3 align="center">Select AI Analyzer</h3>
