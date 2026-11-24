@@ -42,16 +42,17 @@ docker run --rm --name select-ai-analyzer \
   select-ai-analyzer:local
 ```
 
-Open [localhost:8080](http://localhost:8080). The wizard needs an Autonomous Database wallet, an application database user, and OCI access to Generative AI. The named Docker volumes retain the configuration across container restarts. For a managed lab, choose a version with a v2 manifest from the [published releases](https://github.com/jgangini/select-ai-analyzer/releases) and follow the [OCI tutorial](docs/tutorial.md).
+Open [localhost:8080](http://localhost:8080). The wizard needs an Autonomous Database wallet, an application database user, and OCI access to Generative AI. The named Docker volumes retain the configuration across container restarts. For a managed lab, choose a version with a v2 manifest from the [published releases](https://github.com/jgangini/select-ai-analyzer/releases) and follow the [OCI deployment guide](terraform/README.md).
 
-In Analytics, select a registered Oracle table or a CSV-backed source and ask a question. The app generates SQL through Select AI, validates it as read-only, and returns the rows and available chart data.
+In Analytics, ask a question about a registered Oracle table or CSV-backed source. The app generates SQL through Select AI, validates it as read-only, and returns the rows and available chart data.
 
 Select AI Analyzer is an independent project. Oracle, OCI, and related marks belong to their respective owners.
 
 ## Documentation
 
 - [Architecture](docs/architecture.md) explains the application and OCI boundaries.
-- [Deploy and ask a question](docs/tutorial.md) walks through the Sales History lab.
+- [Use Select AI Analyzer](docs/tutorial.md) follows a Sales History question from the answer to a saved dashboard.
+- [OCI deployment](terraform/README.md) explains provisioning and application access.
 - [Testing](docs/testing.md) covers local checks, mock plans, and live acceptance.
 - [Demo data](data/README.md) describes Sales History and Core Banking.
 - [Demo video](docs/media/oci-select-analyzer-ai-ora26ai-git.mp4) shows the analytics workflow.

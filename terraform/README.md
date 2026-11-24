@@ -6,4 +6,26 @@ Resource Manager provisions an Oracle Linux 9 VM, VCN, public subnet, internet g
 
 Deploy Studio resolves the release to `source_commit_sha`. Cloud-init fetches that commit, installs Docker, and waits for the application container. After Apply, a Deploy Studio hook verifies the VM's SSH host key through OCI console history and sends the database wallet and setup inputs over SFTP. The installer verifies application login before reporting success. New databases can load the chosen demo schemas. Existing databases skip demo loading.
 
-The Resource Manager package excludes the OCI config and signing key. The application retains a private copy of the signing key on the VM for OCI requests. The deploying identity also needs permission to read the Resource Manager stack state and create and read OCI instance console connections and console history. A standalone Terraform Apply provisions infrastructure and starts the container. Deploy Studio runs the application setup hook. See [access and validation](../docs/tutorial.md) and [mock Terraform checks](../docs/testing.md).
+The Resource Manager package excludes the OCI config and signing key. The application retains a private copy of the signing key on the VM for OCI requests. The deploying identity also needs permission to read the Resource Manager stack state and create and read OCI instance console connections and console history. A standalone Terraform Apply provisions infrastructure and starts the container. Deploy Studio runs the application setup hook. See the [mock Terraform checks](../docs/testing.md).
+
+## Deploy a Sales History lab
+
+Use [Deploy Studio](https://cloudtechnext.net/#deploy), a [release](https://github.com/jgangini/select-ai-analyzer/releases) with a v2 deployment manifest, and a test OCI compartment in a region with an available OCI Generative AI chat model.
+
+1. Select **Select AI Analyzer** and the release. Attach your **OCI config** and **API private key**, then confirm the region and compartment.
+2. In **Autonomous AI Database**, choose **Create new** and **Lakehouse · 26ai**. Enter ADMIN and wallet passwords.
+3. Select a **Generative AI chat model**. Set the application username and password. Under **Schemas exposed to Select AI**, choose **Sales History (SH_DEMO)**.
+4. Select **Validate** and **Deploy**. Follow Terraform and application setup in **Jobs**. When the job succeeds, the access email provides the application URL and access attachments.
+5. The OCI lab serves HTTP. To sign in through an SSH tunnel, use the VM host from the access URL and the SSH key from the access package.
+
+   ```sh
+   ssh -N -L 8080:127.0.0.1:80 -i /path/to/ssh-private-key.pem opc@VM_PUBLIC_IP
+   ```
+
+6. Open [localhost:8080](http://localhost:8080) while the tunnel runs. Sign in and follow the [Sales History tutorial](../docs/tutorial.md).
+
+## Reuse a database
+
+Select **Use existing** and pick a compatible database in the selected region. Use the existing ADMIN password for database setup. Choose a new password for the wallet that OCI generates for this deployment. The deploying identity needs permission to list the database and generate its wallet. The VM needs a network route to the database endpoint.
+
+The installer skips demo data and creates a privileged application schema. Use an isolated database for this lab. After setup, read `/api/config/status` through the SSH tunnel to find the generated database username under `select_ai.schema`. Use that username when reviewing grants. Register approved tables from **Data Source**. The Terraform plan should contain no new Autonomous AI Database resource.
