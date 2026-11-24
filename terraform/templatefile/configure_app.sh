@@ -316,15 +316,14 @@ login = request_json(
     {"username": secrets["APPLICATION_USERNAME"], "password": secrets["APPLICATION_PASSWORD"]},
     attempts=3,
 )
-access_token = login.get("access_token")
-if not access_token:
+if not login.get("access_token"):
     raise RuntimeError("Select AI Analyzer login did not return an access token")
 
 selected_demos = demo_schemas.split(",") if demo_schemas else []
 if selected_demos:
     demo_check = docker_exec(
         ["python", "/app/scripts/check_deployed_demos.py"],
-        json.dumps({"token": access_token, "schemas": selected_demos}).encode("utf-8"),
+        json.dumps({"token": login["access_token"], "schemas": selected_demos}).encode("utf-8"),
         timeout=350,
     )
     if demo_check.returncode:
