@@ -60,5 +60,5 @@ RUN_LOG.md
 /.codex/
 /AGENTS.md
 /.archify/
-/.sentrux/baseline.json
+.sentrux/
 /graphify-out/
