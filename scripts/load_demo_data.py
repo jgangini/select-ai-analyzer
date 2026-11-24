@@ -303,9 +303,37 @@ def _connect():
     return _connect_db(config, user=config["user"], password=config["password"])
 
 
+def demo_questions(entry: DemoSchemaEntry) -> list[str]:
+    path = DEMO_ROOT / entry.folder / "questions.csv"
+    with path.open(encoding="utf-8-sig", newline="") as handle:
+        reader = csv.DictReader(handle)
+        if reader.fieldnames != ["question"]:
+            raise ValueError(f"{entry.schema} questions.csv must have one question column.")
+        questions = [(row["question"] or "").strip() for row in reader]
+    if not questions or not all(questions):
+        raise ValueError(f"{entry.schema} questions.csv must contain non-empty questions.")
+    return questions
+
+
+def _seed_starter_questions(cursor: Any, entries: list[DemoSchemaEntry]) -> None:
+    questions = [question for entry in entries for question in demo_questions(entry)]
+    cursor.execute(
+        """
+        INSERT INTO config (config_key, config_value, config_type, config_category, config_description)
+        SELECT 'suggested_questions.items', :questions, 'json', 'suggested_questions', 'Global starter question library'
+        FROM dual
+        WHERE NOT EXISTS (
+            SELECT 1 FROM config WHERE config_key = 'suggested_questions.items'
+        )
+        """,
+        {"questions": json.dumps(questions, ensure_ascii=False)},
+    )
+
+
 def validate_demo_assets() -> list[str]:
     messages: list[str] = []
     for entry in demo_entries().values():
+        demo_questions(entry)
         rows = 0
         for metadata_path, table in table_metadata(entry):
             _render_create_table(entry, table)
@@ -359,6 +387,7 @@ def load_demo_schemas(raw_schemas: str) -> list[dict[str, Any]]:
                 rows += row_count
             results.append({"schema": entry.schema, "tables": len(metadata), "rows": rows, "warnings": metadata_warnings})
         cursor.callproc("SP_SEL_AI_PROFILE", ["APP_AGENT_ANALYTICS", 0])
+        _seed_starter_questions(cursor, entries)
         connection.commit()
         return results
     except Exception:
@@ -525,6 +554,7 @@ def load_managed_demo_schemas(raw_schemas: str, admin_password: str) -> list[dic
             results.append({"schema": entry.schema, "tables": len(counts), "rows": sum(counts.values()), "warnings": warnings})
         app_connection.commit()
         app_cursor.callproc("SP_SEL_AI_PROFILE", ["APP_AGENT_ANALYTICS", 0])
+        _seed_starter_questions(app_cursor, entries)
         app_connection.commit()
     return results
 

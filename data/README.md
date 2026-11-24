@@ -7,6 +7,7 @@ Each demo folder uses the same contract:
 - `manifest.json`: dataset identity, schema name, aliases, loader strategy and table list.
 - `data/*.json`: table metadata, column metadata, comments, classifications and optional constraints.
 - `data/*.csv`: seed rows loaded in batches by `scripts/load_demo_data.py`.
+- `questions.csv`: starter questions for the demo. The loader combines files for the selected demos and seeds **Settings → Questions** only if the library has never been saved.
 
 The loader creates the selected schema owners, recreates only their versioned tables, registers every table in `APP_AGENT.data_sources`, and refreshes the Select AI profile. It runs only for a newly created database; an existing-database deployment initializes a separate application schema and skips demo loading.
 

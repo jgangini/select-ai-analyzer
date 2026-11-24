@@ -6,6 +6,8 @@ Resource Manager provisions an Oracle Linux 9 VM, VCN, public subnet, internet g
 
 Deploy Studio resolves the release to `source_commit_sha`. Cloud-init fetches that commit, installs Docker, and waits for the application container. After Apply, a Deploy Studio hook verifies the VM's SSH host key through OCI console history and sends the database wallet and setup inputs over SFTP. Deploy Studio selects xai.grok-4.7 when the region offers an exact match. The installer verifies application login and runs a Select AI Analytics query for every selected demo before reporting success. For a new database, the installer loads only the selected demos. It creates and populates tables as their demo schema owners and gives the application schema read access to those tables for Select AI. The installer removes any temporary proxy access and privileges it granted for the load. Existing databases skip demo loading.
 
+For new databases, **Settings > Questions** starts with questions for the selected demos. Saving a custom or empty library preserves that choice on subsequent demo loads.
+
 The Resource Manager package excludes the OCI config and signing key. The application retains a private copy of the signing key on the VM for OCI requests. The deploying identity also needs permission to read the Resource Manager stack state and create and read OCI instance console connections and console history. A standalone Terraform Apply provisions infrastructure and starts the container. Deploy Studio runs the application setup hook. See the [mock Terraform checks](../docs/testing.md).
 
 ## Deploy a Sales History lab

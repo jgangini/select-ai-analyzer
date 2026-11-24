@@ -1,4 +1,4 @@
-"""Verify the selected demo fixtures through the private Analyzer Analytics API."""
+"""Verify the selected demo fixtures and starter questions through the Analyzer API."""
 
 import json
 import re
@@ -6,6 +6,8 @@ import sys
 from contextlib import closing
 from http.client import HTTPConnection, HTTPException
 from urllib.parse import quote
+
+from scripts.load_demo_data import demo_questions, selected_demo_entries
 
 
 DEMO_QUERIES = {
@@ -39,10 +41,10 @@ def request_json(method, path, token, payload=None, *, timeout=150):
             if response.status != 200:
                 codes = dict.fromkeys(re.findall(rb"\b(?:ORA|DPI|DPY)-[0-9]{4,5}\b", response.read(4096)))
                 detail = ", ".join(code.decode("ascii") for code in codes)
-                raise DemoCheckError(f"Analytics returned HTTP {response.status}" + (f" ({detail})" if detail else ""))
+                raise DemoCheckError(f"Analyzer API returned HTTP {response.status}" + (f" ({detail})" if detail else ""))
             data = json.load(response)
             if not isinstance(data, dict):
-                raise DemoCheckError("Analytics returned an invalid response")
+                raise DemoCheckError("Analyzer API returned an invalid response")
             return data
 
 
@@ -104,6 +106,25 @@ def verify(schemas, token):
         print(f"{schema} Select AI query verified.")
 
 
+def verify_starter_questions(schemas, token):
+    if not schemas:
+        return
+    try:
+        expected = [
+            question
+            for entry in selected_demo_entries(",".join(schemas))
+            for question in demo_questions(entry)
+        ]
+        payload = request_json("GET", "/settings/public", token, timeout=10)
+    except DemoCheckError as exc:
+        raise DemoCheckError(f"Starter questions verification failed: {exc}") from None
+    except (OSError, HTTPException, ValueError):
+        raise DemoCheckError("Starter questions verification failed: could not read the application or packaged catalog") from None
+    if payload.get("suggested_questions") != {"items": expected}:
+        raise DemoCheckError("Starter questions verification failed: the application did not return the catalog for the selected demos")
+    print("Packaged demo starter questions verified.")
+
+
 def main():
     try:
         inputs = json.load(sys.stdin)
@@ -117,6 +138,7 @@ def main():
         print("Invalid demo query verification inputs.", file=sys.stderr)
         return 1
     try:
+        verify_starter_questions(schemas, token)
         verify(schemas, token)
     except DemoCheckError as exc:
         print(exc, file=sys.stderr)

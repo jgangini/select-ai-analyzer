@@ -327,7 +327,7 @@ if selected_demos:
         timeout=350,
     )
     if demo_check.returncode:
-        raise RuntimeError(demo_check.stderr.decode("utf-8").strip() or "Select AI demo query verification failed")
+        raise RuntimeError(demo_check.stderr.decode("utf-8").strip() or "Select AI demo verification failed")
     print(demo_check.stdout.decode("utf-8").rstrip())
 
 summary = {
@@ -339,6 +339,7 @@ summary = {
     "namespace": payload["namespace"],
     "demo_schemas": selected_demos,
     "verified_demo_queries": selected_demos,
+    "verified_starter_questions": selected_demos,
     "setup": "automated",
     "login_verified": True,
 }

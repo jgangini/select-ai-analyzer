@@ -1,4 +1,6 @@
 import io
+import json
+import sqlite3
 import unittest
 from contextlib import ExitStack, redirect_stdout
 from datetime import date, datetime
@@ -33,6 +35,35 @@ class DemoDataLoaderTests(unittest.TestCase):
             selected_demo_entries("UNKNOWN")
         with self.assertRaisesRegex(ValueError, "must not contain duplicates"):
             selected_demo_entries("SH_DEMO,SH_DEMO")
+
+    def test_starter_questions_seed_only_selected_catalogs_and_keep_saved_settings(self) -> None:
+        cases = {"SH_DEMO": 3, "FLEXCUBE_DEMO": 10, "SH_DEMO,FLEXCUBE_DEMO": 13}
+        for schemas, expected_count in cases.items():
+            with self.subTest(schemas=schemas), sqlite3.connect(":memory:") as connection:
+                connection.execute(
+                    "CREATE TABLE config (config_key TEXT PRIMARY KEY, config_value TEXT, "
+                    "config_type TEXT, config_category TEXT, config_description TEXT)"
+                )
+                connection.execute("CREATE TABLE dual (dummy TEXT)")
+                connection.execute("INSERT INTO dual VALUES ('X')")
+                entries = selected_demo_entries(schemas)
+
+                load_demo_data._seed_starter_questions(connection.cursor(), entries)
+
+                fields = connection.execute(
+                    "SELECT config_key, config_value, config_type, config_category FROM config"
+                ).fetchone()
+                self.assertEqual(fields[0], "suggested_questions.items")
+                self.assertEqual(fields[2:], ("json", "suggested_questions"))
+                questions = json.loads(fields[1])
+                self.assertEqual(len(questions), expected_count)
+                self.assertEqual(any("SH_DEMO.SALES" in question for question in questions), "SH_DEMO" in schemas)
+                self.assertEqual(any("saldo actual" in question for question in questions), "FLEXCUBE_DEMO" in schemas)
+
+                for saved in (["Custom administrator question"], []):
+                    connection.execute("UPDATE config SET config_value = ?", (json.dumps(saved),))
+                    load_demo_data._seed_starter_questions(connection.cursor(), entries)
+                    self.assertEqual(json.loads(connection.execute("SELECT config_value FROM config").fetchone()[0]), saved)
 
     def test_sales_demo_ddl_preserves_primary_and_foreign_keys(self) -> None:
         entry = demo_entries()["SH_DEMO"]

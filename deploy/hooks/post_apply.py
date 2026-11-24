@@ -236,7 +236,7 @@ def main():
         demos = run(os.environ)
         level, message, exit_code = "success", "Select AI Analyzer setup and application login verified.", 0
         if demos:
-            message += f" Select AI demo queries verified for {', '.join(demos)}."
+            message += f" Select AI demo queries and starter questions verified for {', '.join(demos)}."
     except BootstrapError as exc:
         level, message, exit_code = "error", str(exc), 1
     except oci.exceptions.ServiceError as exc:

@@ -129,33 +129,57 @@ class DemoVerificationTests(unittest.TestCase):
             status = check_deployed_demos.main()
         return status, request.call_args_list, stdout.getvalue(), stderr.getvalue()
 
+    def starter_questions(self, schemas):
+        entries = check_deployed_demos.selected_demo_entries(",".join(schemas))
+        return {"suggested_questions": {"items": [
+            question for entry in entries for question in check_deployed_demos.demo_questions(entry)
+        ]}}
+
     def test_queries_every_selected_demo_and_removes_probe_conversations(self):
         sales = self.response("SH_DEMO", [{"PROD_ID": 10, "TOTAL": 4797}, *[{"PROD_ID": n, "TOTAL": 1} for n in range(4)]])
         bank = self.response("FLEXCUBE_DEMO", [{"CCY": code, "N": count} for code, count in
                                               {"BRL": 456, "EUR": 456, "PEN": 456, "USD": 457}.items()])
-        status, calls, stdout, stderr = self.run_check(["SH_DEMO", "FLEXCUBE_DEMO"], [sales, {}, bank, {}])
+        schemas = ["SH_DEMO", "FLEXCUBE_DEMO"]
+        starter = self.starter_questions(schemas)
+        self.assertEqual(len(starter["suggested_questions"]["items"]), 13)
+        self.assertTrue(all(question.startswith("\u00bf") for question in starter["suggested_questions"]["items"]))
+        status, calls, stdout, stderr = self.run_check(schemas, [starter, sales, {}, bank, {}])
         self.assertEqual(status, 0)
-        self.assertEqual([call.args[0] for call in calls], ["POST", "DELETE", "POST", "DELETE"])
-        self.assertIn("SH_DEMO.SALES", calls[0].args[3]["question"])
-        self.assertIn("FLEXCUBE_DEMO.FLEX_ACTB_ACCBAL_HISTORY", calls[2].args[3]["question"])
+        self.assertEqual([call.args[0] for call in calls], ["GET", "POST", "DELETE", "POST", "DELETE"])
+        self.assertEqual(calls[0].args[1], "/settings/public")
+        self.assertIn("SH_DEMO.SALES", calls[1].args[3]["question"])
+        self.assertIn("FLEXCUBE_DEMO.FLEX_ACTB_ACCBAL_HISTORY", calls[3].args[3]["question"])
+        self.assertIn("Packaged demo starter questions verified.", stdout)
         self.assertIn("FLEXCUBE_DEMO Select AI query verified.", stdout)
         self.assertNotIn("synthetic.token", stdout + stderr)
 
     def test_wrong_fixture_totals_fail_even_with_http_success(self):
         bank = self.response("FLEXCUBE_DEMO", [{"CCY": code, "N": 456} for code in ("BRL", "EUR", "PEN", "USD")])
-        status, calls, stdout, stderr = self.run_check(["FLEXCUBE_DEMO"], [bank, {}])
+        schemas = ["FLEXCUBE_DEMO"]
+        status, calls, stdout, stderr = self.run_check(schemas, [self.starter_questions(schemas), bank, {}])
         self.assertEqual(status, 1)
-        self.assertEqual(calls[1].args[0], "DELETE")
-        self.assertEqual(stdout, "")
+        self.assertEqual(calls[2].args[0], "DELETE")
+        self.assertNotIn("Select AI query verified", stdout)
         self.assertIn("FLEXCUBE_DEMO query verification failed", stderr)
 
     def test_inference_error_fails_check_and_preserves_redacted_reason(self):
-        error = check_deployed_demos.DemoCheckError("Analytics returned HTTP 400 (ORA-20400)")
-        status, calls, stdout, stderr = self.run_check(["FLEXCUBE_DEMO"], [error])
+        error = check_deployed_demos.DemoCheckError("Analyzer API returned HTTP 400 (ORA-20400)")
+        schemas = ["FLEXCUBE_DEMO"]
+        status, calls, stdout, stderr = self.run_check(schemas, [self.starter_questions(schemas), error])
         self.assertEqual(status, 1)
-        self.assertEqual(len(calls), 1)
-        self.assertEqual(stdout, "")
-        self.assertIn("FLEXCUBE_DEMO query verification failed: Analytics returned HTTP 400 (ORA-20400)", stderr)
+        self.assertEqual(len(calls), 2)
+        self.assertNotIn("Select AI query verified", stdout)
+        self.assertIn("FLEXCUBE_DEMO query verification failed: Analyzer API returned HTTP 400 (ORA-20400)", stderr)
+
+    def test_missing_or_wrong_questions_fail_before_running_queries(self):
+        schemas = ["SH_DEMO"]
+        for response in ({}, {"suggested_questions": {"items": []}}, self.starter_questions(["FLEXCUBE_DEMO"])):
+            with self.subTest(response=response):
+                status, calls, stdout, stderr = self.run_check(schemas, [response])
+                self.assertEqual(status, 1)
+                self.assertEqual([call.args[1] for call in calls], ["/settings/public"])
+                self.assertEqual(stdout, "")
+                self.assertIn("Starter questions verification failed", stderr)
 
     def test_no_demos_makes_no_analytics_calls(self):
         self.assertEqual(self.run_check([], []), (0, [], "", ""))
